@@ -43,8 +43,20 @@ class RouteSegment(BaseModel):
     incline_percent: float | None = None
     warnings: list[str] = Field(default_factory=list)
     difficulty: Difficulty = Difficulty.EASY
+    accessibility_score: int = Field(
+        ge=0,
+        le=100,
+        description=(
+            "Dostępność odcinka dla wybranego profilu: 0 = niedostępny, "
+            "100 = bez barier i kar routingu"
+        ),
+    )
     data_status: AttributeStatus = AttributeStatus.UNVERIFIED
-    confidence: float = Field(ge=0, le=1)
+    confidence: float = Field(
+        ge=0,
+        le=1,
+        description="Pewność danych odcinka: 0 = brak wiarygodnych danych, 1 = pełna pewność",
+    )
     sources: list[str] = Field(default_factory=list, description="Źródła danych odcinka")
 
 
@@ -61,6 +73,16 @@ class RouteResponse(BaseModel):
     distance_m: float
     duration_s: float
     segments: list[RouteSegment]
+    accessibility_score: int = Field(
+        ge=0,
+        le=100,
+        description="Wynik dostępności całej trasy, ważony długością jej odcinków",
+    )
+    confidence: float = Field(
+        ge=0,
+        le=1,
+        description="Pewność danych całej trasy, ważona długością jej odcinków",
+    )
     warnings: list[str] = Field(default_factory=list)
     is_mock: bool = False
     profile: str | None = None

@@ -351,6 +351,16 @@ export interface components {
             duration_s: number;
             /** Segments */
             segments: components["schemas"]["RouteSegment"][];
+            /**
+             * Accessibility Score
+             * @description Wynik dostępności całej trasy, ważony długością jej odcinków
+             */
+            accessibility_score: number;
+            /**
+             * Confidence
+             * @description Pewność danych całej trasy, ważona długością jej odcinków
+             */
+            confidence: number;
             /** Warnings */
             warnings?: string[];
             /**
@@ -393,9 +403,17 @@ export interface components {
             warnings?: string[];
             /** @default easy */
             difficulty: components["schemas"]["Difficulty"];
+            /**
+             * Accessibility Score
+             * @description Dostępność odcinka dla wybranego profilu: 0 = niedostępny, 100 = bez barier i kar routingu
+             */
+            accessibility_score: number;
             /** @default unverified */
             data_status: components["schemas"]["AttributeStatus"];
-            /** Confidence */
+            /**
+             * Confidence
+             * @description Pewność danych odcinka: 0 = brak wiarygodnych danych, 1 = pełna pewność
+             */
             confidence: number;
             /**
              * Sources

@@ -29,6 +29,18 @@ export function RouteSummary({ route }: { route: RouteResponse }) {
           </dt>
           <dd>ok. {minutes} min</dd>
         </div>
+        <div className="stat">
+          <dt>
+            <CheckIcon size={18} /> Dostępność trasy
+          </dt>
+          <dd>{route.accessibility_score}/100</dd>
+        </div>
+        <div className="stat">
+          <dt>
+            <AlertIcon size={18} /> Pewność danych
+          </dt>
+          <dd>{Math.round(route.confidence * 100)}%</dd>
+        </div>
         {rough !== null && (
           <div className="stat">
             <dt>

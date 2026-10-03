@@ -1,5 +1,6 @@
-from app.models import RoutePreferences
+from app.models import LatLon, RoutePreferences, RouteSegment
 from app.routing import PROFILES, edge_cost, profile_from_preferences
+from app.routing.scores import accessibility_score, aggregate_route_scores, data_confidence
 
 
 def test_stairs_impassable_for_wheelchair():
@@ -36,3 +37,42 @@ def test_incline_parsed_from_osm_tag():
 def test_simplified_graph_list_values():
     edge = {"length": 10, "highway": "['steps', 'footway']"}
     assert edge_cost(edge, PROFILES["wheelchair"]) is None
+
+
+def test_accessibility_score_uses_profile_penalties():
+    easy = [{"length": 100, "surface": "asphalt"}]
+    rough = [{"length": 100, "surface": "sett"}]
+
+    assert accessibility_score(easy, PROFILES["wheelchair"]) == 100
+    assert accessibility_score(rough, PROFILES["wheelchair"]) == 25
+    assert accessibility_score(rough, PROFILES["stroller"]) > 25
+
+
+def test_data_confidence_penalizes_missing_and_imprecise_data():
+    known = [{"length": 100, "surface": "asphalt"}]
+    unknown = [{"length": 100, "incline": "up"}]
+
+    assert data_confidence(known) == 0.6
+    assert data_confidence(unknown) == 0.25
+
+
+def test_route_scores_are_weighted_by_segment_length():
+    point = LatLon(lat=50.0, lon=20.0)
+    segments = [
+        RouteSegment(
+            instruction="Łatwy odcinek",
+            distance_m=75,
+            geometry=[point, point],
+            accessibility_score=100,
+            confidence=0.8,
+        ),
+        RouteSegment(
+            instruction="Trudny odcinek",
+            distance_m=25,
+            geometry=[point, point],
+            accessibility_score=20,
+            confidence=0.4,
+        ),
+    ]
+
+    assert aggregate_route_scores(segments) == (80, 0.7)

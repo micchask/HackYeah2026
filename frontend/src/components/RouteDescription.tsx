@@ -52,7 +52,8 @@ export function RouteDescription({ route, selected = null, onSelect }: Props) {
                 <span className="confidence" aria-hidden="true">
                   <span style={{ width: `${Math.round(s.confidence * 100)}%` }} />
                 </span>
-                pewność {Math.round(s.confidence * 100)}%
+                dostępność {s.accessibility_score}/100 · pewność danych{' '}
+                {Math.round(s.confidence * 100)}%
                 {s.data_status ? ` · ${STATUS_LABEL[s.data_status] ?? s.data_status}` : ''}
                 {s.sources?.length ? ` · źródło: ${s.sources.join(', ')}` : ''}
               </span>

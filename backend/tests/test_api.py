@@ -28,6 +28,10 @@ def test_route_mock(client):
     data = r.json()
     assert data["segments"]
     assert all(s["instruction"] for s in data["segments"])
+    assert 0 <= data["accessibility_score"] <= 100
+    assert 0 <= data["confidence"] <= 1
+    assert all(0 <= s["accessibility_score"] <= 100 for s in data["segments"])
+    assert all(0 <= s["confidence"] <= 1 for s in data["segments"])
 
 
 def test_create_report(client):
