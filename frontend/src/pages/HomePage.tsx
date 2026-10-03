@@ -122,8 +122,9 @@ export function HomePage() {
     }
   }, [origin, destination, prefs])
 
-  const activeTarget: PickTarget | null =
-    pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
+  // Kliknięcie w mapę ustawia punkt tylko po "Wskaż na mapie" - domyślnie (jak w mapach Google)
+  // klik w mapę nic nie ustawia; punkty A/B: wyszukiwarka, okienko miejsca, trasy demo
+  const activeTarget: PickTarget | null = pickTarget
 
   const setterFor = useCallback(
     (target: PickTarget) =>
