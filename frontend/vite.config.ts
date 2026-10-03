@@ -7,6 +7,8 @@ const apiTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
+  // maplibre-gl 6 ładuje workera względnym URL-em; po pre-bundlingu Vite plik workera znika
+  optimizeDeps: { exclude: ['maplibre-gl'] },
   server: {
     proxy: { '/api': apiTarget },
     // Docker na Windows/WSL nie przekazuje zdarzeń zmian plików - wtedy odpytujemy dysk

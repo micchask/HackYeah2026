@@ -64,8 +64,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Plan Route */
-        post: operations["plan_route_api_routes_post"];
+        /** Plan */
+        post: operations["plan_api_routes_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -138,6 +138,13 @@ export interface components {
                 number,
                 number
             ];
+            /** Demo Bbox */
+            demo_bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | null;
             /** Center */
             center: [
                 number,
@@ -152,6 +159,11 @@ export interface components {
             providers?: components["schemas"]["ProviderConfig"][];
             routing?: components["schemas"]["RoutingConfig"];
         };
+        /**
+         * Difficulty
+         * @enum {string}
+         */
+        Difficulty: "easy" | "moderate" | "hard";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -271,6 +283,20 @@ export interface components {
          */
         ReportStatus: "pending" | "confirmed" | "rejected" | "resolved";
         /**
+         * RouteBaseline
+         * @description Najkrótsza zwykła trasa piesza - do porównania, czego unikamy.
+         */
+        RouteBaseline: {
+            /** Distance M */
+            distance_m: number;
+            /** Stairs Count */
+            stairs_count: number;
+            /** Rough Surface M */
+            rough_surface_m: number;
+            /** Geometry */
+            geometry: components["schemas"]["LatLon"][];
+        };
+        /**
          * RoutePreferences
          * @description Preferencje trasy. Pytamy o potrzeby, NIE o niepełnosprawność.
          */
@@ -332,6 +358,13 @@ export interface components {
              * @default false
              */
             is_mock: boolean;
+            /** Profile */
+            profile?: string | null;
+            /** Rough Surface M */
+            rough_surface_m?: number | null;
+            /** Stairs Count */
+            stairs_count?: number | null;
+            baseline?: components["schemas"]["RouteBaseline"] | null;
         };
         /**
          * RouteSegment
@@ -347,16 +380,28 @@ export interface components {
             distance_m: number;
             /** Geometry */
             geometry: components["schemas"]["LatLon"][];
+            /**
+             * Street
+             * @description Nazwa ulicy lub rodzaj drogi
+             */
+            street?: string | null;
             /** Surface */
             surface?: string | null;
             /** Incline Percent */
             incline_percent?: number | null;
             /** Warnings */
             warnings?: string[];
+            /** @default easy */
+            difficulty: components["schemas"]["Difficulty"];
             /** @default unverified */
             data_status: components["schemas"]["AttributeStatus"];
             /** Confidence */
             confidence: number;
+            /**
+             * Sources
+             * @description Źródła danych odcinka
+             */
+            sources?: string[];
         };
         /** RoutingConfig */
         RoutingConfig: {
@@ -365,6 +410,8 @@ export interface components {
              * @default walk
              */
             network_type: string;
+            /** Overpass Url */
+            overpass_url?: string | null;
         };
         /**
          * SourceType
@@ -466,7 +513,7 @@ export interface operations {
             };
         };
     };
-    plan_route_api_routes_post: {
+    plan_api_routes_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -17,6 +17,7 @@ class ProviderConfig(BaseModel):
 
 class RoutingConfig(BaseModel):
     network_type: str = "walk"
+    overpass_url: str | None = None
 
 
 class CityConfig(BaseModel):
@@ -25,10 +26,20 @@ class CityConfig(BaseModel):
     country: str
     timezone: str
     bbox: tuple[float, float, float, float]  # south, west, north, east
+    # Mniejszy obszar dla grafu i danych demo; gdy brak - cały bbox miasta
+    demo_bbox: tuple[float, float, float, float] | None = None
     center: tuple[float, float]  # lat, lon
     default_zoom: int = 13
     providers: list[ProviderConfig] = Field(default_factory=list)
     routing: RoutingConfig = Field(default_factory=RoutingConfig)
+
+    @property
+    def area_bbox(self) -> tuple[float, float, float, float]:
+        return self.demo_bbox or self.bbox
+
+    def contains(self, lat: float, lon: float) -> bool:
+        s, w, n, e = self.area_bbox
+        return s <= lat <= n and w <= lon <= e
 
 
 @lru_cache

@@ -7,6 +7,8 @@ timezone: Europe/Warsaw
 # [south, west, north, east] w WGS84
 bbox: [49.97, 19.79, 50.13, 20.22]
 center: [50.0614, 19.9366]
+# Obszar demo: Stare Miasto, Wawel, Kazimierz (docs/demo-scenario.md)
+demo_bbox: [50.045, 19.928, 50.066, 19.950]
 default_zoom: 13
 
 # Kolejność ma znaczenie: przy konfliktach wyżej = większe zaufanie bazowe
@@ -36,3 +38,5 @@ providers:
 routing:
   # Graf pieszy z OSM (osmnx), cache'owany w data/cache/<city>/graph.graphml
   network_type: walk
+  # overpass-api.de bywa niedostępny; mirror sprawdzony 3.10.2026
+  overpass_url: https://maps.mail.ru/osm/tools/overpass/api/interpreter
