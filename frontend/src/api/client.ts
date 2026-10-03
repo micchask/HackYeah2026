@@ -1,4 +1,5 @@
 // Typy są generowane z OpenAPI backendu: `make gen-api` (nie edytuj schema.d.ts ręcznie)
+import type { FeatureCollection, LineString } from 'geojson'
 import type { components } from './schema'
 
 export type Place = components['schemas']['Place']
@@ -7,11 +8,23 @@ export type RouteRequest = components['schemas']['RouteRequest']
 export type RouteResponse = components['schemas']['RouteResponse']
 export type RouteAlternative = components['schemas']['RouteAlternative']
 export type RouteSegment = components['schemas']['RouteSegment']
+export type RouteBaseline = components['schemas']['RouteBaseline']
+
+/** Odpowiedź `POST /api/routes/geojson` - można ją podać wprost do źródła `geojson` w MapLibre. */
+export type RouteFeatureProperties =
+  | ({ kind: 'segment'; index: number } & Omit<RouteSegment, 'geometry'>)
+  | ({ kind: 'baseline' } & Omit<RouteBaseline, 'geometry'>)
+export type RouteGeoJSON = FeatureCollection<LineString, RouteFeatureProperties> & {
+  properties: Omit<RouteResponse, 'segments' | 'baseline'>
+}
 export type RoutePreferences = components['schemas']['RoutePreferences']
 export type Difficulty = components['schemas']['Difficulty']
 export type ReportCreate = components['schemas']['ReportCreate']
+export type Report = components['schemas']['Report']
 export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
+export type Institution = components['schemas']['Institution']
+export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -62,6 +75,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       const detail = (JSON.parse(text) as { detail?: unknown }).detail
       if (typeof detail === 'string') message = detail
+      // błędy walidacji FastAPI: [{ msg: "Value error, …" }, …]
+      else if (Array.isArray(detail))
+        message = detail
+          .map((d: { msg?: string }) => (d.msg ?? '').replace(/^Value error, /, ''))
+          .join(' ')
     } catch {
       // odpowiedź nie jest JSON-em - zostaje surowy tekst
     }
@@ -76,6 +94,12 @@ export const api = {
     request<Place[]>(`/places?${new URLSearchParams({ city, ...(q ? { q } : {}) })}`),
   route: (body: RouteRequest, signal?: AbortSignal) =>
     request<RouteResponse>('/routes', { method: 'POST', body: JSON.stringify(body), signal }),
+  routeGeojson: (body: RouteRequest, signal?: AbortSignal) =>
+    request<RouteGeoJSON>('/routes/geojson', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      signal,
+    }),
   geocode: (q: string, city: string, signal?: AbortSignal) =>
     request<GeocodeResult[]>(`/geocode?${new URLSearchParams({ q, city })}`, { signal }),
   reverseGeocode: (point: LatLon, city: string, signal?: AbortSignal) =>
@@ -83,6 +107,13 @@ export const api = {
       `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
       { signal },
     ),
+  institutions: (city: string) =>
+    request<Institution[]>(`/institutions?${new URLSearchParams({ city })}`),
   report: (body: ReportCreate, city: string) =>
-    request(`/reports?city=${city}`, { method: 'POST', body: JSON.stringify(body) }),
+    request<Report>(`/reports?${new URLSearchParams({ city })}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  reports: (city: string, signal?: AbortSignal) =>
+    request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
 }

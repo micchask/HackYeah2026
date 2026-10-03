@@ -86,7 +86,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.943986,
+        50.040481
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Zamoyskiego 50",
+      "matched": "Teatr KTO, Jana Zamoyskiego 50, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "zdmk-centralna",
@@ -184,7 +197,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        20.009994,
+        50.064261
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Centralna",
+      "matched": "Centralna, Czyżyny",
+      "match": "przybliżony",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "zdmk-spp-reymonta",
@@ -257,7 +283,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.912968,
+        50.06351
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Reymonta 20",
+      "matched": "Biuro Stowarzyszenia Metropolia Krakowska, Władysława Reymonta 20, Krowodrza",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "zdmk-galicyjska",
@@ -298,7 +337,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        20.007705,
+        50.062774
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Galicyjska 1",
+      "matched": "BeBaby Galicyjska, Galicyjska 1, Czyżyny",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "mk-krzysztofory",
@@ -395,7 +447,20 @@
         "status": "potwierdzone"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.936369,
+        50.062889
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Rynek Główny 35",
+      "matched": "Pałac Pod Krzysztofory, Rynek Główny 35, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "mk-stara-synagoga",
@@ -460,7 +525,20 @@
         "status": "potwierdzone"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.948704,
+        50.051435
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Szeroka 24",
+      "matched": "Szeroka 24, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "mk-fabryka-schindlera",
@@ -525,7 +603,20 @@
         "status": "potwierdzone"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.961369,
+        50.047877
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Lipowa 4",
+      "matched": "Muzeum Sztuki Współczesnej w Krakowie, Lipowa 4, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-magistrat",
@@ -542,7 +633,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.936727,
+        50.058892
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "plac Wszystkich Świętych 3",
+      "matched": "Urząd Miasta Krakowa, Plac Wszystkich Świętych 3, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-geodezja",
@@ -559,7 +663,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.965067,
+        50.067271
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Grunwaldzka 8",
+      "matched": "Grunwaldzka 8, Grzegórzki",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-skarb",
@@ -576,7 +693,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.967834,
+        50.068012
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Kasprowicza 29",
+      "matched": "Urząd Miasta Krakowa - Wydział Skarbu Miasta, Jana Kasprowicza 29, Grzegórzki",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-stachowicza",
@@ -593,7 +723,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.922002,
+        50.055078
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Stachowicza 18",
+      "matched": "Urząd Miasta Krakowa, Michała Stachowicza 18, Zwierzyniec",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-rynek-podgorski-1",
@@ -610,7 +753,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.949938,
+        50.04474
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Rynek Podgórski 1",
+      "matched": "Dawny ratusz miasta Podgórza, Rynek Podgórski 1, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-rynek-podgorski-2",
@@ -627,7 +783,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.949858,
+        50.044475
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Rynek Podgórski 2",
+      "matched": "Rynek Podgórski 2, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-wielicka-28a",
@@ -644,7 +813,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.966368,
+        50.038792
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Wielicka 28A",
+      "matched": "Urząd Miasta Krakowa, Wielicka 28a, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-zgody-2",
@@ -661,7 +843,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        20.031881,
+        50.076856
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "os. Zgody 2",
+      "matched": "Osiedle Zgody 2, Nowa Huta",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-wielopole-17a",
@@ -678,7 +873,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.945526,
+        50.057855
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Wielopole 17a",
+      "matched": "Wielopole 17a, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-powstania-warszawskiego-10",
@@ -695,7 +903,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.961676,
+        50.062101
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Powstania Warszawskiego 10",
+      "matched": "Wydział Spraw Administracyjnych, Aleja Powstania Warszawskiego 10, Grzegórzki",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-lubelska",
@@ -712,7 +933,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.934694,
+        50.074303
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Lubelska 27",
+      "matched": "Lubelska 27, Krowodrza",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-jozefinska",
@@ -729,7 +963,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.950558,
+        50.045861
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Józefińska 14",
+      "matched": "Józefińska 14, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-centrum-c10",
@@ -746,7 +993,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        20.036743,
+        50.07414
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "os. Centrum C 10",
+      "matched": "Osiedle Centrum C 10, Nowa Huta",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-sarego-4",
@@ -763,7 +1023,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.941147,
+        50.056994
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Sarego 4",
+      "matched": "Józefa Sarego 4, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-dekerta-24",
@@ -780,7 +1053,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.967648,
+        50.048522
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Dekerta 24",
+      "matched": "Alensa, Jana Dekerta 24, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-wielopole-1",
@@ -797,7 +1083,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.943177,
+        50.059025
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Wielopole 1",
+      "matched": "Wielopole 1, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-mogilska-41",
@@ -814,7 +1113,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.966877,
+        50.065947
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Mogilska 41",
+      "matched": "Urząd Miasta Krakowa - Wydział Architektury i Urbanistyki, Mogilska 41, Grzegórzki",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-nowohucka-1",
@@ -831,7 +1143,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        20.005663,
+        50.070279
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Nowohucka 1",
+      "matched": "Miejskie Przedsiębiorstwo Oczyszczania Sp. z o.o., Nowohucka 1, Czyżyny",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-bora-komorowskiego-41",
@@ -848,7 +1173,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.985689,
+        50.088016
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Bora-Komorowskiego 41",
+      "matched": "Centrum Serenada, Aleja Generała Tadeusza Bora-Komorowskiego 41, Czyżyny",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-kamienskiego-11",
@@ -865,7 +1203,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.950721,
+        50.027977
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Kamieńskiego 11",
+      "matched": "Bonarka City Center, Generała Henryka Kamieńskiego 11, Podgórze Duchackie",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-stawowa-61",
@@ -882,7 +1233,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.898284,
+        50.092087
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Stawowa 61",
+      "matched": "Galeria Bronowice, Stawowa 61, Prądnik Biały",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-wadowicka-8w",
@@ -899,7 +1263,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.941403,
+        50.032831
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Wadowicka 8W",
+      "matched": "NFZ Małopolski Oddział Wojewódzk i, Wadowicka 8w, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-zablocie-22",
@@ -916,7 +1293,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.966912,
+        50.050192
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Zabłocie 22",
+      "matched": "Zabłocie 22, Podgórze",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-bracka-10",
@@ -933,7 +1323,20 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.936477,
+        50.059939
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Bracka 10",
+      "matched": "Bracka 10, Stare Miasto",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   },
   {
     "id": "umk-slawka-10",
@@ -950,6 +1353,19 @@
         "status": "potwierdzone_brak_daty"
       }
     ],
-    "geometry": null
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        19.959567,
+        50.02423
+      ]
+    },
+    "geometrySource": {
+      "source": "Photon (dane OpenStreetMap)",
+      "query": "Walerego Sławka 10",
+      "matched": "Biblioteka Kraków Filia 38, Walerego Sławka 10, Podgórze Duchackie",
+      "match": "dokładny adres",
+      "fetched": "2026-10-03"
+    }
   }
 ]

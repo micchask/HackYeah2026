@@ -23,8 +23,10 @@ from app.routing.profiles import (
     UNPAVED_SURFACES,
     RoutingProfile,
     has_unknown_incline,
+    has_unknown_kerb,
     incline_percent,
     is_steps,
+    kerb_cm,
     profile_from_preferences,
     stair_ramp,
     tag,
@@ -79,6 +81,10 @@ MIN_SEGMENT_M = 25
 MAX_SHARED_LENGTH_RATIO = 0.8
 
 logger = logging.getLogger(__name__)
+# Od tej wysokości krawężnik jest problemem dla większości wózków
+HIGH_KERB_CM = 6.0
+# Niższe krawężniki (obniżone, ok. 2 cm) nie wymagają ostrzeżenia
+WARN_KERB_CM = 3.0
 
 
 class NoRouteError(Exception):
@@ -286,9 +292,15 @@ def _street(edge: dict[str, Any], city_graph: CityGraph, geometry: list[LatLon])
 def edge_difficulty(edge: dict[str, Any]) -> Difficulty:
     surface = tag(edge, "surface")
     incline = incline_percent(edge)
-    if is_steps(edge) or surface in HARD_SURFACES or (incline is not None and abs(incline) > 6):
+    kerb = kerb_cm(edge)
+    if (
+        is_steps(edge)
+        or surface in HARD_SURFACES
+        or (incline is not None and abs(incline) > 6)
+        or (kerb is not None and kerb >= HIGH_KERB_CM)
+    ):
         return Difficulty.HARD
-    if surface not in EASY_SURFACES or has_unknown_incline(edge):
+    if surface not in EASY_SURFACES or has_unknown_incline(edge) or has_unknown_kerb(edge):
         return Difficulty.MODERATE
     return Difficulty.EASY
 
@@ -437,6 +449,11 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
     steep = [i for e in seg.edges if (i := incline_percent(e)) is not None and abs(i) > 4]
     if steep:
         warnings.append(f"Nachylenie do {max(abs(i) for i in steep):g}%.")
+    kerbs = [k for e in seg.edges if (k := kerb_cm(e)) is not None and k >= WARN_KERB_CM]
+    if kerbs:
+        warnings.append(f"Krawężnik ok. {max(kerbs):g} cm.")
+    if any(has_unknown_kerb(e) for e in seg.edges):
+        warnings.append("Krawężnik o nieznanej wysokości - sprawdź na miejscu.")
     unknown = sum(float(e["length"]) for e in seg.edges if not tag(e, "surface"))
     if unknown >= 30:
         warnings.append(f"Brak danych o nawierzchni na {round(unknown)} m.")

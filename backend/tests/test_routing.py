@@ -207,3 +207,56 @@ def test_compromise_profile_only_relaxes_surface_penalties():
     assert compromise.surface_penalty["ground"] == 3.5
     assert compromise.avoid_stairs == profile.avoid_stairs
     assert compromise.max_incline_percent == profile.max_incline_percent
+
+
+def test_kerb_too_high_for_wheelchair_ok_for_stroller():
+    edge = {"length": 10, "highway": "footway", "surface": "asphalt", "kerb_height_cm": 4}
+    assert edge_cost(edge, PROFILES["wheelchair"]) is None
+    assert edge_cost(edge, PROFILES["stroller"]) is not None
+
+
+def test_unknown_kerb_costs_more_but_is_passable():
+    edge = {"length": 10, "highway": "footway", "surface": "asphalt"}
+    unknown = {**edge, "kerb_unknown": "yes"}
+    assert edge_cost(unknown, PROFILES["wheelchair"]) > edge_cost(edge, PROFILES["wheelchair"])
+
+
+def test_kerb_height_from_osm_tags():
+    from app.routing.graph import kerb_height_cm
+
+    assert kerb_height_cm({"barrier": "kerb", "kerb": "raised"}) == (True, 10.0)
+    assert kerb_height_cm({"kerb": "lowered", "highway": "crossing"}) == (True, 2.0)
+    assert kerb_height_cm({"barrier": "kerb"}) == (True, None)
+    assert kerb_height_cm({"barrier": "kerb", "kerb:height": "0.04"}) == (True, 4.0)
+    assert kerb_height_cm({"kerb:height": "5 cm"}) == (True, 5.0)
+    assert kerb_height_cm({"highway": "crossing"}) == (False, None)
+
+
+def test_add_kerbs_moves_kerb_from_node_to_edges():
+    import networkx as nx
+
+    from app.routing.graph import add_kerbs
+
+    graph = nx.MultiDiGraph()
+    graph.add_node(1)
+    graph.add_node(2, barrier="kerb", kerb="raised")
+    graph.add_node(3, barrier="kerb")
+    graph.add_edge(1, 2, length=5)
+    graph.add_edge(1, 3, length=5)
+    graph.add_edge(3, 2, length=5)
+    add_kerbs(graph)
+
+    assert graph[1][2][0]["kerb_height_cm"] == 10.0
+    assert graph[1][3][0] == {"length": 5, "kerb_unknown": "yes"}
+    assert graph[3][2][0]["kerb_height_cm"] == 10.0
+    assert graph[3][2][0]["kerb_unknown"] == "yes"
+
+
+def test_high_kerb_makes_edge_hard():
+    from app.models import Difficulty
+    from app.routing.planner import edge_difficulty
+
+    edge = {"length": 10, "highway": "footway", "surface": "asphalt"}
+    assert edge_difficulty(edge) == Difficulty.EASY
+    assert edge_difficulty({**edge, "kerb_height_cm": 10}) == Difficulty.HARD
+    assert edge_difficulty({**edge, "kerb_unknown": "yes"}) == Difficulty.MODERATE

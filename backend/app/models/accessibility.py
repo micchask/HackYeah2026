@@ -41,6 +41,8 @@ class AttributeKey(StrEnum):
     KERB_HEIGHT_CM = "kerb_height_cm"  # float
     WIDTH_CM = "width_cm"  # float
     TACTILE_PAVING = "tactile_paving"  # bool
+    BLOCKED = "blocked"  # bool - przejście zablokowane (remont, rusztowanie)
+    ACCESSIBLE_PARKING = "accessible_parking"  # bool - miejsce parkingowe dla OzN dostępne
 
 
 class Provenance(BaseModel):

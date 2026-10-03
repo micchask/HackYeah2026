@@ -30,6 +30,8 @@ class RoutingProfile:
     stair_ramp_penalty: float = 1.5
     # odcinek oznaczony w OSM jako pochyły (incline=up/down), ale bez wartości w %
     unknown_incline_penalty: float = 1.5
+    # krawężnik oznaczony w OSM, ale bez wysokości (barrier=kerb, kerb=yes)
+    unknown_kerb_penalty: float = 1.5
     # krawędź z tagiem wheelchair=no jest nieprzejezdna
     wheelchair_no_impassable: bool = True
     speed_m_s: float = 0.9
@@ -46,6 +48,7 @@ PROFILES: dict[str, RoutingProfile] = {
         | {"paving_stones": 1.3},
         stair_ramp_tags=("ramp:wheelchair",),
         unknown_incline_penalty=2.0,
+        unknown_kerb_penalty=2.0,
         speed_m_s=0.9,
     ),
     "stroller": RoutingProfile(
@@ -57,6 +60,7 @@ PROFILES: dict[str, RoutingProfile] = {
         stair_ramp_tags=("ramp:stroller", "ramp:wheelchair"),
         stair_ramp_penalty=2.0,
         unknown_incline_penalty=1.1,
+        unknown_kerb_penalty=1.2,
         wheelchair_no_impassable=False,
         speed_m_s=1.1,
     ),
@@ -107,6 +111,16 @@ def has_unknown_incline(edge: dict[str, Any]) -> bool:
     return tag(edge, "incline") in ("up", "down", "yes")
 
 
+def kerb_cm(edge: dict[str, Any]) -> float | None:
+    """Wysokość krawężnika na krawędzi [cm] (z węzłów barrier=kerb, patrz graph.add_kerbs)."""
+    value = edge.get("kerb_height_cm")
+    return float(value) if value is not None else None
+
+
+def has_unknown_kerb(edge: dict[str, Any]) -> bool:
+    return edge.get("kerb_unknown") in ("yes", True)
+
+
 def is_steps(edge: dict[str, Any]) -> bool:
     return tag(edge, "highway") == "steps"
 
@@ -137,9 +151,11 @@ def edge_cost(edge: dict[str, Any], profile: RoutingProfile) -> float | None:
     if incline is None and has_unknown_incline(edge):
         multiplier *= profile.unknown_incline_penalty
 
-    kerb = edge.get("kerb_height_cm")
-    if kerb is not None and float(kerb) > profile.max_kerb_height_cm:
+    kerb = kerb_cm(edge)
+    if kerb is not None and kerb > profile.max_kerb_height_cm:
         return None
+    if has_unknown_kerb(edge):
+        multiplier *= profile.unknown_kerb_penalty
 
     surface = tag(edge, "surface")
     if surface is None:

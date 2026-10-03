@@ -24,6 +24,18 @@ def init_db() -> None:
     with engine.begin() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
     Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        for statement in COLUMN_MIGRATIONS:
+            conn.execute(text(statement))
+
+
+# create_all nie zmienia istniejących tabel - nowe kolumny dla baz założonych wcześniej
+COLUMN_MIGRATIONS = [
+    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS type VARCHAR NOT NULL DEFAULT 'barrier'",
+    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS valid_until DATE",
+    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE",
+    "CREATE INDEX IF NOT EXISTS ix_reports_status ON reports (status)",
+]
 
 
 def db_is_alive() -> bool:

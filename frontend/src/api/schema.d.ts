@@ -72,6 +72,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/routes/geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plan Geojson
+         * @description Ta sama trasa co `POST /routes`, jako GeoJSON FeatureCollection.
+         *
+         *     Odcinki mają `properties.kind = "segment"` i `index`, trasa bazowa (najkrótsza zwykła)
+         *     `kind = "baseline"`. Podsumowanie trasy jest w `properties` kolekcji.
+         */
+        post: operations["plan_geojson_api_routes_geojson_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports": {
         parameters: {
             query?: never;
@@ -79,15 +102,41 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Reports */
+        /**
+         * List Reports
+         * @description Zgłoszenia miasta, najnowsze pierwsze; opcjonalnie tylko o danym statusie.
+         */
         get: operations["list_reports_api_reports_get"];
         put?: never;
-        /** Create Report */
+        /**
+         * Create Report
+         * @description Nowe zgłoszenie bariery. Zapisujemy tylko to, co w formularzu - bez IP i danych osobowych.
+         */
         post: operations["create_report_api_reports_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Report
+         * @description Zmiana statusu zgłoszenia (moderacja). TODO(api): uprawnienia moderatora - #37.
+         */
+        patch: operations["update_report_api_reports__report_id__patch"];
         trace?: never;
     };
     "/api/geocode": {
@@ -130,6 +179,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/institutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Institutions
+         * @description Instytucje publiczne z deklaracji dostępności (BIP) wraz z lokalizacją.
+         */
+        get: operations["list_institutions_api_institutions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -155,7 +224,7 @@ export interface components {
          * @description Słownik cech dostępności. Dodajemy nowe klucze tutaj, nie ad hoc w kodzie.
          * @enum {string}
          */
-        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving";
+        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving" | "blocked" | "accessible_parking";
         /**
          * AttributeStatus
          * @enum {string}
@@ -238,6 +307,72 @@ export interface components {
             /** Database */
             database: string;
         };
+        /**
+         * Institution
+         * @description Instytucja publiczna z deklaracji dostępności (BIP).
+         */
+        Institution: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /**
+             * Kind
+             * @description Rodzaj po polsku, np. 'urząd', 'muzeum', 'teatr'
+             */
+            kind: string;
+            location?: components["schemas"]["InstitutionLocation"] | null;
+            /** Attributes */
+            attributes?: components["schemas"]["InstitutionAttribute"][];
+        };
+        /** InstitutionAttribute */
+        InstitutionAttribute: {
+            /**
+             * Category
+             * @description Klucz z danych źródłowych, np. 'winda', 'toaleta'
+             */
+            category: string;
+            /**
+             * Label
+             * @description Nazwa po polsku do wyświetlenia, np. 'Winda'
+             */
+            label: string;
+            /**
+             * Value
+             * @description Opis z deklaracji; null = brak informacji
+             */
+            value: string | null;
+            /** Source */
+            source: string;
+            /** Last Verified */
+            last_verified?: string | null;
+            /** Confidence */
+            confidence: number;
+            status: components["schemas"]["InstitutionDataStatus"];
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * InstitutionDataStatus
+         * @enum {string}
+         */
+        InstitutionDataStatus: "confirmed" | "confirmed_no_date" | "unknown";
+        /** InstitutionLocation */
+        InstitutionLocation: {
+            point: components["schemas"]["LatLon"];
+            /**
+             * Source
+             * @description Skąd współrzędne, np. geokoder Photon (OSM)
+             */
+            source: string;
+            /**
+             * Exact
+             * @description False = punkt tylko na ulicy, bez numeru domu
+             */
+            exact: boolean;
+        };
         /** LatLon */
         LatLon: {
             /** Lat */
@@ -305,14 +440,22 @@ export interface components {
         };
         /** Report */
         Report: {
+            /** @default barrier */
+            type: components["schemas"]["ReportType"];
             location: components["schemas"]["LatLon"];
             /** Place Id */
             place_id?: string | null;
-            attribute: components["schemas"]["AttributeKey"];
+            /** @description Wymagane dla typu 'barrier'; dla innych typów domyślne */
+            attribute?: components["schemas"]["AttributeKey"] | null;
             /** Value */
-            value: boolean | number | string;
+            value?: boolean | number | string | null;
             /** Comment */
             comment?: string | null;
+            /**
+             * Valid Until
+             * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
+             */
+            valid_until?: string | null;
             /** Id */
             id: string;
             /** City */
@@ -324,26 +467,48 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ReportCreate
          * @description Zgłoszenie użytkownika. Celowo bez danych osobowych (patrz docs/security-privacy.md).
          */
         ReportCreate: {
+            /** @default barrier */
+            type: components["schemas"]["ReportType"];
             location: components["schemas"]["LatLon"];
             /** Place Id */
             place_id?: string | null;
-            attribute: components["schemas"]["AttributeKey"];
+            /** @description Wymagane dla typu 'barrier'; dla innych typów domyślne */
+            attribute?: components["schemas"]["AttributeKey"] | null;
             /** Value */
-            value: boolean | number | string;
+            value?: boolean | number | string | null;
             /** Comment */
             comment?: string | null;
+            /**
+             * Valid Until
+             * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
+             */
+            valid_until?: string | null;
         };
         /**
          * ReportStatus
          * @enum {string}
          */
         ReportStatus: "pending" | "confirmed" | "rejected" | "resolved";
+        /**
+         * ReportType
+         * @enum {string}
+         */
+        ReportType: "barrier" | "elevator_broken" | "construction" | "inaccessible_entrance" | "blocked_parking";
+        /**
+         * ReportUpdate
+         * @description Zmiana statusu przez moderację (na razie bez logowania - patrz #37).
+         */
+        ReportUpdate: {
+            status: components["schemas"]["ReportStatus"];
+        };
         /**
          * RouteAlternative
          * @description Pełna alternatywa trasy, gotowa do pokazania obok trasy głównej.
@@ -662,10 +827,46 @@ export interface operations {
             };
         };
     };
+    plan_geojson_api_routes_geojson_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_reports_api_reports_get: {
         parameters: {
             query?: {
                 city?: string;
+                status?: components["schemas"]["ReportStatus"] | null;
             };
             header?: never;
             path?: never;
@@ -710,6 +911,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_api_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -782,6 +1018,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeocodeResult"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_institutions_api_institutions_get: {
+        parameters: {
+            query?: {
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Institution"][];
                 };
             };
             /** @description Validation Error */
