@@ -162,6 +162,8 @@ dist/
 # --- Dane (surowe pliki i cache providerów/grafu) ---
 data/*
 !data/README.md
+# Snapshot danych demo dla `make seed` (mały obszar, spakowany)
+!data/seed/
 
 # --- System / IDE ---
 .DS_Store

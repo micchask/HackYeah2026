@@ -46,10 +46,11 @@ Graf pieszy dla tego obszaru jest mały, więc buduje się szybko i mieści w ca
 
 ## Jak uruchomić demo lokalnie
 
-1. `docker compose up -d`, potem otwórz http://localhost:5173.
-2. Przy pierwszym starcie backend pobiera graf pieszy obszaru demo z Overpass do
-   `data/cache/krakow/graph.graphml`. Przez mirror trwa to nawet **10 minut**. Kolejne starty ładują graf z pliku
-   w ok. 1 s. Dopóki grafu nie ma, `/api/routes` czeka na jego pobranie.
+1. `make up && make seed` (bez make: `docker compose up --build -d`, `docker compose exec backend python -m app.seed`,
+   `docker compose restart backend`), potem otwórz http://localhost:5173.
+2. `make seed` rozpakowuje snapshot z `data/seed/krakow/` (graf pieszy + miejsca OSM) do `data/cache/krakow/`
+   i zapisuje miejsca w bazie, więc demo **nie potrzebuje Overpass**. Graf ładuje się z pliku w ok. 1 s.
+   Snapshot odświeża `make seed-refresh` (pobiera z Overpass, przez mirror nawet **10 minut**) – potem commit plików z `data/seed/`.
 3. Kliknij **Rynek → Wawel**, potem przełącz **Wózek inwalidzki / Rodzina z wózkiem dziecięcym**.
 4. Własne punkty: **Wskaż A na mapie** / **Wskaż B na mapie** i kliknięcie na mapie. Punkty spoza obszaru demo
    dostają trasę przykładową (mock) z ostrzeżeniem.

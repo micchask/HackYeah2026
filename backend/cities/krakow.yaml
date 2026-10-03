@@ -17,7 +17,8 @@ providers:
   - name: osm
     enabled: true
     options:
-      overpass_url: https://overpass-api.de/api/interpreter
+      # overpass-api.de odrzuca połączenia (3.10.2026) - ten sam mirror co routing
+      overpass_url: https://maps.mail.ru/osm/tools/overpass/api/interpreter
       timeout_s: 60
 
   - name: krakow_open_data

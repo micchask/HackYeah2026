@@ -79,6 +79,8 @@ Wszystko to zwykłe komendy `docker compose`. Działają tak samo w PowerShell, 
 | Zobaczyć logi (Ctrl+C aby wyjść) | `docker compose logs -f` | `make logs` |
 | Logi tylko backendu | `docker compose logs -f backend` | |
 | Status kontenerów | `docker compose ps` | `make ps` |
+| Dane demo bez Overpass (graf + miejsca z `data/seed/`) | `docker compose exec backend python -m app.seed`, potem `docker compose restart backend` | `make seed` |
+| Odświeżyć snapshot danych demo z Overpass | `docker compose exec backend python -m app.seed --refresh` | `make seed-refresh` |
 | Testy backendu | `docker compose exec backend pytest -q` | `make test` (oba) |
 | Testy frontendu | `docker compose exec frontend npm test` | |
 | Lint backendu | `docker compose exec backend ruff check .` | `make lint` (wszystko) |
@@ -414,7 +416,7 @@ Baza jeszcze startuje (poczekaj kilka sekund) albo coś jest nie tak z kontenere
 Oficjalny obraz nie ma wersji na procesory ARM (Mac z Apple Silicon). Ten działa na wszystkich komputerach.
 
 **Overpass (OSM) zwraca 429 / 504.**
-Publiczne API ma limity. Provider przełączy się na cache z `data/cache/`. Można też zmienić `overpass_url` w `cities/krakow.yaml` na inny serwer.
+Publiczne API ma limity. Provider przełączy się na cache z `data/cache/`, a `make seed` wypełnia ten cache ze snapshotu w repo (bez internetu). Można też zmienić `overpass_url` w `cities/krakow.yaml` na inny serwer.
 
 **Chcę zacząć od zera (czysta baza).**
 `docker compose down -v`, potem `docker compose up --build -d`. Uwaga: usuwa wszystkie dane z bazy.
