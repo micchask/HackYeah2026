@@ -1,6 +1,6 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as maplibregl from 'maplibre-gl'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Institution, LatLon, Place, RouteResponse } from '../api/client'
 import { DIFFICULTY_COLOR } from './difficulty'
@@ -137,6 +137,12 @@ export function MapView({
     }
     updateLabels()
     instance.on('zoom', updateLabels)
+    // Wysokość mapy dla CSS: rozwinięte okienko instytucji nie może być wyższe niż mapa
+    const updateHeight = () => {
+      container.current?.style.setProperty('--map-h', `${instance.getContainer().clientHeight}px`)
+    }
+    updateHeight()
+    instance.on('resize', updateHeight)
     instance.on('click', (e) => {
       // Klik w znacznik instytucji albo w okienko nie ustawia punktu A/B
       const target = e.originalEvent.target as Element | null
@@ -392,6 +398,27 @@ export function MapView({
     }
   }, [selectedInstitution, institutions, mapReady])
 
+  // Po rozwinięciu okienko jest wyższe: MapLibre wybiera stronę na nowo (setLngLat),
+  // a jeśli dalej wystaje poza mapę - przesuwamy mapę o brakujące piksele
+  const fitPopup = useCallback(() => {
+    const p = popup.current
+    const m = map.current
+    if (!p || !m) return
+    p.setLngLat(p.getLngLat())
+    requestAnimationFrame(() => {
+      const box = p.getElement().getBoundingClientRect()
+      const area = m.getContainer().getBoundingClientRect()
+      const margin = 12
+      let dx = 0
+      let dy = 0
+      if (box.top < area.top + margin) dy = box.top - area.top - margin
+      else if (box.bottom > area.bottom - margin) dy = box.bottom - area.bottom + margin
+      if (box.left < area.left + margin) dx = box.left - area.left - margin
+      else if (box.right > area.right - margin) dx = box.right - area.right + margin
+      if (dx || dy) m.panBy([dx, dy], { duration: 300 })
+    })
+  }, [])
+
   const selected = institutions.find((i) => i.id === selectedInstitution)
 
   return (
@@ -410,6 +437,7 @@ export function MapView({
             onSetOrigin={() => onInstitutionRoute(selected, 'origin')}
             onSetDestination={() => onInstitutionRoute(selected, 'destination')}
             onClose={() => onInstitutionSelect(null)}
+            onResize={fitPopup}
           />,
           popupEl,
         )}

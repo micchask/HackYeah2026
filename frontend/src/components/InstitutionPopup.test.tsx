@@ -46,7 +46,7 @@ describe('InstitutionPopup', () => {
     expect(screen.getByRole('heading', { name: 'Muzeum testowe' })).toHaveFocus()
     expect(screen.queryByText('tak, przyciski Braille')).not.toBeInTheDocument()
 
-    const more = screen.getByRole('button', { name: 'Więcej informacji' })
+    const more = screen.getByRole('button', { name: 'Więcej informacji o dostępności' })
     expect(more).toHaveAttribute('aria-expanded', 'false')
     fireEvent.click(more)
 

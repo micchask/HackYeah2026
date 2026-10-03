@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Institution, InstitutionAttribute } from '../api/client'
-import { AlertIcon } from './icons'
+import { AlertIcon, ChevronDownIcon, InfoIcon } from './icons'
 import { formatDate } from './format'
 
 type Status = InstitutionAttribute['status']
@@ -17,6 +17,8 @@ interface Props {
   onSetOrigin: () => void
   onSetDestination: () => void
   onClose: () => void
+  /** Wywoływane po zmianie rozmiaru (rozwinięcie) - mapa dopasowuje się, żeby okienko było widać */
+  onResize?: () => void
 }
 
 /**
@@ -28,6 +30,7 @@ export function InstitutionPopup({
   onSetOrigin,
   onSetDestination,
   onClose,
+  onResize,
 }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -39,6 +42,17 @@ export function InstitutionPopup({
   useEffect(() => {
     heading.current?.focus()
   }, [inst.id])
+
+  // Po rozwinięciu/zwinięciu okienko zmienia wysokość - mapa musi je "dociągnąć" do widoku.
+  // Przy samym otwarciu nie: mapa wtedy i tak centruje się na punkcie.
+  const firstRender = useRef(true)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    onResize?.()
+  }, [expanded, onResize])
 
   // Escape zamyka okienko, gdy fokus jest w jego środku
   useEffect(() => {
@@ -66,16 +80,18 @@ export function InstitutionPopup({
         <button type="button" className="chip" onClick={onSetDestination}>
           Cel (B)
         </button>
-        <button
-          type="button"
-          className="link-button"
-          aria-expanded={expanded}
-          aria-controls={detailsId}
-          onClick={() => setExpanded((v) => !v)}
-        >
-          {expanded ? 'Mniej informacji' : 'Więcej informacji'}
-        </button>
       </div>
+      <button
+        type="button"
+        className="more-button"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <InfoIcon size={18} />
+        <span>{expanded ? 'Mniej informacji' : 'Więcej informacji o dostępności'}</span>
+        <ChevronDownIcon size={18} className="more-chevron" />
+      </button>
 
       {expanded && (
         <div id={detailsId} className="institution-more">

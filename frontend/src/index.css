@@ -1206,7 +1206,8 @@ button.step-body:hover {
   margin-top: 0.5rem;
 }
 .institution-more {
-  max-height: min(45vh, 22rem);
+  /* górna część okienka (nazwa, adres, przyciski) zajmuje ok. 15rem - reszta mapy na szczegóły */
+  max-height: max(6rem, min(24rem, calc(var(--map-h, 70vh) - 15rem)));
   margin-top: 0.5rem;
   padding-right: 0.25rem;
   overflow-y: auto;
@@ -1283,4 +1284,37 @@ button.step-body:hover {
 }
 .institution-popup-wrap.maplibregl-popup-anchor-right .maplibregl-popup-tip {
   border-left-color: var(--surface);
+}
+
+/* "Więcej informacji" - wyraźny przycisk na całą szerokość okienka */
+.more-button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--accent-text);
+  font-weight: 700;
+  text-align: left;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+}
+.more-button:hover {
+  background: var(--accent-strong);
+}
+.more-button span {
+  flex: 1;
+}
+.more-chevron {
+  transition: transform 0.2s;
+}
+.more-button[aria-expanded='true'] {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.more-button[aria-expanded='true'] .more-chevron {
+  transform: rotate(180deg);
 }
