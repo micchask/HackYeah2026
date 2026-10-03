@@ -17,6 +17,7 @@
   --success: #135c28;
   --success-soft: #e6f4ea;
   --focus: #ffbf47;
+  --input-border: #7b8794;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 4px 16px rgb(16 24 40 / 8%);
   --radius: 14px;
 
@@ -44,6 +45,7 @@
     --surface: #161e27;
     --surface-2: #1d2731;
     --border: #2f3b47;
+    --input-border: #7d8a97;
     --accent: #6cb4ff;
     --accent-strong: #9ccbff;
     --accent-soft: #14304d;
@@ -307,11 +309,93 @@ button:disabled {
 .point-row:last-child.picking {
   border-radius: 0 0 12px 12px;
 }
-.point-text {
+.point-text,
+.address-search {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
+}
+
+/* ---------- wyszukiwarka adresu (combobox) ---------- */
+
+.address-search {
+  position: relative;
+  gap: 0.15rem;
+}
+.address-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.35rem 0.6rem;
+  color: var(--text);
+  background: var(--surface);
+  /* ramka pola min. 3:1 względem tła (WCAG 1.4.11) */
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+}
+.address-input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+.address-input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+.suggestions {
+  min-width: min(320px, 80vw);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.suggestions[hidden] {
+  display: none;
+}
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.suggestion:hover {
+  background: var(--surface-2);
+}
+.suggestion.active {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+.suggestion-label {
+  font-weight: 600;
+}
+.suggestion-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.suggestion.active .suggestion-meta {
+  color: inherit;
+}
+.field-hint,
+.field-error {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+}
+.field-hint {
+  color: var(--muted);
+}
+.field-error {
+  color: var(--error);
 }
 .point-title {
   color: var(--muted);

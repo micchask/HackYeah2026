@@ -8,6 +8,7 @@
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |
 | Deklaracje dostępności (BIP) | – (plik `backend/datasets/krakow_instytucje_dostepnosc.json`) | plik JSON, opracowany ręcznie | informacja publiczna | dane gotowe, bez providera | 32 instytucje (UMK, ZDMK, Muzeum Krakowa, Teatr KTO): wejścia, windy, toalety, pętle indukcyjne, tłumacz PJM. Brak współrzędnych (`geometry: null`) – do geokodowania po adresie |
 | GTFS ZTP Kraków (gtfs.ztp.krakow.pl) | – (plik `backend/datasets/krakow_przystanki_stare_miasto.json`) | plik JSON, wyciąg z GTFS | TODO: potwierdzić warunki ZTP | dane gotowe, bez providera | 29 przystanków w `demo_bbox` (18 tramwajowych, 11 autobusowych) ze współrzędnymi i liniami. `wheelchair_boarding` pusty w całym GTFS ZTP – zapisany jako `unknown`, confidence 0.0 |
+| Photon (komoot), geokoder | – (`backend/app/geocoding.py`, `GET /api/geocode`, `/api/geocode/reverse`) | API | dane OSM (ODbL); publiczna instancja w trybie fair use | działa | podpowiedzi adresów A/B i adres po kliknięciu na mapie, tylko w `demo_bbox`. Wymaga własnego `User-Agent` (inaczej 403) i nie obsługuje `lang=pl`. Wyniki w cache procesu przez 1 h. Bez internetu: komunikat w UI, zostają trasy demo i wybór na mapie |
 
 ## Jak dodać źródło
 
