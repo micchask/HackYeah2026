@@ -1,7 +1,3 @@
-# Każdy PR wymaga review. Podmień na loginy osób odpowiedzialnych za obszar.
-*                       @micchask
-/backend/app/providers/ @micchask
-/backend/app/routing/   @micchask
-/backend/app/api/       @micchask
-/frontend/              @micchask
-/docs/                  @micchask
+# Każdy PR wymaga review od jednej z tych osób.
+# Można zawęzić per obszar, np.: /backend/app/routing/ @login
+* @micchask @mwiktorowicz @PawelK123 @bleklajtnik @gustawito
