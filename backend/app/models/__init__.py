@@ -8,7 +8,7 @@ from app.models.accessibility import (
 from app.models.geo import LatLon
 from app.models.geocode import GeocodeResult
 from app.models.place import Place
-from app.models.report import Report, ReportCreate, ReportStatus
+from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
 from app.models.route import (
     Difficulty,
     RouteBaseline,
@@ -30,6 +30,8 @@ __all__ = [
     "Report",
     "ReportCreate",
     "ReportStatus",
+    "ReportType",
+    "ReportUpdate",
     "RouteBaseline",
     "RoutePreferences",
     "RouteRequest",

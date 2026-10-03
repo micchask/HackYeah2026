@@ -36,6 +36,8 @@ interface Props {
   route: RouteResponse | null
   origin: LatLon | null
   destination: LatLon | null
+  /** Miejsce zgłaszanej bariery (formularz „Zgłoś barierę”) */
+  reportPoint?: LatLon | null
   selectedSegment: number | null
   /** Etykieta punktu, który ustawi kliknięcie w mapę, np. "A" */
   pickLabel: string | null
@@ -58,6 +60,7 @@ export function MapView({
   route,
   origin,
   destination,
+  reportPoint = null,
   selectedSegment,
   pickLabel,
   onMapClick,
@@ -203,23 +206,23 @@ export function MapView({
     const currentMap = map.current
     if (!currentMap) return
 
-    pointMarkers.current = (
-      [
-        ['A', origin],
-        ['B', destination],
-      ] as const
-    )
-      .filter((entry): entry is ['A' | 'B', LatLon] => entry[1] !== null)
-      .map(([label, point]) => {
+    const points: [string, string, LatLon | null][] = [
+      ['A', 'a', origin],
+      ['B', 'b', destination],
+      ['!', 'report', reportPoint],
+    ]
+    pointMarkers.current = points
+      .filter((entry): entry is [string, string, LatLon] => entry[2] !== null)
+      .map(([label, kind, point]) => {
         const el = document.createElement('div')
-        el.className = `point-marker point-marker-${label.toLowerCase()}`
+        el.className = `point-marker point-marker-${kind}`
         el.textContent = label
         el.setAttribute('aria-hidden', 'true')
         return new maplibregl.Marker({ element: el })
           .setLngLat([point.lon, point.lat])
           .addTo(currentMap)
       })
-  }, [origin, destination])
+  }, [origin, destination, reportPoint])
 
   useEffect(() => {
     const currentMap = map.current
