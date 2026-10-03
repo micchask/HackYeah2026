@@ -9,6 +9,7 @@ from app.api import (
     places,
     reports,
     routes,
+    search,
     segments,
 )
 
@@ -21,6 +22,7 @@ for module in (
     reports,
     geocode,
     institutions,
+    search,
     segments,
     barriers,
 ):

@@ -239,11 +239,11 @@ def path_edges(
     """Krawędzie ścieżki (dla multigrafu - ta o najmniejszym koszcie), z węzłami u, v."""
     edges = []
     for u, v in zip(path, path[1:], strict=False):
-        candidates = [e for e in graph[u][v].values() if _cost(e, profile) is not None] or list(
-            graph[u][v].values()
-        )
-        best = min(candidates, key=lambda e: _cost(e, profile) or math.inf)
-        edges.append({**best, "_u": u, "_v": v})
+        candidates = [
+            (key, edge) for key, edge in graph[u][v].items() if _cost(edge, profile) is not None
+        ] or list(graph[u][v].items())
+        key, best = min(candidates, key=lambda item: _cost(item[1], profile) or math.inf)
+        edges.append({**best, "_u": u, "_v": v, "_key": key})
     return edges
 
 

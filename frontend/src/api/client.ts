@@ -6,6 +6,7 @@ export type Place = components['schemas']['Place']
 export type LatLon = components['schemas']['LatLon']
 export type RouteRequest = components['schemas']['RouteRequest']
 export type RouteResponse = components['schemas']['RouteResponse']
+export type RouteAlternative = components['schemas']['RouteAlternative']
 export type RouteSegment = components['schemas']['RouteSegment']
 export type RouteBaseline = components['schemas']['RouteBaseline']
 
@@ -24,6 +25,7 @@ export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
 export type Institution = components['schemas']['Institution']
 export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
+export type SearchResult = components['schemas']['SearchResult']
 /** Odcinki sieci pieszej (`GET /api/segments`) - GeoJSON do źródła `geojson` w MapLibre. */
 export type SegmentCollection = components['schemas']['SegmentCollection']
 export type Barrier = components['schemas']['Barrier']
@@ -119,6 +121,15 @@ export const api = {
   reverseGeocode: (point: LatLon, city: string, signal?: AbortSignal) =>
     request<GeocodeResult | null>(
       `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
+      { signal },
+    ),
+  search: (q: string, city: string, near: LatLon | null, signal?: AbortSignal) =>
+    request<SearchResult[]>(
+      `/search?${new URLSearchParams({
+        q,
+        city,
+        ...(near ? { lat: String(near.lat), lon: String(near.lon) } : {}),
+      })}`,
       { signal },
     ),
   institutions: (city: string) =>

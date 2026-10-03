@@ -125,4 +125,5 @@ def mock_route(req: RouteRequest) -> RouteResponse:
         confidence=confidence,
         warnings=["To jest trasa przykładowa (mock) - routing w budowie."],
         is_mock=True,
+        explanation="To jest trasa przykładowa; porównanie wariantów nie jest dostępne.",
     )

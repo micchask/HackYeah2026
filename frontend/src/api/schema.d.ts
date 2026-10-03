@@ -199,6 +199,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search
+         * @description Wyszukiwarka miejsc w obszarze demo: instytucje, miejsca z OSM, adresy.
+         *
+         *     Z `lat`/`lon` bliższe wyniki są wyżej, a każdy ma `distance_m`.
+         */
+        get: operations["search_api_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/segments": {
         parameters: {
             query?: never;
@@ -619,6 +641,28 @@ export interface components {
             status: components["schemas"]["ReportStatus"];
         };
         /**
+         * RouteAlternative
+         * @description Pełna alternatywa trasy, gotowa do pokazania obok trasy głównej.
+         */
+        RouteAlternative: {
+            /** Label */
+            label: string;
+            /** Distance M */
+            distance_m: number;
+            /** Duration S */
+            duration_s: number;
+            /** Stairs Count */
+            stairs_count: number;
+            /** Rough Surface M */
+            rough_surface_m: number;
+            /** Geometry */
+            geometry: components["schemas"]["LatLon"][];
+            /** Segments */
+            segments: components["schemas"]["RouteSegment"][];
+            /** Explanation */
+            explanation: string;
+        };
+        /**
          * RouteBarrier
          * @description Bariera na odcinku trasy - do podsumowania „na tej trasie: …”.
          */
@@ -723,6 +767,10 @@ export interface components {
             /** Stairs Count */
             stairs_count?: number | null;
             baseline?: components["schemas"]["RouteBaseline"] | null;
+            /** Explanation */
+            explanation: string;
+            /** Alternatives */
+            alternatives?: components["schemas"]["RouteAlternative"][];
         };
         /**
          * RouteSegment
@@ -794,6 +842,51 @@ export interface components {
             /** Overpass Url */
             overpass_url?: string | null;
         };
+        /**
+         * SearchResult
+         * @description Wynik wyszukiwarki miejsc. Pola label/description/kind/point jak w GeocodeResult.
+         */
+        SearchResult: {
+            /**
+             * Id
+             * @description Stabilne ID wyniku, np. 'institution:mk-krzysztofory'
+             */
+            id: string;
+            source: components["schemas"]["SearchResultKind"];
+            /**
+             * Label
+             * @description Nazwa do wyświetlenia
+             */
+            label: string;
+            /**
+             * Description
+             * @description Adres albo kontekst
+             */
+            description?: string | null;
+            /**
+             * Kind
+             * @description Rodzaj po polsku, np. 'apteka', 'muzeum'
+             */
+            kind?: string | null;
+            point: components["schemas"]["LatLon"];
+            /**
+             * Institution Id
+             * @description Dla source=institution
+             */
+            institution_id?: string | null;
+            /** @description Dla source=place: miejsce z atrybutami */
+            place?: components["schemas"]["Place"] | null;
+            /**
+             * Distance M
+             * @description Odległość od punktu `lat`/`lon` z zapytania (np. środka mapy)
+             */
+            distance_m?: number | null;
+        };
+        /**
+         * SearchResultKind
+         * @enum {string}
+         */
+        SearchResultKind: "institution" | "place" | "address";
         /**
          * SegmentCollection
          * @description Odcinki sieci pieszej jako GeoJSON - do podania wprost do źródła `geojson` w MapLibre.
@@ -1210,6 +1303,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Institution"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_search_get: {
+        parameters: {
+            query: {
+                /** @description Nazwa miejsca, rodzaj (np. 'apteka') albo adres */
+                q: string;
+                city?: string;
+                limit?: number;
+                /** @description Np. środek widoku mapy */
+                lat?: number | null;
+                lon?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResult"][];
                 };
             };
             /** @description Validation Error */

@@ -81,6 +81,19 @@ class RouteBaseline(BaseModel):
     geometry: list[LatLon]
 
 
+class RouteAlternative(BaseModel):
+    """Pełna alternatywa trasy, gotowa do pokazania obok trasy głównej."""
+
+    label: str
+    distance_m: float
+    duration_s: float
+    stairs_count: int
+    rough_surface_m: float
+    geometry: list[LatLon]
+    segments: list[RouteSegment]
+    explanation: str
+
+
 class RouteResponse(BaseModel):
     distance_m: float
     duration_s: float
@@ -101,3 +114,5 @@ class RouteResponse(BaseModel):
     rough_surface_m: float | None = None
     stairs_count: int | None = None
     baseline: RouteBaseline | None = None
+    explanation: str
+    alternatives: list[RouteAlternative] = Field(default_factory=list)
