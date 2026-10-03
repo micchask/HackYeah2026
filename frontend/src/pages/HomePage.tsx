@@ -8,6 +8,7 @@ import {
   type RoutePreferences,
   type RouteResponse,
 } from '../api/client'
+import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
 import { Legend } from '../components/Legend'
 import { MapView } from '../components/MapView'
 import { PlaceList } from '../components/PlaceList'
@@ -20,6 +21,7 @@ import {
   type PickTarget,
   type Preset,
 } from '../components/RoutePoints'
+import { RouteSummary } from '../components/RouteSummary'
 
 const CITY = 'krakow'
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
@@ -46,7 +48,7 @@ const PRESETS: Preset[] = [
 
 function mapPoint(point: LatLon): NamedPoint {
   return {
-    label: `punkt na mapie (${point.lat.toFixed(5)}, ${point.lon.toFixed(5)})`,
+    label: `Punkt na mapie (${point.lat.toFixed(4)}, ${point.lon.toFixed(4)})`,
     point,
   }
 }
@@ -101,35 +103,32 @@ export function HomePage() {
     }
   }, [origin, destination, prefs])
 
+  const activeTarget: PickTarget | null =
+    pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
+
   const handleMapClick = useCallback(
     (point: LatLon) => {
-      const target = pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
-      if (target === 'origin') {
+      if (activeTarget === 'origin') {
         setOrigin(mapPoint(point))
         setPickTarget(destination ? null : 'destination')
-      } else if (target === 'destination') {
+      } else if (activeTarget === 'destination') {
         setDestination(mapPoint(point))
         setPickTarget(null)
       }
     },
-    [pickTarget, origin, destination],
+    [activeTarget, destination],
   )
 
-  const pickLabel =
-    pickTarget === 'origin'
-      ? 'A'
-      : pickTarget === 'destination'
-        ? 'B'
-        : !origin
-          ? 'A'
-          : !destination
-            ? 'B'
-            : null
+  const pickLetter = activeTarget === 'origin' ? 'A' : activeTarget === 'destination' ? 'B' : null
 
   return (
     <div className="layout">
-      <aside className="panel">
-        <form onSubmit={(e) => e.preventDefault()} aria-describedby={error ? 'error' : undefined}>
+      <aside className="panel" aria-label="Planowanie trasy">
+        <form
+          className="card"
+          onSubmit={(e) => e.preventDefault()}
+          aria-describedby={error ? 'error' : undefined}
+        >
           <RoutePoints
             origin={origin}
             destination={destination}
@@ -151,41 +150,81 @@ export function HomePage() {
             onChange={(id) => setPrefs(PROFILE_PRESETS[id].preferences)}
           />
           <details className="advanced">
-            <summary>Dostosuj szczegóły</summary>
+            <summary>
+              <SlidersIcon size={18} /> Dostosuj szczegóły
+            </summary>
             <PreferencesForm value={prefs} onChange={setPrefs} />
           </details>
         </form>
 
-        <div aria-live="polite" aria-busy={loading}>
-          {loading && <p className="hint">Szukam trasy…</p>}
+        <div className="results" aria-live="polite" aria-busy={loading}>
           {error && (
-            <p id="error" role="alert" className="error">
-              {error}
+            <p id="error" role="alert" className="callout callout-error">
+              <AlertIcon size={18} />
+              <span>{error}</span>
             </p>
           )}
+          {loading && !route && (
+            <div className="card skeleton" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          {loading && <p className="visually-hidden">Szukam trasy…</p>}
           {!route && !error && !loading && (
-            <p className="hint">Wybierz gotową trasę albo wskaż punkty A i B na mapie.</p>
+            <section className="card empty" aria-labelledby="start-heading">
+              <h2 id="start-heading">Jak to działa?</h2>
+              <ol>
+                <li>Wybierz trasę demo albo wskaż punkty A i B na mapie.</li>
+                <li>Zaznacz, jak się poruszasz – trasa przeliczy się od razu.</li>
+                <li>Sprawdź opis krok po kroku: bruk, schody, źródła danych.</li>
+              </ol>
+            </section>
           )}
           {route && (
-            <>
-              <Legend showBaseline={!!route.baseline && !route.is_mock} />
+            <div className={loading ? 'stale' : undefined}>
+              <RouteSummary route={route} />
               <RouteDescription route={route} selected={selected} onSelect={setSelected} />
-            </>
+            </div>
           )}
         </div>
+
         <PlaceList places={places} />
       </aside>
-      <MapView
-        center={KRAKOW_CENTER}
-        zoom={14}
-        places={places}
-        route={route}
-        origin={origin?.point ?? null}
-        destination={destination?.point ?? null}
-        selectedSegment={selected}
-        pickLabel={pickLabel}
-        onMapClick={handleMapClick}
-      />
+
+      <div className="map-wrap">
+        <MapView
+          center={KRAKOW_CENTER}
+          zoom={14}
+          places={places}
+          route={route}
+          origin={origin?.point ?? null}
+          destination={destination?.point ?? null}
+          selectedSegment={selected}
+          pickLabel={pickLetter}
+          onMapClick={handleMapClick}
+        />
+        {pickLetter && (
+          <div className="map-banner">
+            <PinIcon size={18} />
+            <span>
+              Kliknij na mapie, aby ustawić punkt <strong>{pickLetter}</strong>
+            </span>
+            {pickTarget && (
+              <button type="button" className="banner-button" onClick={() => setPickTarget(null)}>
+                Anuluj
+              </button>
+            )}
+          </div>
+        )}
+        {loading && (
+          <div className="map-loading" aria-hidden="true">
+            <span className="spinner" /> Szukam trasy…
+          </div>
+        )}
+        {route && <Legend showBaseline={!!route.baseline && !route.is_mock} />}
+      </div>
     </div>
   )
 }

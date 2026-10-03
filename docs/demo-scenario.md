@@ -13,7 +13,7 @@ Około 2 km, cały czas w obrębie Starego Miasta, Wawelu i Kazimierza.
 **Co widzi jury w 3 minuty:**
 
 1. Profil **wózek inwalidzki**: trasa omija bruk na Grodzkiej i Kanoniczej oraz schody na Wawel.
-2. Zmiana profilu na **wózek dziecięcy**: trasa jest krótsza, bo dopuszcza nachylenie do 10% i trochę bruku.
+2. Zmiana profilu na **rodzinę z wózkiem dziecięcym**: trasa jest krótsza, bo dopuszcza nachylenie do 10% i trochę bruku.
 3. Przy każdym odcinku i miejscu widać **źródło danych i pewność**. Gdy źródła się nie zgadzają, aplikacja to mówi.
 4. Całość działa **bez myszy**: tekstowy opis trasy, klawiatura, czytnik ekranu.
 
@@ -50,7 +50,7 @@ Graf pieszy dla tego obszaru jest mały, więc buduje się szybko i mieści w ca
 2. Przy pierwszym starcie backend pobiera graf pieszy obszaru demo z Overpass do
    `data/cache/krakow/graph.graphml`. Przez mirror trwa to nawet **10 minut**. Kolejne starty ładują graf z pliku
    w ok. 1 s. Dopóki grafu nie ma, `/api/routes` czeka na jego pobranie.
-3. Kliknij **Rynek → Wawel**, potem przełącz **Wózek inwalidzki / Wózek dziecięcy**.
+3. Kliknij **Rynek → Wawel**, potem przełącz **Wózek inwalidzki / Rodzina z wózkiem dziecięcym**.
 4. Własne punkty: **Wskaż A na mapie** / **Wskaż B na mapie** i kliknięcie na mapie. Punkty spoza obszaru demo
    dostają trasę przykładową (mock) z ostrzeżeniem.
 
@@ -98,9 +98,9 @@ Co pokazujemy:
 
 > „Trasa jest o kilkaset metrów dłuższa, ale bez schodów i prawie bez bruku. A tam, gdzie nie mamy pewności, mówimy to wprost.”
 
-### Scena 3 – Zmiana profilu na wózek dziecięcy (30 s)
+### Scena 3 – Zmiana profilu na rodzinę z wózkiem dziecięcym (30 s)
 
-1. Przełączam profil na **„Wózek dziecięcy”** (max 10% nachylenia, mniejsza kara za bruk – `routing/profiles.py`).
+1. Przełączam profil na **„Rodzina z wózkiem dziecięcym”** (max 10% nachylenia, mniejsza kara za bruk – `routing/profiles.py`).
 2. **Wyznacz trasę** ponownie.
 
 Co pokazujemy: trasa jest krótsza (1,46 km), idzie Grodzką i dalej bez schodów. Opis mówi, ile metrów bruku

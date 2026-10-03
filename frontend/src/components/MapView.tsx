@@ -19,6 +19,8 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
       id: 'osm',
       type: 'raster',
       source: 'osm',
+      // przygaszony podkład, żeby kolory trasy były czytelne
+      paint: { 'raster-saturation': -0.6, 'raster-contrast': -0.1 },
     },
   ],
 }
@@ -61,6 +63,11 @@ export function MapView({
   const pointMarkers = useRef<maplibregl.Marker[]>([])
   const onClick = useRef(onMapClick)
   const [mapReady, setMapReady] = useState(false)
+  const routeRef = useRef(route)
+
+  useEffect(() => {
+    routeRef.current = route
+  }, [route])
 
   useEffect(() => {
     onClick.current = onMapClick
@@ -87,14 +94,19 @@ export function MapView({
         type: 'line',
         source: 'baseline',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#4a4a4a', 'line-width': 4, 'line-dasharray': [1, 2] },
+        paint: {
+          'line-color': '#3d4652',
+          'line-width': 4,
+          'line-opacity': 0.75,
+          'line-dasharray': [1, 1.6],
+        },
       })
       instance.addLayer({
         id: 'route-casing',
         type: 'line',
         source: 'route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 10 },
+        paint: { 'line-color': '#ffffff', 'line-width': 11 },
       })
       instance.addLayer({
         id: 'route-selected',
@@ -102,7 +114,7 @@ export function MapView({
         source: 'route',
         filter: ['==', ['get', 'index'], -1],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#1a1a1a', 'line-width': 14 },
+        paint: { 'line-color': '#111827', 'line-width': 16 },
       })
       instance.addLayer({
         id: 'route',
@@ -119,7 +131,7 @@ export function MapView({
             DIFFICULTY_COLOR.moderate,
             DIFFICULTY_COLOR.easy,
           ],
-          'line-width': 6,
+          'line-width': 7,
         },
       })
       setMapReady(true)
@@ -220,7 +232,7 @@ export function MapView({
       if (coords.length > 1) {
         const bounds = new maplibregl.LngLatBounds()
         coords.forEach((p) => bounds.extend([p.lon, p.lat]))
-        currentMap.fitBounds(bounds, { padding: 60, maxZoom: 17, duration: 600 })
+        currentMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 700 })
       }
     }
 
@@ -231,6 +243,13 @@ export function MapView({
     const currentMap = map.current
     if (!currentMap || !mapReady) return
     currentMap.setFilter('route-selected', ['==', ['get', 'index'], selectedSegment ?? -1])
+    const geometry =
+      selectedSegment !== null ? routeRef.current?.segments[selectedSegment]?.geometry : null
+    if (geometry && geometry.length > 1) {
+      const bounds = new maplibregl.LngLatBounds()
+      geometry.forEach((p) => bounds.extend([p.lon, p.lat]))
+      currentMap.fitBounds(bounds, { padding: 120, maxZoom: 18, duration: 600 })
+    }
   }, [selectedSegment, mapReady])
 
   return (

@@ -116,8 +116,6 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
 
     baseline = _baseline(city_graph, source, target)
-    if baseline and baseline.distance_m > 0:
-        warnings.extend(_comparison(distance, rough_m, stairs, baseline))
 
     return RouteResponse(
         distance_m=round(distance, 1),
@@ -356,19 +354,3 @@ def _baseline(city_graph: CityGraph, source: int, target: int) -> RouteBaseline 
         rough_surface_m=round(_rough_m(edges)),
         geometry=geometry,
     )
-
-
-def _comparison(distance: float, rough_m: float, stairs: int, baseline: RouteBaseline) -> list[str]:
-    avoided = []
-    if baseline.stairs_count > stairs:
-        avoided.append(f"schody ({baseline.stairs_count - stairs} odc.)")
-    if baseline.rough_surface_m - rough_m >= 20:
-        avoided.append(f"{round(baseline.rough_surface_m - rough_m)} m nierównej nawierzchni")
-    if not avoided:
-        return []
-    extra = round(distance - baseline.distance_m)
-    longer = f"dłuższa o {extra} m" if extra > 0 else "tak samo długa"
-    return [
-        f"Ta trasa jest {longer} od najkrótszej zwykłej trasy pieszej, "
-        f"ale omija: {', '.join(avoided)}."
-    ]

@@ -39,12 +39,8 @@ describe('RouteDescription', () => {
   it('opisuje każdy segment tekstem', () => {
     render(<RouteDescription route={route} />)
     expect(screen.getByRole('heading', { name: 'Opis trasy' })).toBeInTheDocument()
-    expect(screen.getByText('Dostępność trasy')).toBeInTheDocument()
-    expect(screen.getByText('72/100')).toBeInTheDocument()
-    expect(screen.getByText('Pewność danych')).toBeInTheDocument()
-    expect(screen.getByText('68%')).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
-    expect(screen.getByText(/dostępność 30\/100, pewność danych 50%/)).toBeInTheDocument()
+    expect(screen.getByText(/dostępność 30\/100 · pewność danych 50%/)).toBeInTheDocument()
     expect(screen.getByText('Uwaga: Nierówna nawierzchnia')).toBeInTheDocument()
   })
 })
