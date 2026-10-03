@@ -1,0 +1,6 @@
+# Zawsze LF w repo i na dysku (także na Windows) - inaczej prettier/ruff i skrypty w Dockerze się wysypią
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary

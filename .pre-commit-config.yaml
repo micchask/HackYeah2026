@@ -1,4 +1,4 @@
-# Instalacja: uvx pre-commit install  (albo: make install)
+# Opcjonalne. Instalacja: uvx pre-commit install  (wymaga lokalnie uv i Node, patrz README)
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.10

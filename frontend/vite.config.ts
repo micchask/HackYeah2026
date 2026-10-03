@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: { '/api': apiTarget },
+    // Docker na Windows/WSL nie przekazuje zdarzeń zmian plików - wtedy odpytujemy dysk
+    watch: { usePolling: process.env.VITE_USE_POLLING === 'true' },
   },
   test: {
     environment: 'jsdom',

@@ -25,6 +25,8 @@ services:
       DEFAULT_CITY: ${DEFAULT_CITY:-krakow}
       CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173"]}'
       DATA_DIR: /data
+      # Hot reload działa też na Windows (bind mount nie przekazuje zdarzeń plików)
+      WATCHFILES_FORCE_POLLING: ${FILE_POLLING:-true}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -38,6 +40,7 @@ services:
     build: ./frontend
     environment:
       API_PROXY_TARGET: http://backend:8000
+      VITE_USE_POLLING: ${FILE_POLLING:-true}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:
