@@ -294,6 +294,28 @@ fieldset .profile-option {
 .route-summary {
   font-weight: 600;
 }
+.route-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+.route-scores > div {
+  min-width: 9rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.route-scores dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.route-scores dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
 .comparison {
   padding: 0.5rem 0.75rem;
   border-left: 4px solid var(--border);

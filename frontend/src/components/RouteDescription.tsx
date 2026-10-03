@@ -29,6 +29,16 @@ export function RouteDescription({ route, selected = null, onSelect }: Props) {
           <> Schody: {route.stairs_count === 0 ? 'brak' : route.stairs_count}.</>
         )}
       </p>
+      <dl className="route-scores" aria-label="Ocena trasy">
+        <div>
+          <dt>Dostępność trasy</dt>
+          <dd>{route.accessibility_score}/100</dd>
+        </div>
+        <div>
+          <dt>Pewność danych</dt>
+          <dd>{Math.round(route.confidence * 100)}%</dd>
+        </div>
+      </dl>
       {route.baseline && !route.is_mock && (
         <p className="comparison">
           Dla porównania najkrótsza zwykła trasa piesza:{' '}
@@ -55,7 +65,8 @@ export function RouteDescription({ route, selected = null, onSelect }: Props) {
                 {DIFFICULTY_LABEL[s.difficulty]}
                 {s.surface ? `, nawierzchnia: ${s.surface}` : ''}
                 {s.data_status ? ` – ${STATUS_LABEL[s.data_status] ?? s.data_status}` : ''}
-                {`, pewność ${Math.round(s.confidence * 100)}%`}
+                {`, dostępność ${s.accessibility_score}/100`}
+                {`, pewność danych ${Math.round(s.confidence * 100)}%`}
                 {s.sources?.length ? `, źródło: ${s.sources.join(', ')}` : ''}
               </p>
               {s.warnings?.map((w) => (
