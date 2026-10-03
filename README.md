@@ -100,32 +100,25 @@ Wszystko to zwykłe komendy `docker compose`. Działają tak samo w PowerShell, 
 
 ## 3. Praca w zespole
 
-### Agile: jak bierzemy zadania (Kanban)
+### Jak bierzemy zadania
 
-Pracujemy w prostym Kanbanie na **[tablicy](https://github.com/users/micchask/projects/3)**. Zadania nie są przypisane z góry do osób – kto ma wolne ręce, bierze następne.
+Zadania są na **[tablicy Kanban](https://github.com/users/micchask/projects/3)**. Każde ma w tytule fazę i ID, np. `[F1 · R1]`.
 
-**Kolumny:** `Todo` → `In progress` → `Review` → `Done`
+| Faza | Cel |
+|---|---|
+| **F0 – Start** | każdy odpala projekt, scenariusz demo |
+| **F1 – MVP** | działające demo end-to-end na prawdziwych danych |
+| **F2 – WOW** | funkcje wyróżniające dla jury |
+| **F3 – Dostępność i polish** | WCAG, telefon, dopracowanie |
+| **F4 – Pitch i oddanie** | slajdy, film, testy końcowe |
 
-**Priorytety:** **P0** = bez tego nie ma demo · **P1** = efekt „wow” · **P2** = jeśli starczy czasu
+1. Bierz zadanie z **najniższej otwartej fazy** (najpierw F0, potem F1…). Do kolejnej fazy przechodzisz, gdy w obecnej nie ma nic wolnego.
+2. Sprawdź w opisie „Zależy od” – czy poprzednie zadanie jest gotowe.
+3. Przypisz się (Assignees) i przesuń na **In progress**. Max **1 zadanie na osobę**.
+4. Branch o nazwie z issue → PR z `Closes #<nr>` → przesuń na **Review**.
+5. Po review i zielonym CI merge – zadanie samo trafi do **Done**.
 
-**Fazy:** 0 Start · 1 Dane i GIS · 2 Routing · 3 Frontend + Dostępność · 4 Biznes i pitch. Fazy 1–3 idą **równolegle** (frontend działa na mockach).
-
-**Cykl jednego zadania:**
-
-1. **Wybierz** z `Todo` zadanie **P0** (P1 dopiero, gdy P0 się skończą). Sprawdź w opisie „Zależy od” – czy poprzednie zadanie jest gotowe.
-2. **Przypisz się** (Assignees) i przesuń na `In progress`. **Max 1 zadanie w toku na osobę.**
-3. **Branch** o nazwie z issue, np. `feat/R1-routing`.
-4. **PR** z `Closes #<nr>` w opisie → przesuń na `Review` → poproś kogoś o review.
-5. **Merge** po zielonym CI i 1 review → zadanie samo trafia do `Done`.
-
-**Zasady:**
-
-- Zadanie gotowe = spełnia **Definition of Done** z opisu issue.
-- Utknąłeś na >30 min? Napisz na czacie zespołu albo w komentarzu issue – nie siedź w ciszy.
-- Zadanie za duże? Podziel je na mniejsze issues i wrzuć do `Todo`.
-- Nowy pomysł / bug? Nowe issue z fazą i priorytetem – nie rób „przy okazji” w innym PR.
-- Review ma pierwszeństwo przed braniem nowego zadania – nie blokujmy się nawzajem.
-- Co kilka godzin krótki **stand-up** (5 min): co zrobiłem, co biorę, co mnie blokuje.
+Utknąłeś na >30 min? Pisz do zespołu. Nowy pomysł lub bug? Nowe issue z etykietą fazy.
 
 ### Git krok po kroku
 
