@@ -128,6 +128,207 @@ input[type='checkbox'] {
 .error {
   color: var(--error);
 }
+.hint {
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+button.secondary {
+  color: var(--accent);
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  min-height: 40px;
+  padding: 0.35rem 0.75rem;
+}
+button.secondary[aria-pressed='true'] {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+button.link-button {
+  min-height: 32px;
+  padding: 0.25rem 0;
+  color: var(--accent);
+  background: none;
+  text-decoration: underline;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+fieldset.presets {
+  border: none;
+  padding: 0;
+}
+.presets-label {
+  width: 100%;
+  padding: 0;
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.points {
+  margin: 0 0 0.75rem;
+}
+.points > div {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.points dt {
+  font-weight: 600;
+  min-width: 4.5rem;
+}
+.points dd {
+  margin: 0;
+}
+
+.point-badge,
+.point-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.point-marker {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 50%);
+  font-size: 1rem;
+}
+.point-badge-a,
+.point-marker-a {
+  background: #0b5cad;
+}
+.point-badge-b,
+.point-marker-b {
+  background: #1a1a1a;
+}
+
+.profile-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.profile-picker legend {
+  margin-bottom: 0.25rem;
+}
+fieldset .profile-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.profile-option.selected {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.profile-option input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.advanced {
+  margin-bottom: 1rem;
+}
+.advanced summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.legend {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.legend-title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.legend-swatch,
+.segment-swatch {
+  display: inline-block;
+  flex: none;
+  width: 1.5rem;
+  height: 0.4rem;
+  border-radius: 2px;
+}
+.legend-swatch-dashed {
+  background: repeating-linear-gradient(90deg, #4a4a4a 0 4px, transparent 4px 8px);
+}
+
+.route-summary {
+  font-weight: 600;
+}
+.comparison {
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--border);
+  background: var(--bg);
+}
+
+.segments {
+  list-style: none;
+  padding: 0;
+}
+.segment {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+.segment.selected {
+  outline: 2px solid var(--accent);
+  background: var(--bg);
+}
+.segment-swatch {
+  width: 0.4rem;
+  height: auto;
+  align-self: stretch;
+}
+.segment p {
+  margin: 0 0 0.25rem;
+}
+.instruction {
+  font-weight: 600;
+}
+
+.places .conflict {
+  color: var(--warning);
+}
 
 @media (max-width: 768px) {
   .layout {

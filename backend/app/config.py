@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     data_dir: Path = BACKEND_DIR.parent / "data"
     # Gdy false, aplikacja startuje bez bazy (np. testy, praca tylko na mockach)
     db_enabled: bool = True
+    # Ładowanie grafu routingu w tle przy starcie (wyłączone w testach)
+    routing_warmup: bool = True
 
 
 @lru_cache

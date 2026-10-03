@@ -20,6 +20,11 @@ async def lifespan(_app: FastAPI):
             init_db()
         except Exception:
             logger.exception("Nie udało się zainicjalizować bazy - API działa dalej na mockach")
+    if get_settings().routing_warmup:
+        from app.cities import get_city
+        from app.routing.graph import warm_up
+
+        warm_up(get_city(get_settings().default_city))
     yield
 
 
