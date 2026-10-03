@@ -130,6 +130,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/institutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Institutions
+         * @description Instytucje publiczne z deklaracji dostępności (BIP) wraz z lokalizacją.
+         */
+        get: operations["list_institutions_api_institutions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -237,6 +257,72 @@ export interface components {
             status: string;
             /** Database */
             database: string;
+        };
+        /**
+         * Institution
+         * @description Instytucja publiczna z deklaracji dostępności (BIP).
+         */
+        Institution: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string;
+            /**
+             * Kind
+             * @description Rodzaj po polsku, np. 'urząd', 'muzeum', 'teatr'
+             */
+            kind: string;
+            location?: components["schemas"]["InstitutionLocation"] | null;
+            /** Attributes */
+            attributes?: components["schemas"]["InstitutionAttribute"][];
+        };
+        /** InstitutionAttribute */
+        InstitutionAttribute: {
+            /**
+             * Category
+             * @description Klucz z danych źródłowych, np. 'winda', 'toaleta'
+             */
+            category: string;
+            /**
+             * Label
+             * @description Nazwa po polsku do wyświetlenia, np. 'Winda'
+             */
+            label: string;
+            /**
+             * Value
+             * @description Opis z deklaracji; null = brak informacji
+             */
+            value: string | null;
+            /** Source */
+            source: string;
+            /** Last Verified */
+            last_verified?: string | null;
+            /** Confidence */
+            confidence: number;
+            status: components["schemas"]["InstitutionDataStatus"];
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * InstitutionDataStatus
+         * @enum {string}
+         */
+        InstitutionDataStatus: "confirmed" | "confirmed_no_date" | "unknown";
+        /** InstitutionLocation */
+        InstitutionLocation: {
+            point: components["schemas"]["LatLon"];
+            /**
+             * Source
+             * @description Skąd współrzędne, np. geokoder Photon (OSM)
+             */
+            source: string;
+            /**
+             * Exact
+             * @description False = punkt tylko na ulicy, bez numeru domu
+             */
+            exact: boolean;
         };
         /** LatLon */
         LatLon: {
@@ -756,6 +842,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeocodeResult"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_institutions_api_institutions_get: {
+        parameters: {
+            query?: {
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Institution"][];
                 };
             };
             /** @description Validation Error */

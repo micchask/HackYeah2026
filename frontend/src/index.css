@@ -1090,3 +1090,80 @@ button.step-body:hover {
     font-size: 0.78rem;
   }
 }
+
+/* ---------- instytucje publiczne ---------- */
+
+.legend-dot {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+  vertical-align: middle;
+}
+.institution h2:focus {
+  outline: none;
+}
+.institution h2:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.institution-kind {
+  margin-bottom: 0.2rem;
+  text-transform: capitalize;
+}
+.institution-attribute {
+  border-top: 1px solid var(--border);
+}
+.institution-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+}
+.institution-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.institution-list summary {
+  min-height: 32px;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.institution-list ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.institution-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.institution-button:hover {
+  border-color: var(--accent);
+}
+.institution-button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.institution-button .meta {
+  margin: 0;
+  font-size: 0.8rem;
+}

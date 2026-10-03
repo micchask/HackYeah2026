@@ -3,12 +3,15 @@ import {
   api,
   DEFAULT_PREFERENCES,
   PROFILE_PRESETS,
+  type Institution,
   type LatLon,
   type Place,
   type RoutePreferences,
   type RouteResponse,
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
+import { InstitutionDetails } from '../components/InstitutionDetails'
+import { InstitutionList } from '../components/InstitutionList'
 import { Legend } from '../components/Legend'
 import { MapView } from '../components/MapView'
 import { PlaceList } from '../components/PlaceList'
@@ -63,13 +66,27 @@ export function HomePage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [institutions, setInstitutions] = useState<Institution[]>([])
+  const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
 
   useEffect(() => {
     api
       .places(CITY)
       .then(setPlaces)
       .catch((e: Error) => setError(e.message))
+    api
+      .institutions(CITY)
+      .then(setInstitutions)
+      .catch(() => {
+        // bez warstwy instytucji aplikacja dalej działa
+      })
   }, [])
+
+  const institution = institutions.find((i) => i.id === selectedInstitution) ?? null
+
+  function institutionPoint(inst: Institution): NamedPoint | null {
+    return inst.location ? { label: inst.name, point: inst.location.point } : null
+  }
 
   useEffect(() => {
     if (!origin || !destination) return
@@ -209,6 +226,29 @@ export function HomePage() {
           )}
         </div>
 
+        {institution && (
+          <InstitutionDetails
+            institution={institution}
+            onSetOrigin={() => {
+              const p = institutionPoint(institution)
+              if (p) setPoint('origin', p)
+              setPickTarget(null)
+            }}
+            onSetDestination={() => {
+              const p = institutionPoint(institution)
+              if (p) setPoint('destination', p)
+              setPickTarget(null)
+            }}
+            onClose={() => setSelectedInstitution(null)}
+          />
+        )}
+
+        <InstitutionList
+          institutions={institutions}
+          selected={selectedInstitution}
+          onSelect={setSelectedInstitution}
+        />
+
         <PlaceList places={places} />
       </aside>
 
@@ -224,6 +264,9 @@ export function HomePage() {
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
           onSegmentClick={setSelected}
+          institutions={institutions}
+          selectedInstitution={selectedInstitution}
+          onInstitutionClick={setSelectedInstitution}
         />
         {pickLetter && (
           <div className="map-banner">
@@ -243,7 +286,13 @@ export function HomePage() {
             <span className="spinner" /> Szukam trasy…
           </div>
         )}
-        {route && <Legend showBaseline={!!route.baseline && !route.is_mock} />}
+        {(route || institutions.length > 0) && (
+          <Legend
+            showRoute={!!route}
+            showBaseline={!!route?.baseline && !route.is_mock}
+            showInstitutions={institutions.length > 0}
+          />
+        )}
       </div>
     </div>
   )
