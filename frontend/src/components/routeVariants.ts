@@ -1,0 +1,41 @@
+import type { RouteResponse, RouteSegment } from '../api/client'
+
+/** Buduje pełny widok wybranego wariantu, aby wszystkie części UI pokazywały tę samą trasę. */
+export function routeForVariant(route: RouteResponse, selected: number): RouteResponse {
+  if (selected === 0) return route
+  const alternative = route.alternatives?.[selected - 1]
+  if (!alternative) return route
+
+  const [accessibility_score, confidence] = aggregateScores(alternative.segments)
+  return {
+    ...route,
+    distance_m: alternative.distance_m,
+    duration_s: alternative.duration_s,
+    segments: alternative.segments,
+    accessibility_score,
+    confidence,
+    rough_surface_m: alternative.rough_surface_m,
+    stairs_count: alternative.stairs_count,
+    explanation: alternative.explanation,
+  }
+}
+
+export function selectedVariantLabel(route: RouteResponse, selected: number): string {
+  if (selected === 0) return 'Twoja trasa'
+  return route.alternatives?.[selected - 1]?.label ?? 'Twoja trasa'
+}
+
+function aggregateScores(segments: RouteSegment[]): [number, number] {
+  const total = segments.reduce((sum, segment) => sum + Math.max(segment.distance_m, 0), 0)
+  if (total <= 0) return [0, 0]
+
+  const accessibility = segments.reduce(
+    (sum, segment) => sum + segment.accessibility_score * Math.max(segment.distance_m, 0),
+    0,
+  )
+  const confidence = segments.reduce(
+    (sum, segment) => sum + segment.confidence * Math.max(segment.distance_m, 0),
+    0,
+  )
+  return [Math.round(accessibility / total), Math.round((confidence / total) * 100) / 100]
+}

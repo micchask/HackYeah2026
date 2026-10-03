@@ -569,6 +569,28 @@ export interface components {
             status: components["schemas"]["ReportStatus"];
         };
         /**
+         * RouteAlternative
+         * @description Pełna alternatywa trasy, gotowa do pokazania obok trasy głównej.
+         */
+        RouteAlternative: {
+            /** Label */
+            label: string;
+            /** Distance M */
+            distance_m: number;
+            /** Duration S */
+            duration_s: number;
+            /** Stairs Count */
+            stairs_count: number;
+            /** Rough Surface M */
+            rough_surface_m: number;
+            /** Geometry */
+            geometry: components["schemas"]["LatLon"][];
+            /** Segments */
+            segments: components["schemas"]["RouteSegment"][];
+            /** Explanation */
+            explanation: string;
+        };
+        /**
          * RouteBaseline
          * @description Najkrótsza zwykła trasa piesza - do porównania, czego unikamy.
          */
@@ -661,6 +683,10 @@ export interface components {
             /** Stairs Count */
             stairs_count?: number | null;
             baseline?: components["schemas"]["RouteBaseline"] | null;
+            /** Explanation */
+            explanation: string;
+            /** Alternatives */
+            alternatives?: components["schemas"]["RouteAlternative"][];
         };
         /**
          * RouteSegment

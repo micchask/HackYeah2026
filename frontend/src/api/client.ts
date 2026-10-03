@@ -6,6 +6,7 @@ export type Place = components['schemas']['Place']
 export type LatLon = components['schemas']['LatLon']
 export type RouteRequest = components['schemas']['RouteRequest']
 export type RouteResponse = components['schemas']['RouteResponse']
+export type RouteAlternative = components['schemas']['RouteAlternative']
 export type RouteSegment = components['schemas']['RouteSegment']
 export type RouteBaseline = components['schemas']['RouteBaseline']
 

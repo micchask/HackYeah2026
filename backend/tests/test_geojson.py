@@ -32,6 +32,7 @@ def _route(baseline: bool) -> RouteResponse:
         segments=segments,
         accessibility_score=60,
         confidence=0.6,
+        explanation="Trasa testowa.",
         baseline=RouteBaseline(distance_m=850, stairs_count=1, rough_surface_m=300, geometry=[A, C])
         if baseline
         else None,

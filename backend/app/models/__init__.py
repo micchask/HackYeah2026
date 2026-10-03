@@ -17,6 +17,7 @@ from app.models.place import Place
 from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
 from app.models.route import (
     Difficulty,
+    RouteAlternative,
     RouteBaseline,
     RoutePreferences,
     RouteRequest,
@@ -46,6 +47,7 @@ __all__ = [
     "Report",
     "ReportCreate",
     "ReportStatus",
+    "RouteAlternative",
     "ReportType",
     "ReportUpdate",
     "RouteBaseline",

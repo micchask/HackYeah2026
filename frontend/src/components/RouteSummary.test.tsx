@@ -11,6 +11,7 @@ const route: RouteResponse = {
   is_mock: false,
   warnings: [],
   segments: [],
+  explanation: 'Ta trasa omija schody i nierówną nawierzchnię.',
 }
 
 describe('RouteSummary', () => {
@@ -20,5 +21,6 @@ describe('RouteSummary', () => {
     expect(screen.getByText('72/100')).toBeInTheDocument()
     expect(screen.getByText('Pewność danych')).toBeInTheDocument()
     expect(screen.getByText('68%')).toBeInTheDocument()
+    expect(screen.getByText(route.explanation)).toBeInTheDocument()
   })
 })
