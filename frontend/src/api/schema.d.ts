@@ -599,6 +599,9 @@ export interface operations {
                 city?: string;
                 /** @description Szukaj po nazwie */
                 q?: string | null;
+                /** @description Obszar 'south,west,north,east' (WGS84). Domyślnie obszar demo miasta. */
+                bbox?: string | null;
+                limit?: number;
             };
             header?: never;
             path?: never;

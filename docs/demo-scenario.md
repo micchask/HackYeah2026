@@ -117,8 +117,10 @@ profil `wheelchair` nie. To najmocniejszy przykład różnicy między profilami.
 
 1. Klikam segment trasy → panel szczegółów (#26): nawierzchnia, nachylenie, **źródło** (OSM / MSIP / zgłoszenie), **data weryfikacji**, **pewność**.
 2. Na liście miejsc pokazuję:
-   - **Sukiennice** – winda potwierdzona przez otwarte dane miasta (pewność 75%),
-   - **Bazylika Mariacka** – wejście bez schodów: **źródła się nie zgadzają** (status `conflicting`, widać obie wartości).
+   - **Sukiennice** – dostępność z OSM + winda z danych wprowadzonych ręcznie (pewność 75%),
+   - **Bazylika Mariacka** – dostępność dla wózka: **źródła się nie zgadzają** (ręcznie „częściowo”, OSM „tak”; status `conflicting`, widać obie wartości).
+
+   Oba wpisy ręczne są w `data/seed/krakow/manual.json.gz` (provider `manual`, #14) – do czasu prawdziwego źródła miejskiego (#13).
 
 > „Każda informacja ma źródło i datę. Gdy dane z OSM i z miasta się różnią, pokazujemy obie wersje zamiast zgadywać.”
 

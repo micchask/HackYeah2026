@@ -24,6 +24,8 @@ import {
 import { RouteSummary } from '../components/RouteSummary'
 
 const CITY = 'krakow'
+// Tyle miejsc naraz trafia na mapę - więcej spowalnia mapę i czytnik ekranu
+const PLACES_LIMIT = 200
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 
 // Punkty ze scenariusza demo (docs/demo-scenario.md)
@@ -55,6 +57,8 @@ function mapPoint(point: LatLon): NamedPoint {
 
 export function HomePage() {
   const [places, setPlaces] = useState<Place[]>([])
+  const [placesQuery, setPlacesQuery] = useState('')
+  const [mapBbox, setMapBbox] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<RoutePreferences>(DEFAULT_PREFERENCES)
   const [origin, setOrigin] = useState<NamedPoint | null>(null)
   const [destination, setDestination] = useState<NamedPoint | null>(null)
@@ -65,11 +69,27 @@ export function HomePage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    api
-      .places(CITY)
-      .then(setPlaces)
-      .catch((e: Error) => setError(e.message))
-  }, [])
+    if (!mapBbox) return
+    const q = placesQuery.trim()
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      api
+        // Wyszukiwanie po nazwie obejmuje cały obszar demo, nie tylko widok mapy
+        .places(
+          CITY,
+          { q: q || undefined, bbox: q ? undefined : mapBbox, limit: PLACES_LIMIT },
+          controller.signal,
+        )
+        .then(setPlaces)
+        .catch((e: Error) => {
+          if (e.name !== 'AbortError') setError(e.message)
+        })
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [mapBbox, placesQuery])
 
   useEffect(() => {
     if (!origin || !destination) return
@@ -209,7 +229,12 @@ export function HomePage() {
           )}
         </div>
 
-        <PlaceList places={places} />
+        <PlaceList
+          places={places}
+          query={placesQuery}
+          onQueryChange={setPlacesQuery}
+          limit={PLACES_LIMIT}
+        />
       </aside>
 
       <div className="map-wrap">
@@ -224,6 +249,7 @@ export function HomePage() {
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
           onSegmentClick={setSelected}
+          onBoundsChange={setMapBbox}
         />
         {pickLetter && (
           <div className="map-banner">

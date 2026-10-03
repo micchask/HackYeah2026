@@ -42,6 +42,8 @@ interface Props {
   onMapClick: (point: LatLon) => void
   /** Kliknięcie w odcinek trasy (poza trybem wskazywania punktu) */
   onSegmentClick: (index: number) => void
+  /** Widoczny obszar mapy "south,west,north,east" - po załadowaniu i po każdym przesunięciu */
+  onBoundsChange?: (bbox: string) => void
 }
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
@@ -62,6 +64,7 @@ export function MapView({
   pickLabel,
   onMapClick,
   onSegmentClick,
+  onBoundsChange,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -69,6 +72,7 @@ export function MapView({
   const pointMarkers = useRef<maplibregl.Marker[]>([])
   const onClick = useRef(onMapClick)
   const onSegment = useRef(onSegmentClick)
+  const onBounds = useRef(onBoundsChange)
   const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
@@ -80,7 +84,8 @@ export function MapView({
   useEffect(() => {
     onClick.current = onMapClick
     onSegment.current = onSegmentClick
-  }, [onMapClick, onSegmentClick])
+    onBounds.current = onBoundsChange
+  }, [onMapClick, onSegmentClick, onBoundsChange])
 
   useEffect(() => {
     if (!container.current) return
@@ -94,6 +99,13 @@ export function MapView({
     map.current = instance
 
     instance.addControl(new maplibregl.NavigationControl(), 'top-right')
+    const reportBounds = () => {
+      const b = instance.getBounds()
+      onBounds.current?.(
+        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((v) => v.toFixed(5)).join(','),
+      )
+    }
+    instance.on('moveend', reportBounds)
     instance.on('click', (e) => {
       if (!picking.current && instance.getLayer('route')) {
         const { x, y } = e.point
@@ -166,6 +178,7 @@ export function MapView({
         instance.getCanvas().style.cursor = picking.current ? 'crosshair' : ''
       })
       setMapReady(true)
+      reportBounds()
     })
 
     return () => {
