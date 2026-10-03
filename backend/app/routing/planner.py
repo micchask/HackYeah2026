@@ -7,8 +7,10 @@ from typing import Any
 
 from app.models import (
     AttributeStatus,
+    BarrierType,
     Difficulty,
     LatLon,
+    RouteBarrier,
     RouteBaseline,
     RouteRequest,
     RouteResponse,
@@ -79,6 +81,8 @@ MIN_SEGMENT_M = 25
 HIGH_KERB_CM = 6.0
 # Niższe krawężniki (obniżone, ok. 2 cm) nie wymagają ostrzeżenia
 WARN_KERB_CM = 3.0
+# Powyżej tego nachylenia [%] odcinek jest trudny (próg profilu wózka inwalidzkiego)
+STEEP_PERCENT = 6.0
 
 
 class NoRouteError(Exception):
@@ -182,13 +186,69 @@ def edge_difficulty(edge: dict[str, Any]) -> Difficulty:
     if (
         is_steps(edge)
         or surface in HARD_SURFACES
-        or (incline is not None and abs(incline) > 6)
+        or (incline is not None and abs(incline) > STEEP_PERCENT)
         or (kerb is not None and kerb >= HIGH_KERB_CM)
     ):
         return Difficulty.HARD
     if surface not in EASY_SURFACES or has_unknown_incline(edge) or has_unknown_kerb(edge):
         return Difficulty.MODERATE
     return Difficulty.EASY
+
+
+def edge_barriers(edge: dict[str, Any]) -> list[RouteBarrier]:
+    """Bariery krawędzi, od najważniejszej (kolejność jak w BarrierType).
+
+    Te same progi co w `edge_difficulty`, więc bariera zawsze oznacza trudny odcinek.
+    """
+    barriers: list[RouteBarrier] = []
+    if is_steps(edge):
+        count = _int(tag(edge, "step_count"))
+        text = "Schody" + (f", {count} {_steps_word(count)}" if count else "")
+        if tag(edge, "ramp:wheelchair") == "yes" or tag(edge, "ramp") in ("yes", True):
+            text += " (z rampą)"
+        elif tag(edge, "ramp:stroller") == "yes":
+            text += " (z szynami dla wózka dziecięcego)"
+        barriers.append(RouteBarrier(type=BarrierType.STAIRS, description=text))
+    if (kerb := kerb_cm(edge)) is not None and kerb >= HIGH_KERB_CM:
+        barriers.append(
+            RouteBarrier(type=BarrierType.KERB, description=f"Krawężnik ok. {kerb:g} cm")
+        )
+    if (incline := incline_percent(edge)) is not None and abs(incline) > STEEP_PERCENT:
+        barriers.append(
+            RouteBarrier(type=BarrierType.STEEP, description=f"Nachylenie {abs(incline):g}%")
+        )
+    if (surface := tag(edge, "surface")) in HARD_SURFACES:
+        name = SURFACE_PL.get(surface, surface)
+        barriers.append(
+            RouteBarrier(type=BarrierType.ROUGH_SURFACE, description=name[:1].upper() + name[1:])
+        )
+    return barriers
+
+
+def segment_barriers(edges: list[dict[str, Any]]) -> list[RouteBarrier]:
+    """Bariery odcinka trasy bez powtórzeń (np. bruk na kilku krawędziach tej samej ulicy)."""
+    unique: dict[tuple[BarrierType, str], RouteBarrier] = {}
+    for edge in edges:
+        for barrier in edge_barriers(edge):
+            unique.setdefault((barrier.type, barrier.description), barrier)
+    order = list(BarrierType)
+    return sorted(unique.values(), key=lambda b: order.index(b.type))
+
+
+def _steps_word(n: int) -> str:
+    """1 stopień, 2-4 stopnie (bez 12-14), reszta stopni."""
+    if n == 1:
+        return "stopień"
+    if n % 10 in (2, 3, 4) and n % 100 not in (12, 13, 14):
+        return "stopnie"
+    return "stopni"
+
+
+def _int(value: Any) -> int | None:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
 
 
 def _group(edges: list[dict[str, Any]], city_graph: CityGraph) -> list[_Segment]:
@@ -300,6 +360,7 @@ def _to_segment(
         data_status=AttributeStatus.UNVERIFIED,
         confidence=data_confidence(seg.edges),
         sources=["OpenStreetMap"],
+        barriers=segment_barriers(seg.edges),
         fetched_at=fetched_at,
         last_verified=last_verified(seg.edges),
     )

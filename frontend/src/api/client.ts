@@ -26,6 +26,9 @@ export type Institution = components['schemas']['Institution']
 export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 /** Odcinki sieci pieszej (`GET /api/segments`) - GeoJSON do źródła `geojson` w MapLibre. */
 export type SegmentCollection = components['schemas']['SegmentCollection']
+export type Barrier = components['schemas']['Barrier']
+export type BarrierType = components['schemas']['BarrierType']
+export type BarrierList = components['schemas']['BarrierList']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -128,6 +131,9 @@ export const api = {
   reports: (city: string, signal?: AbortSignal) =>
     request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
   /** bbox: [south, west, north, east] jak w konfiguracji miasta */
+  /** bbox: "south,west,north,east" (jak z MapView.onBoundsChange) */
+  barriers: (city: string, bbox: string, signal?: AbortSignal) =>
+    request<BarrierList>(`/barriers?${new URLSearchParams({ city, bbox })}`, { signal }),
   segments: (
     city: string,
     bbox: [number, number, number, number],

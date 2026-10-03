@@ -1,9 +1,17 @@
-import type { RouteResponse } from '../api/client'
+import type { BarrierType, RouteResponse } from '../api/client'
+import { BarrierIcon } from './BarrierIcon'
+import { BARRIER_COUNT_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { formatKm, plural } from './format'
 import { AlertIcon, CheckIcon, ClockIcon, CobbleIcon, RouteIcon, StairsIcon } from './icons'
 
 /** Najważniejsze liczby trasy i porównanie z najkrótszą zwykłą trasą pieszą. */
-export function RouteSummary({ route }: { route: RouteResponse }) {
+interface Props {
+  route: RouteResponse
+  /** Otwiera odcinek w opisie trasy (panel szczegółów) */
+  onSelectSegment?: (index: number) => void
+}
+
+export function RouteSummary({ route, onSelectSegment }: Props) {
   const minutes = Math.max(1, Math.round(route.duration_s / 60))
   const baseline = route.baseline && !route.is_mock ? route.baseline : null
   const stairs = route.stairs_count ?? null
@@ -59,6 +67,8 @@ export function RouteSummary({ route }: { route: RouteResponse }) {
         )}
       </dl>
 
+      <RouteBarriers route={route} onSelectSegment={onSelectSegment} />
+
       {baseline && <Comparison route={route} baseline={baseline} />}
 
       {route.warnings?.map((w) => (
@@ -110,6 +120,53 @@ function Comparison({
         (szara linia na mapie): {formatKm(baseline.distance_m)}, schody: {baseline.stairs_count},
         nierówna nawierzchnia: {baseline.rough_surface_m} m.
       </p>
+    </div>
+  )
+}
+
+/** „Na tej trasie: 2 odcinki bruku, 1 wysoki krawężnik” + odnośniki do odcinków. */
+function RouteBarriers({ route, onSelectSegment }: Props) {
+  const withBarriers = route.segments
+    .map((segment, index) => ({ segment, index }))
+    .filter(({ segment }) => segment.barriers?.length)
+  if (!withBarriers.length) {
+    return (
+      <p className="route-barriers-none">
+        <CheckIcon size={18} /> Na tej trasie nie ma znanych barier.
+      </p>
+    )
+  }
+
+  const counts = new Map<BarrierType, number>()
+  for (const { segment } of withBarriers)
+    for (const type of new Set(segment.barriers?.map((b) => b.type)))
+      counts.set(type, (counts.get(type) ?? 0) + 1)
+  const summary = BARRIER_TYPES.filter((t) => counts.has(t))
+    .map((t) => {
+      const n = counts.get(t) ?? 0
+      return `${n} ${plural(n, ...BARRIER_COUNT_LABEL[t])}`
+    })
+    .join(', ')
+
+  return (
+    <div className="route-barriers">
+      <h3>Na tej trasie: {summary}</h3>
+      <ul>
+        {withBarriers.map(({ segment, index }) => (
+          <li key={index}>
+            <BarrierIcon type={segment.barriers![0].type} size={20} />
+            <span className="route-barrier-text">
+              <strong>{segment.street ?? `Odcinek ${index + 1}`}</strong>:{' '}
+              {segment.barriers!.map((b) => b.description.toLowerCase()).join(', ')}
+            </span>
+            {onSelectSegment && (
+              <button type="button" className="link-button" onClick={() => onSelectSegment(index)}>
+                Szczegóły <span className="visually-hidden">odcinka {index + 1}</span>
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

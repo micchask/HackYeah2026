@@ -219,6 +219,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/barriers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Barriers
+         * @description Bariery (schody, krawężniki, strome i nierówne odcinki, zgłoszenia) w obszarze.
+         */
+        get: operations["list_barriers_api_barriers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -250,6 +270,58 @@ export interface components {
          * @enum {string}
          */
         AttributeStatus: "verified" | "unverified" | "conflicting" | "outdated";
+        /** Barrier */
+        Barrier: {
+            /**
+             * Id
+             * @description 'segment:{id}' albo 'report:{id}'
+             */
+            id: string;
+            type: components["schemas"]["BarrierType"];
+            /**
+             * Description
+             * @description Np. 'Schody, 81 stopni; kostka granitowa (bruk)'
+             */
+            description: string;
+            /** Street */
+            street?: string | null;
+            /** @description Punkt na ikonę (środek odcinka) */
+            location: components["schemas"]["LatLon"];
+            /**
+             * Geometry
+             * @description Przebieg odcinka; dla zgłoszenia jeden punkt
+             */
+            geometry: components["schemas"]["LatLon"][];
+            /** Length M */
+            length_m?: number | null;
+            /**
+             * Source
+             * @description Nazwa źródła, np. 'osm', 'user_reports'
+             */
+            source: string;
+            /** Source Ref */
+            source_ref?: string | null;
+            /** Confidence */
+            confidence: number;
+            /** Last Verified */
+            last_verified?: string | null;
+        };
+        /** BarrierList */
+        BarrierList: {
+            /** Barriers */
+            barriers: components["schemas"]["Barrier"][];
+            /**
+             * Truncated
+             * @description True, gdy w bbox jest więcej barier niż limit
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /**
+         * BarrierType
+         * @enum {string}
+         */
+        BarrierType: "stairs" | "kerb" | "steep" | "rough_surface" | "reported";
         /** CityConfig */
         CityConfig: {
             /** Id */
@@ -547,6 +619,18 @@ export interface components {
             status: components["schemas"]["ReportStatus"];
         };
         /**
+         * RouteBarrier
+         * @description Bariera na odcinku trasy - do podsumowania „na tej trasie: …”.
+         */
+        RouteBarrier: {
+            type: components["schemas"]["BarrierType"];
+            /**
+             * Description
+             * @description Np. 'Krawężnik ok. 10 cm'
+             */
+            description: string;
+        };
+        /**
          * RouteBaseline
          * @description Najkrótsza zwykła trasa piesza - do porównania, czego unikamy.
          */
@@ -694,6 +778,11 @@ export interface components {
              * @description Najstarsza data weryfikacji w terenie (OSM check_date); brak = brak
              */
             last_verified?: string | null;
+            /**
+             * Barriers
+             * @description Bariery na odcinku (schody, krawężnik, bruk…)
+             */
+            barriers?: components["schemas"]["RouteBarrier"][];
         };
         /** RoutingConfig */
         RoutingConfig: {
@@ -1157,6 +1246,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SegmentCollection"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_barriers_api_barriers_get: {
+        parameters: {
+            query: {
+                /** @description Obszar 's,w,n,e' (WGS84), obowiązkowy */
+                bbox: string;
+                city?: string;
+                /** @description Tylko te typy, np. ?types=stairs&types=kerb */
+                types?: components["schemas"]["BarrierType"][] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarrierList"];
                 };
             };
             /** @description Validation Error */

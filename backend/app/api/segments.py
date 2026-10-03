@@ -1,5 +1,3 @@
-import json
-
 from fastapi import APIRouter, HTTPException, Query
 
 from app.cities import CityConfig, get_city
@@ -64,36 +62,21 @@ def _query(
     max_confidence: float | None,
     limit: int,
 ) -> SegmentCollection:
-    from sqlalchemy import func, select
     from sqlalchemy.exc import SQLAlchemyError
-    from sqlalchemy.orm import selectinload
 
-    from app.db.session import SessionLocal
-    from app.db.tables import SegmentRow
+    from app.db.segments import segments_in_bbox
 
-    s, w, n, e = bbox
-    query = (
-        select(SegmentRow, func.ST_AsGeoJSON(SegmentRow.geom))
-        .where(SegmentRow.city == city_id)
-        .where(func.ST_Intersects(SegmentRow.geom, func.ST_MakeEnvelope(w, s, e, n, 4326)))
-        .options(selectinload(SegmentRow.attributes))
-        .order_by(SegmentRow.id)
-        .limit(limit + 1)
-    )
-    if max_confidence is not None:
-        query = query.where(SegmentRow.confidence <= max_confidence)
     try:
-        with SessionLocal() as session:
-            rows = session.execute(query).all()
-            features = [_feature(row, geojson) for row, geojson in rows[:limit]]
+        rows = segments_in_bbox(city_id, bbox, max_confidence=max_confidence, limit=limit + 1)
     except SQLAlchemyError as exc:
         raise HTTPException(status_code=503, detail=NO_DATABASE) from exc
+    features = [_feature(row, coords) for row, coords in rows[:limit]]
     return SegmentCollection(features=features, truncated=len(rows) > limit)
 
 
-def _feature(row, geojson: str) -> SegmentFeature:
+def _feature(row, coords: list[tuple[float, float]]) -> SegmentFeature:
     return SegmentFeature(
-        geometry=LineStringGeometry(coordinates=json.loads(geojson)["coordinates"]),
+        geometry=LineStringGeometry(coordinates=coords),
         properties=SegmentProperties(
             id=row.id,
             name=row.name,
