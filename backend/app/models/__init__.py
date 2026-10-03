@@ -6,6 +6,7 @@ from app.models.accessibility import (
     SourceType,
 )
 from app.models.geo import LatLon
+from app.models.geocode import GeocodeResult
 from app.models.place import Place
 from app.models.report import Report, ReportCreate, ReportStatus
 from app.models.route import (
@@ -22,6 +23,7 @@ __all__ = [
     "AttributeKey",
     "AttributeStatus",
     "Difficulty",
+    "GeocodeResult",
     "LatLon",
     "Place",
     "Provenance",

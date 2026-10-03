@@ -1,4 +1,5 @@
 import type { LatLon } from '../api/client'
+import { AddressSearch } from './AddressSearch'
 import { PinIcon, SwapIcon } from './icons'
 
 export interface NamedPoint {
@@ -15,26 +16,30 @@ export interface Preset {
 export type PickTarget = 'origin' | 'destination'
 
 interface Props {
+  city: string
   origin: NamedPoint | null
   destination: NamedPoint | null
   presets: Preset[]
   pickTarget: PickTarget | null
+  onChange: (target: PickTarget, value: NamedPoint) => void
   onPick: (target: PickTarget | null) => void
   onPreset: (preset: Preset) => void
   onSwap: () => void
 }
 
 const ROWS = [
-  { target: 'origin', letter: 'A', title: 'Start', empty: 'Wybierz punkt startu' },
-  { target: 'destination', letter: 'B', title: 'Cel', empty: 'Wybierz cel' },
+  { target: 'origin', letter: 'A', title: 'Start', empty: 'Wpisz adres startu' },
+  { target: 'destination', letter: 'B', title: 'Cel', empty: 'Wpisz adres celu' },
 ] as const
 
-/** Punkty A/B: gotowe trasy (dostępne z klawiatury) albo kliknięcie na mapie. */
+/** Punkty A/B: wyszukiwarka adresów, gotowe trasy albo kliknięcie na mapie. */
 export function RoutePoints({
+  city,
   origin,
   destination,
   presets,
   pickTarget,
+  onChange,
   onPick,
   onPreset,
   onSwap,
@@ -51,7 +56,6 @@ export function RoutePoints({
       <div className="points">
         <ol className="points-list">
           {ROWS.map(({ target, letter, title, empty }) => {
-            const value = values[target]
             const picking = pickTarget === target
             return (
               <li key={target} className={picking ? 'point-row picking' : 'point-row'}>
@@ -61,12 +65,13 @@ export function RoutePoints({
                 >
                   {letter}
                 </span>
-                <span className="point-text">
-                  <span className="point-title">{title}</span>
-                  <span className={value ? 'point-value' : 'point-value empty'}>
-                    {picking ? 'Kliknij na mapie…' : (value?.label ?? empty)}
-                  </span>
-                </span>
+                <AddressSearch
+                  label={title}
+                  placeholder={picking ? 'Kliknij na mapie…' : empty}
+                  value={values[target]}
+                  city={city}
+                  onSelect={(value) => onChange(target, value)}
+                />
                 <button
                   type="button"
                   className="icon-button"

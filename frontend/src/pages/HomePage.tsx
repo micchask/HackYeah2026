@@ -106,17 +106,31 @@ export function HomePage() {
   const activeTarget: PickTarget | null =
     pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
 
+  const setPoint = useCallback((target: PickTarget, value: NamedPoint) => {
+    if (target === 'origin') setOrigin(value)
+    else setDestination(value)
+  }, [])
+
   const handleMapClick = useCallback(
     (point: LatLon) => {
-      if (activeTarget === 'origin') {
-        setOrigin(mapPoint(point))
-        setPickTarget(destination ? null : 'destination')
-      } else if (activeTarget === 'destination') {
-        setDestination(mapPoint(point))
-        setPickTarget(null)
-      }
+      if (!activeTarget) return
+      const picked = mapPoint(point)
+      setPoint(activeTarget, picked)
+      setPickTarget(activeTarget === 'origin' && !destination ? 'destination' : null)
+
+      // Adres zamiast współrzędnych, jeśli geokoder odpowie; punkt zostaje ten sam
+      const setter = activeTarget === 'origin' ? setOrigin : setDestination
+      api
+        .reverseGeocode(point, CITY)
+        .then((found) => {
+          if (!found) return
+          setter((current) => (current === picked ? { label: found.label, point } : current))
+        })
+        .catch(() => {
+          // brak geokodera: zostają współrzędne
+        })
     },
-    [activeTarget, destination],
+    [activeTarget, destination, setPoint],
   )
 
   const pickLetter = activeTarget === 'origin' ? 'A' : activeTarget === 'destination' ? 'B' : null
@@ -130,10 +144,15 @@ export function HomePage() {
           aria-describedby={error ? 'error' : undefined}
         >
           <RoutePoints
+            city={CITY}
             origin={origin}
             destination={destination}
             presets={PRESETS}
             pickTarget={pickTarget}
+            onChange={(target, value) => {
+              setPoint(target, value)
+              setPickTarget(null)
+            }}
             onPick={setPickTarget}
             onPreset={(preset) => {
               setOrigin(preset.origin)
@@ -176,7 +195,7 @@ export function HomePage() {
             <section className="card empty" aria-labelledby="start-heading">
               <h2 id="start-heading">Jak to działa?</h2>
               <ol>
-                <li>Wybierz trasę demo albo wskaż punkty A i B na mapie.</li>
+                <li>Wpisz adres startu i celu, wybierz trasę demo albo wskaż punkty na mapie.</li>
                 <li>Zaznacz, jak się poruszasz – trasa przeliczy się od razu.</li>
                 <li>Sprawdź opis krok po kroku: bruk, schody, źródła danych.</li>
               </ol>

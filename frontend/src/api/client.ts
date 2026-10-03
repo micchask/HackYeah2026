@@ -10,6 +10,7 @@ export type RoutePreferences = components['schemas']['RoutePreferences']
 export type Difficulty = components['schemas']['Difficulty']
 export type ReportCreate = components['schemas']['ReportCreate']
 export type City = components['schemas']['CityConfig']
+export type GeocodeResult = components['schemas']['GeocodeResult']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -74,6 +75,13 @@ export const api = {
     request<Place[]>(`/places?${new URLSearchParams({ city, ...(q ? { q } : {}) })}`),
   route: (body: RouteRequest, signal?: AbortSignal) =>
     request<RouteResponse>('/routes', { method: 'POST', body: JSON.stringify(body), signal }),
+  geocode: (q: string, city: string, signal?: AbortSignal) =>
+    request<GeocodeResult[]>(`/geocode?${new URLSearchParams({ q, city })}`, { signal }),
+  reverseGeocode: (point: LatLon, city: string, signal?: AbortSignal) =>
+    request<GeocodeResult | null>(
+      `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
+      { signal },
+    ),
   report: (body: ReportCreate, city: string) =>
     request(`/reports?city=${city}`, { method: 'POST', body: JSON.stringify(body) }),
 }

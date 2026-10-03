@@ -90,6 +90,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/geocode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Geocode
+         * @description Podpowiedzi adresów, tylko z obszaru miasta (demo_bbox).
+         */
+        get: operations["geocode_api_geocode_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/geocode/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reverse Geocode
+         * @description Adres najbliższy punktowi (np. kliknięciu na mapie); null poza obszarem miasta.
+         */
+        get: operations["reverse_geocode_api_geocode_reverse_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -164,6 +204,28 @@ export interface components {
          * @enum {string}
          */
         Difficulty: "easy" | "moderate" | "hard";
+        /**
+         * GeocodeResult
+         * @description Podpowiedź wyszukiwarki adresów - ten sam kształt co punkt A/B na froncie.
+         */
+        GeocodeResult: {
+            /**
+             * Label
+             * @description Nazwa do wyświetlenia, np. 'Sukiennice' albo 'Grodzka 20'
+             */
+            label: string;
+            /**
+             * Description
+             * @description Kontekst: adres i dzielnica, np. 'Rynek Główny 3 · Stare Miasto'
+             */
+            description?: string | null;
+            /**
+             * Kind
+             * @description Rodzaj obiektu po polsku, np. 'ulica'
+             */
+            kind?: string | null;
+            point: components["schemas"]["LatLon"];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -627,6 +689,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    geocode_api_geocode_get: {
+        parameters: {
+            query: {
+                /** @description Adres, ulica albo nazwa miejsca */
+                q: string;
+                city?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeocodeResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reverse_geocode_api_geocode_reverse_get: {
+        parameters: {
+            query: {
+                lat: number;
+                lon: number;
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeocodeResult"] | null;
                 };
             };
             /** @description Validation Error */

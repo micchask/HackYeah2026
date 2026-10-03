@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     db_enabled: bool = True
     # Ładowanie grafu routingu w tle przy starcie (wyłączone w testach)
     routing_warmup: bool = True
+    # Geokoder Photon (komoot) - bez klucza, ale wymaga własnego User-Agent
+    geocoder_url: str = "https://photon.komoot.io"
 
 
 @lru_cache
