@@ -1,27 +1,5 @@
 import type { Place } from '../api/client'
-
-const ATTRIBUTE_LABEL: Record<string, string> = {
-  wheelchair: 'dostępność dla wózka',
-  step_free_entrance: 'wejście bez schodów',
-  stairs: 'schody',
-  step_count: 'liczba stopni',
-  ramp: 'rampa',
-  elevator: 'winda',
-  accessible_toilet: 'toaleta dostępna',
-  surface: 'nawierzchnia',
-  incline_percent: 'nachylenie [%]',
-  kerb_height_cm: 'krawężnik [cm]',
-  width_cm: 'szerokość [cm]',
-  tactile_paving: 'ścieżka dotykowa',
-}
-
-const VALUE_LABEL: Record<string, string> = {
-  true: 'tak',
-  false: 'nie',
-  yes: 'tak',
-  no: 'nie',
-  limited: 'częściowo',
-}
+import { ATTRIBUTE_LABEL, VALUE_LABEL } from './attributes'
 
 const SOURCE_LABEL: Record<string, string> = {
   osm: 'OpenStreetMap',

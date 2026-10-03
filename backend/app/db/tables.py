@@ -1,9 +1,9 @@
 """Tabele bazy. Pola odpowiadają modelom Pydantic z app/models/."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from geoalchemy2 import Geometry
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, String, func
+from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -46,10 +46,13 @@ class ReportRow(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     city: Mapped[str] = mapped_column(String, index=True)
+    type: Mapped[str] = mapped_column(String, default="barrier", server_default="barrier")
     place_id: Mapped[str | None]
     geom = mapped_column(Geometry("POINT", srid=4326), nullable=False)
     attribute: Mapped[str]
-    value: Mapped[dict] = mapped_column(JSON)
+    value: Mapped[dict] = mapped_column(JSON)  # {"v": <wartość>} jak w AttributeRow
     comment: Mapped[str | None]
-    status: Mapped[str] = mapped_column(String, default="pending")
+    valid_until: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String, default="pending", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -79,15 +79,41 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Reports */
+        /**
+         * List Reports
+         * @description Zgłoszenia miasta, najnowsze pierwsze; opcjonalnie tylko o danym statusie.
+         */
         get: operations["list_reports_api_reports_get"];
         put?: never;
-        /** Create Report */
+        /**
+         * Create Report
+         * @description Nowe zgłoszenie bariery. Zapisujemy tylko to, co w formularzu - bez IP i danych osobowych.
+         */
         post: operations["create_report_api_reports_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Report
+         * @description Zmiana statusu zgłoszenia (moderacja). TODO(api): uprawnienia moderatora - #37.
+         */
+        patch: operations["update_report_api_reports__report_id__patch"];
         trace?: never;
     };
     "/api/geocode": {
@@ -155,7 +181,7 @@ export interface components {
          * @description Słownik cech dostępności. Dodajemy nowe klucze tutaj, nie ad hoc w kodzie.
          * @enum {string}
          */
-        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving";
+        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving" | "blocked" | "accessible_parking";
         /**
          * AttributeStatus
          * @enum {string}
@@ -305,14 +331,22 @@ export interface components {
         };
         /** Report */
         Report: {
+            /** @default barrier */
+            type: components["schemas"]["ReportType"];
             location: components["schemas"]["LatLon"];
             /** Place Id */
             place_id?: string | null;
-            attribute: components["schemas"]["AttributeKey"];
+            /** @description Wymagane dla typu 'barrier'; dla innych typów domyślne */
+            attribute?: components["schemas"]["AttributeKey"] | null;
             /** Value */
-            value: boolean | number | string;
+            value?: boolean | number | string | null;
             /** Comment */
             comment?: string | null;
+            /**
+             * Valid Until
+             * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
+             */
+            valid_until?: string | null;
             /** Id */
             id: string;
             /** City */
@@ -324,26 +358,48 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ReportCreate
          * @description Zgłoszenie użytkownika. Celowo bez danych osobowych (patrz docs/security-privacy.md).
          */
         ReportCreate: {
+            /** @default barrier */
+            type: components["schemas"]["ReportType"];
             location: components["schemas"]["LatLon"];
             /** Place Id */
             place_id?: string | null;
-            attribute: components["schemas"]["AttributeKey"];
+            /** @description Wymagane dla typu 'barrier'; dla innych typów domyślne */
+            attribute?: components["schemas"]["AttributeKey"] | null;
             /** Value */
-            value: boolean | number | string;
+            value?: boolean | number | string | null;
             /** Comment */
             comment?: string | null;
+            /**
+             * Valid Until
+             * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
+             */
+            valid_until?: string | null;
         };
         /**
          * ReportStatus
          * @enum {string}
          */
         ReportStatus: "pending" | "confirmed" | "rejected" | "resolved";
+        /**
+         * ReportType
+         * @enum {string}
+         */
+        ReportType: "barrier" | "elevator_broken" | "construction" | "inaccessible_entrance" | "blocked_parking";
+        /**
+         * ReportUpdate
+         * @description Zmiana statusu przez moderację (na razie bez logowania - patrz #37).
+         */
+        ReportUpdate: {
+            status: components["schemas"]["ReportStatus"];
+        };
         /**
          * RouteBaseline
          * @description Najkrótsza zwykła trasa piesza - do porównania, czego unikamy.
@@ -640,6 +696,7 @@ export interface operations {
         parameters: {
             query?: {
                 city?: string;
+                status?: components["schemas"]["ReportStatus"] | null;
             };
             header?: never;
             path?: never;
@@ -684,6 +741,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_api_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
