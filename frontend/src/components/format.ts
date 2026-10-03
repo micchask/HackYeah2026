@@ -10,3 +10,11 @@ export function plural(n: number, one: string, few: string, many: string): strin
   const last = n % 10
   return last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14) ? few : many
 }
+
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('pl-PL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}

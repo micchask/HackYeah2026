@@ -76,3 +76,23 @@ def test_route_scores_are_weighted_by_segment_length():
     ]
 
     assert aggregate_route_scores(segments) == (80, 0.7)
+
+
+def test_last_verified_is_oldest_check_date():
+    from app.routing.planner import last_verified
+
+    edges = [{"check_date": "2025-07-16"}, {"check_date": "2024-04"}]
+    assert last_verified(edges).date().isoformat() == "2024-04-01"
+
+
+def test_last_verified_none_when_any_edge_unverified():
+    from app.routing.planner import last_verified
+
+    assert last_verified([{"check_date": "2025-07-16"}, {}]) is None
+
+
+def test_graph_fetched_at_from_osmnx_metadata():
+    from app.routing.planner import graph_fetched_at
+
+    assert graph_fetched_at({"created_date": "2026-10-03 16:01:57"}).hour == 16
+    assert graph_fetched_at({}) is None

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -58,6 +59,13 @@ class RouteSegment(BaseModel):
         description="Pewność danych odcinka: 0 = brak wiarygodnych danych, 1 = pełna pewność",
     )
     sources: list[str] = Field(default_factory=list, description="Źródła danych odcinka")
+    fetched_at: datetime | None = Field(
+        default=None, description="Kiedy dane odcinka pobrano ze źródła (np. z OSM)"
+    )
+    last_verified: datetime | None = Field(
+        default=None,
+        description="Najstarsza data weryfikacji w terenie (OSM check_date); brak = brak",
+    )
 
 
 class RouteBaseline(BaseModel):

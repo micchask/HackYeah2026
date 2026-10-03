@@ -204,6 +204,7 @@ export function HomePage() {
           selectedSegment={selected}
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
+          onSegmentClick={setSelected}
         />
         {pickLetter && (
           <div className="map-banner">

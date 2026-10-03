@@ -40,7 +40,12 @@ interface Props {
   /** Etykieta punktu, który ustawi kliknięcie w mapę, np. "A" */
   pickLabel: string | null
   onMapClick: (point: LatLon) => void
+  /** Kliknięcie w odcinek trasy (poza trybem wskazywania punktu) */
+  onSegmentClick: (index: number) => void
 }
+
+// Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
+const HIT_PX = 6
 
 /**
  * Mapa jest uzupełnieniem, nie jedynym źródłem informacji.
@@ -56,12 +61,15 @@ export function MapView({
   selectedSegment,
   pickLabel,
   onMapClick,
+  onSegmentClick,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const markers = useRef<maplibregl.Marker[]>([])
   const pointMarkers = useRef<maplibregl.Marker[]>([])
   const onClick = useRef(onMapClick)
+  const onSegment = useRef(onSegmentClick)
+  const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
 
@@ -71,7 +79,8 @@ export function MapView({
 
   useEffect(() => {
     onClick.current = onMapClick
-  }, [onMapClick])
+    onSegment.current = onSegmentClick
+  }, [onMapClick, onSegmentClick])
 
   useEffect(() => {
     if (!container.current) return
@@ -85,7 +94,23 @@ export function MapView({
     map.current = instance
 
     instance.addControl(new maplibregl.NavigationControl(), 'top-right')
-    instance.on('click', (e) => onClick.current({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
+    instance.on('click', (e) => {
+      if (!picking.current && instance.getLayer('route')) {
+        const { x, y } = e.point
+        const [hit] = instance.queryRenderedFeatures(
+          [
+            [x - HIT_PX, y - HIT_PX],
+            [x + HIT_PX, y + HIT_PX],
+          ],
+          { layers: ['route'] },
+        )
+        if (hit) {
+          onSegment.current(Number(hit.properties.index))
+          return
+        }
+      }
+      onClick.current({ lat: e.lngLat.lat, lon: e.lngLat.lng })
+    })
     instance.on('load', () => {
       instance.addSource('baseline', { type: 'geojson', data: EMPTY })
       instance.addSource('route', { type: 'geojson', data: EMPTY })
@@ -134,6 +159,12 @@ export function MapView({
           'line-width': 7,
         },
       })
+      instance.on('mouseenter', 'route', () => {
+        if (!picking.current) instance.getCanvas().style.cursor = 'pointer'
+      })
+      instance.on('mouseleave', 'route', () => {
+        instance.getCanvas().style.cursor = picking.current ? 'crosshair' : ''
+      })
       setMapReady(true)
     })
 
@@ -145,6 +176,7 @@ export function MapView({
   }, [center, zoom])
 
   useEffect(() => {
+    picking.current = pickLabel !== null
     const el = map.current?.getCanvas()
     if (el) el.style.cursor = pickLabel ? 'crosshair' : ''
   }, [pickLabel])
@@ -256,7 +288,7 @@ export function MapView({
     <section
       ref={container}
       className="map"
-      aria-label="Mapa. Te same informacje znajdziesz w opisie trasy i liście miejsc."
+      aria-label="Mapa. Te same informacje, w tym szczegóły odcinków, znajdziesz w opisie trasy i liście miejsc."
     />
   )
 }
