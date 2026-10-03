@@ -14,12 +14,21 @@ ROUGH_SURFACES = {"sett", "cobblestone", "unhewn_cobblestone", "gravel", "pebble
 # Nawierzchnie nieutwardzone - dla wózka gorsze niż bruk
 UNPAVED_SURFACES = {"ground", "grass", "rock", "mud", "sand", "unpaved"}
 
+# Nachylenie ponad limit profilu to nie blokada, tylko bardzo wysoka kara: gdy nie ma innej drogi
+# (np. jedyny podjazd na Wawel ma ~11% wg NMT), trasa się wyznacza - z ostrzeżeniem w opisie.
+# Kara: OVER_LIMIT_PENALTY + OVER_LIMIT_PER_PERCENT za każdy punkt procentowy ponad limit.
+OVER_LIMIT_PENALTY = 50.0
+OVER_LIMIT_PER_PERCENT = 10.0
+
 
 @dataclass(frozen=True)
 class RoutingProfile:
     name: str
     avoid_stairs: bool = True
     max_incline_percent: float = 6.0
+    # Powyżej tego nachylenia blokada (strome stoki, nieoznaczone schodki, błędy NMT). Inaczej
+    # router wybrałby np. trawiastą skarpę Wawelu (~50%) zamiast podjazdu (~11%).
+    hard_max_incline_percent: float = 15.0
     max_kerb_height_cm: float = 3.0
     # nawierzchnia -> mnożnik kosztu (1.0 = bez kary)
     surface_penalty: dict[str, float] = field(default_factory=dict)
@@ -147,7 +156,10 @@ def edge_cost(edge: dict[str, Any], profile: RoutingProfile) -> float | None:
 
     incline = incline_percent(edge)
     if incline is not None and abs(incline) > profile.max_incline_percent:
-        return None
+        if abs(incline) > max(profile.hard_max_incline_percent, profile.max_incline_percent):
+            return None
+        excess = abs(incline) - profile.max_incline_percent
+        multiplier *= OVER_LIMIT_PENALTY + OVER_LIMIT_PER_PERCENT * excess
     if incline is None and has_unknown_incline(edge):
         multiplier *= profile.unknown_incline_penalty
 

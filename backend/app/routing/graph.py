@@ -17,6 +17,7 @@ import numpy as np
 
 from app.cities import CityConfig
 from app.config import get_settings
+from app.routing.elevation import add_inclines_from_nmt
 from app.routing.profiles import RoutingProfile, edge_cost
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,8 @@ def download_graph(city: CityConfig) -> nx.MultiDiGraph:
     graph = ox.simplify_graph(
         graph, node_attrs_include=["kerb", "barrier"], edge_attrs_differ=SPLIT_ON
     )
-    return add_kerbs(graph)
+    # nachylenie z NMT GUGiK (#10); bez dostępu do NMT graf zostaje bez niego
+    return add_inclines_from_nmt(add_kerbs(graph), city)
 
 
 def kerb_height_cm(tags: dict[str, Any]) -> tuple[bool, float | None]:

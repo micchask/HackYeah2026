@@ -14,6 +14,7 @@ from app.models import (
     RouteResponse,
     RouteSegment,
 )
+from app.routing.elevation import NMT_SOURCE
 from app.routing.graph import CityGraph, path_edges, shortest_path, shortest_walking_path
 from app.routing.profiles import (
     ROUGH_SURFACES,
@@ -123,6 +124,17 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     for label, d in (("A", d_source), ("B", d_target)):
         if d > 50:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
+    over = [
+        abs(i)
+        for e in edges
+        if (i := incline_percent(e)) is not None and abs(i) > profile.max_incline_percent
+    ]
+    if over:
+        warnings.append(
+            f"Na trasie jest odcinek o nachyleniu {max(over):g}% - powyżej Twojego limitu "
+            f"{profile.max_incline_percent:g}%. Nie znaleźliśmy rozsądnej drogi w limicie; "
+            "może być potrzebna pomoc."
+        )
 
     baseline = _baseline(city_graph, source, target)
 
@@ -299,10 +311,18 @@ def _to_segment(
         accessibility_score=accessibility_score(seg.edges, profile),
         data_status=AttributeStatus.UNVERIFIED,
         confidence=data_confidence(seg.edges),
-        sources=["OpenStreetMap"],
+        sources=segment_sources(seg.edges),
         fetched_at=fetched_at,
         last_verified=last_verified(seg.edges),
     )
+
+
+def segment_sources(edges: list[dict[str, Any]]) -> list[str]:
+    """Źródła danych odcinka: zawsze OSM; NMT GUGiK, gdy nachylenie policzono z modelu terenu."""
+    sources = ["OpenStreetMap"]
+    if any(e.get("incline_source") == "nmt" for e in edges):
+        sources.append(NMT_SOURCE)
+    return sources
 
 
 def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
@@ -333,8 +353,15 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
     if any(has_unknown_incline(e) and incline_percent(e) is None for e in seg.edges):
         warnings.append("Odcinek pochyły - brak dokładnych danych o nachyleniu.")
     steep = [i for e in seg.edges if (i := incline_percent(e)) is not None and abs(i) > 4]
-    if steep:
-        warnings.append(f"Nachylenie do {max(abs(i) for i in steep):g}%.")
+    worst = max((abs(i) for i in steep), default=0.0)
+    if worst > profile.max_incline_percent:
+        # trasa idzie tędy, bo nie ma innej drogi w limicie (patrz profiles.OVER_LIMIT_PENALTY)
+        warnings.append(
+            f"Nachylenie do {worst:g}% - powyżej Twojego limitu "
+            f"{profile.max_incline_percent:g}%. Może być potrzebna pomoc."
+        )
+    elif steep:
+        warnings.append(f"Nachylenie do {worst:g}%.")
     kerbs = [k for e in seg.edges if (k := kerb_cm(e)) is not None and k >= WARN_KERB_CM]
     if kerbs:
         warnings.append(f"Krawężnik ok. {max(kerbs):g} cm.")
