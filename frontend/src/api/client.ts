@@ -25,6 +25,8 @@ export type GeocodeResult = components['schemas']['GeocodeResult']
 export type Institution = components['schemas']['Institution']
 export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 export type SearchResult = components['schemas']['SearchResult']
+/** Odcinki sieci pieszej (`GET /api/segments`) - GeoJSON do źródła `geojson` w MapLibre. */
+export type SegmentCollection = components['schemas']['SegmentCollection']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -90,8 +92,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   cities: () => request<City[]>('/cities'),
-  places: (city: string, q?: string) =>
-    request<Place[]>(`/places?${new URLSearchParams({ city, ...(q ? { q } : {}) })}`),
+  /** `bbox`: "south,west,north,east"; bez niego backend bierze obszar demo miasta */
+  places: (
+    city: string,
+    opts: { q?: string; bbox?: string; limit?: number } = {},
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams({ city })
+    if (opts.q) params.set('q', opts.q)
+    if (opts.bbox) params.set('bbox', opts.bbox)
+    if (opts.limit) params.set('limit', String(opts.limit))
+    return request<Place[]>(`/places?${params}`, { signal })
+  },
   route: (body: RouteRequest, signal?: AbortSignal) =>
     request<RouteResponse>('/routes', { method: 'POST', body: JSON.stringify(body), signal }),
   routeGeojson: (body: RouteRequest, signal?: AbortSignal) =>
@@ -125,4 +137,20 @@ export const api = {
     }),
   reports: (city: string, signal?: AbortSignal) =>
     request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
+  /** bbox: [south, west, north, east] jak w konfiguracji miasta */
+  segments: (
+    city: string,
+    bbox: [number, number, number, number],
+    options: { maxConfidence?: number; signal?: AbortSignal } = {},
+  ) =>
+    request<SegmentCollection>(
+      `/segments?${new URLSearchParams({
+        city,
+        bbox: bbox.join(','),
+        ...(options.maxConfidence !== undefined
+          ? { max_confidence: String(options.maxConfidence) }
+          : {}),
+      })}`,
+      { signal: options.signal },
+    ),
 }

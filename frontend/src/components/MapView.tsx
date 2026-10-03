@@ -56,6 +56,8 @@ interface Props {
   onMapClick: (point: LatLon) => void
   /** Kliknięcie w odcinek trasy (poza trybem wskazywania punktu) */
   onSegmentClick: (index: number) => void
+  /** Widoczny obszar mapy "south,west,north,east" - po załadowaniu i po każdym przesunięciu */
+  onBoundsChange?: (bbox: string) => void
   institutions: Institution[]
   selectedInstitution: string | null
   /** Klik w znacznik instytucji */
@@ -107,6 +109,7 @@ export function MapView({
   pickLabel,
   onMapClick,
   onSegmentClick,
+  onBoundsChange,
   institutions,
   selectedInstitution,
   onInstitutionSelect,
@@ -123,6 +126,7 @@ export function MapView({
   const [popupEl, setPopupEl] = useState<HTMLElement | null>(null)
   const onClick = useRef(onMapClick)
   const onSegment = useRef(onSegmentClick)
+  const onBounds = useRef(onBoundsChange)
   const onSelect = useRef(onInstitutionSelect)
   const onPopupCloseRef = useRef(onPopupClose)
   const onView = useRef(onViewChange)
@@ -137,10 +141,11 @@ export function MapView({
   useEffect(() => {
     onClick.current = onMapClick
     onSegment.current = onSegmentClick
+    onBounds.current = onBoundsChange
     onSelect.current = onInstitutionSelect
     onPopupCloseRef.current = onPopupClose
     onView.current = onViewChange
-  }, [onMapClick, onSegmentClick, onInstitutionSelect, onPopupClose, onViewChange])
+  }, [onMapClick, onSegmentClick, onBoundsChange, onInstitutionSelect, onPopupClose, onViewChange])
 
   useEffect(() => {
     if (!container.current) return
@@ -154,6 +159,13 @@ export function MapView({
     map.current = instance
 
     instance.addControl(new maplibregl.NavigationControl(), 'top-right')
+    const reportBounds = () => {
+      const b = instance.getBounds()
+      onBounds.current?.(
+        [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((v) => v.toFixed(5)).join(','),
+      )
+    }
+    instance.on('moveend', reportBounds)
     const updateLabels = () => {
       const el = container.current
       if (el) el.dataset.labels = instance.getZoom() >= LABEL_MIN_ZOOM ? 'on' : 'off'
@@ -247,6 +259,7 @@ export function MapView({
         instance.getCanvas().style.cursor = picking.current ? 'crosshair' : ''
       })
       setMapReady(true)
+      reportBounds()
     })
 
     return () => {
