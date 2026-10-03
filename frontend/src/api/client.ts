@@ -24,6 +24,8 @@ export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
 export type Institution = components['schemas']['Institution']
 export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
+/** Odcinki sieci pieszej (`GET /api/segments`) - GeoJSON do źródła `geojson` w MapLibre. */
+export type SegmentCollection = components['schemas']['SegmentCollection']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -115,4 +117,20 @@ export const api = {
     }),
   reports: (city: string, signal?: AbortSignal) =>
     request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
+  /** bbox: [south, west, north, east] jak w konfiguracji miasta */
+  segments: (
+    city: string,
+    bbox: [number, number, number, number],
+    options: { maxConfidence?: number; signal?: AbortSignal } = {},
+  ) =>
+    request<SegmentCollection>(
+      `/segments?${new URLSearchParams({
+        city,
+        bbox: bbox.join(','),
+        ...(options.maxConfidence !== undefined
+          ? { max_confidence: String(options.maxConfidence) }
+          : {}),
+      })}`,
+      { signal: options.signal },
+    ),
 }

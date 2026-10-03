@@ -171,6 +171,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     count = save_places_to_db(load_cached_places(city))
     logger.info("Baza: %d miejsc dla %s", count, city.id)
+
+    from app.db.segments import save_graph_to_db
+
+    segments = save_graph_to_db(city)
+    logger.info("Baza: %d odcinków sieci pieszej dla %s", segments, city.id)
     return 0
 
 
