@@ -100,15 +100,32 @@ Wszystko to zwykłe komendy `docker compose`. Działają tak samo w PowerShell, 
 
 ## 3. Praca w zespole
 
-### Zadania
+### Agile: jak bierzemy zadania (Kanban)
 
-Wszystkie zadania są na **[tablicy Kanban](https://github.com/users/micchask/projects/3)** jako issues z ID (np. `[R1]`), fazą i priorytetem.
+Pracujemy w prostym Kanbanie na **[tablicy](https://github.com/users/micchask/projects/3)**. Zadania nie są przypisane z góry do osób – kto ma wolne ręce, bierze następne.
 
-1. Weź zadanie z kolumny **Todo**, zaczynając od **P0**. Najwyżej 1 zadanie w toku na osobę.
-2. Przypisz się (Assignees) i przesuń zadanie na **In progress**.
-3. Zrób branch o nazwie podanej w issue.
-4. Otwórz PR z `Closes #<numer issue>` w opisie i przesuń zadanie na **Review**.
-5. Po merge'u zadanie samo trafi do **Done**.
+**Kolumny:** `Todo` → `In progress` → `Review` → `Done`
+
+**Priorytety:** **P0** = bez tego nie ma demo · **P1** = efekt „wow” · **P2** = jeśli starczy czasu
+
+**Fazy:** 0 Start · 1 Dane i GIS · 2 Routing · 3 Frontend + Dostępność · 4 Biznes i pitch. Fazy 1–3 idą **równolegle** (frontend działa na mockach).
+
+**Cykl jednego zadania:**
+
+1. **Wybierz** z `Todo` zadanie **P0** (P1 dopiero, gdy P0 się skończą). Sprawdź w opisie „Zależy od” – czy poprzednie zadanie jest gotowe.
+2. **Przypisz się** (Assignees) i przesuń na `In progress`. **Max 1 zadanie w toku na osobę.**
+3. **Branch** o nazwie z issue, np. `feat/R1-routing`.
+4. **PR** z `Closes #<nr>` w opisie → przesuń na `Review` → poproś kogoś o review.
+5. **Merge** po zielonym CI i 1 review → zadanie samo trafia do `Done`.
+
+**Zasady:**
+
+- Zadanie gotowe = spełnia **Definition of Done** z opisu issue.
+- Utknąłeś na >30 min? Napisz na czacie zespołu albo w komentarzu issue – nie siedź w ciszy.
+- Zadanie za duże? Podziel je na mniejsze issues i wrzuć do `Todo`.
+- Nowy pomysł / bug? Nowe issue z fazą i priorytetem – nie rób „przy okazji” w innym PR.
+- Review ma pierwszeństwo przed braniem nowego zadania – nie blokujmy się nawzajem.
+- Co kilka godzin krótki **stand-up** (5 min): co zrobiłem, co biorę, co mnie blokuje.
 
 ### Git krok po kroku
 
