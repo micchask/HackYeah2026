@@ -7,8 +7,10 @@ import { MapPopupCard, type MapPopupActions } from './MapPopupCard'
 const SOURCE_LABEL: Record<string, string> = {
   osm: 'OpenStreetMap',
   krakow_open_data: 'otwarte dane Krakowa',
+  accessibility_declarations: 'deklaracja dostępności (BIP)',
   msip: 'MSIP Kraków',
   user_reports: 'zgłoszenia użytkowników',
+  manual: 'dane wprowadzone ręcznie',
 }
 
 interface Props extends MapPopupActions {

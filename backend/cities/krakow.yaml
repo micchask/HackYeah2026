@@ -21,6 +21,30 @@ providers:
       overpass_url: https://maps.mail.ru/osm/tools/overpass/api/interpreter
       timeout_s: 60
 
+  # Deklaracje dostępności podmiotów publicznych (BIP) - wzór obowiązkowy w całej Polsce,
+  # więc inne miasto = inny plik/URL tutaj. Licencja: informacja publiczna (docs/data-sources.md).
+  - name: accessibility_declarations
+    enabled: true
+    options:
+      url: datasets/krakow_instytucje_dostepnosc.json # ścieżka względem backend/ albo http(s)://
+      # kategoria w deklaracji -> cecha; tekst zamieniany na tak/nie wg słów (bez polskich znaków
+      # też pasuje). Najpierw "negative", potem "positive"; tekst bez dopasowania jest pomijany.
+      attributes:
+        winda:
+          key: elevator
+          negative: [brak]
+          positive: [tak, dostosowan, windy osobowe]
+        toaleta:
+          key: accessible_toilet
+          negative: [brak]
+          positive: [dostepn, dostosowan]
+        wejscie: &entrance
+          key: step_free_entrance
+          negative: [schod, stopni, stopien]
+          positive: [bez barier, z poziomu, dostosowan]
+        wejscie_glowne: *entrance
+        wejscie_boczne: *entrance
+
   - name: krakow_open_data
     enabled: false # TODO(dane): uzupełnić URL-e zbiorów z portalu otwartych danych Krakowa
     options:
