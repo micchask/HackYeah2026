@@ -91,8 +91,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   cities: () => request<City[]>('/cities'),
-  places: (city: string, q?: string) =>
-    request<Place[]>(`/places?${new URLSearchParams({ city, ...(q ? { q } : {}) })}`),
+  /** `bbox`: "south,west,north,east"; bez niego backend bierze obszar demo miasta */
+  places: (
+    city: string,
+    opts: { q?: string; bbox?: string; limit?: number } = {},
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams({ city })
+    if (opts.q) params.set('q', opts.q)
+    if (opts.bbox) params.set('bbox', opts.bbox)
+    if (opts.limit) params.set('limit', String(opts.limit))
+    return request<Place[]>(`/places?${params}`, { signal })
+  },
   route: (body: RouteRequest, signal?: AbortSignal) =>
     request<RouteResponse>('/routes', { method: 'POST', body: JSON.stringify(body), signal }),
   routeGeojson: (body: RouteRequest, signal?: AbortSignal) =>

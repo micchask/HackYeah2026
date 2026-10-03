@@ -20,6 +20,7 @@ from pathlib import Path
 from app.cities import CityConfig, get_city
 from app.config import get_settings
 from app.models import Place
+from app.normalization import merge_places
 from app.providers.service import cache_path, fetch_city_places
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,7 @@ def save_places_to_db(places: list[Place]) -> int:
     """Upsert miejsc (z atrybutami) do bazy. Zwraca liczbę zapisanych miejsc."""
     from sqlalchemy import delete
 
+    from app.db.places import place_to_row
     from app.db.session import SessionLocal, init_db
     from app.db.tables import AttributeRow, PlaceRow
 
@@ -84,34 +86,8 @@ def save_places_to_db(places: list[Place]) -> int:
             chunk = ids[i : i + 5000]
             session.execute(delete(AttributeRow).where(AttributeRow.place_id.in_(chunk)))
             session.execute(delete(PlaceRow).where(PlaceRow.id.in_(chunk)))
-        session.add_all(_place_row(p) for p in places)
+        session.add_all(place_to_row(p) for p in places)
     return len(places)
-
-
-def _place_row(place: Place):
-    from app.db.tables import AttributeRow, PlaceRow
-
-    return PlaceRow(
-        id=place.id,
-        city=place.city,
-        name=place.name,
-        category=place.category,
-        geom=f"SRID=4326;POINT({place.location.lon} {place.location.lat})",
-        attributes=[
-            AttributeRow(
-                key=a.key.value,
-                value={"v": a.value},
-                source=a.provenance.source,
-                source_type=a.provenance.source_type.value,
-                source_ref=a.provenance.source_ref,
-                fetched_at=a.provenance.fetched_at,
-                last_verified=a.provenance.last_verified,
-                confidence=a.confidence,
-                status=a.status.value,
-            )
-            for a in place.attributes
-        ],
-    )
 
 
 def refresh_snapshot(city: CityConfig, data_dir: Path | None = None) -> list[Path]:
@@ -169,7 +145,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.no_db or not get_settings().db_enabled:
         return 0
-    count = save_places_to_db(load_cached_places(city))
+    # Te same miejsca z kilku źródeł (to samo id) -> jedno miejsce z wykrytymi konfliktami
+    count = save_places_to_db(merge_places(load_cached_places(city)))
     logger.info("Baza: %d miejsc dla %s", count, city.id)
 
     from app.db.segments import save_graph_to_db

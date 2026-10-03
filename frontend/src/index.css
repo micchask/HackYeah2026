@@ -912,6 +912,16 @@ button.step-body:hover {
   margin: 0;
   font-size: 0.78rem;
 }
+.attribute-alt {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+}
+.place-search {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.75rem;
+}
 
 /* ---------- stany puste / ładowanie ---------- */
 
