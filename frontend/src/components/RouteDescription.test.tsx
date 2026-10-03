@@ -6,6 +6,8 @@ import { RouteDescription } from './RouteDescription'
 const route: RouteResponse = {
   distance_m: 530,
   duration_s: 600,
+  accessibility_score: 72,
+  confidence: 0.68,
   is_mock: true,
   warnings: [],
   segments: [
@@ -14,6 +16,7 @@ const route: RouteResponse = {
       distance_m: 320,
       geometry: [],
       difficulty: 'easy',
+      accessibility_score: 100,
       confidence: 0.8,
       data_status: 'verified',
       warnings: [],
@@ -23,6 +26,7 @@ const route: RouteResponse = {
       distance_m: 210,
       geometry: [],
       difficulty: 'hard',
+      accessibility_score: 30,
       confidence: 0.5,
       data_status: 'unverified',
       surface: 'sett',

@@ -14,6 +14,7 @@ from app.models import (
     RouteSegment,
     SourceType,
 )
+from app.routing.scores import aggregate_route_scores
 
 _NOW = datetime(2026, 10, 1, tzinfo=UTC)
 
@@ -98,6 +99,7 @@ def mock_route(req: RouteRequest) -> RouteResponse:
             geometry=[o, mid],
             surface="paving_stones",
             incline_percent=1.5,
+            accessibility_score=85,
             data_status=AttributeStatus.VERIFIED,
             confidence=0.8,
         ),
@@ -108,15 +110,19 @@ def mock_route(req: RouteRequest) -> RouteResponse:
             surface="sett",
             incline_percent=3.0,
             warnings=["Nierówna nawierzchnia (kostka brukowa)"],
+            accessibility_score=40,
             data_status=AttributeStatus.UNVERIFIED,
             confidence=0.5,
         ),
     ]
     distance = sum(s.distance_m for s in segments)
+    accessibility, confidence = aggregate_route_scores(segments)
     return RouteResponse(
         distance_m=distance,
         duration_s=distance / 0.9,
         segments=segments,
+        accessibility_score=accessibility,
+        confidence=confidence,
         warnings=["To jest trasa przykładowa (mock) - routing w budowie."],
         is_mock=True,
     )

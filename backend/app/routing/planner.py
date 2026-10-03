@@ -25,6 +25,7 @@ from app.routing.profiles import (
     stair_ramp,
     tag,
 )
+from app.routing.scores import accessibility_score, aggregate_route_scores, data_confidence
 
 SURFACE_PL = {
     "asphalt": "asfalt",
@@ -106,6 +107,7 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     ]
 
     distance = sum(s.distance_m for s in segments)
+    route_accessibility, route_confidence = aggregate_route_scores(segments)
     rough_m = _rough_m(edges)
     stairs = _stairs_count(edges)
     warnings: list[str] = []
@@ -121,6 +123,8 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
         distance_m=round(distance, 1),
         duration_s=round(distance / profile.speed_m_s),
         segments=segments,
+        accessibility_score=route_accessibility,
+        confidence=route_confidence,
         warnings=warnings,
         is_mock=False,
         profile=req.preferences.profile,
@@ -268,7 +272,6 @@ def _to_segment(seg: _Segment, profile: RoutingProfile, prev: _Segment | None) -
     inclines = [i for e in seg.edges if (i := incline_percent(e)) is not None]
 
     warnings = _warnings(seg, profile, steps)
-    confidence = _confidence(seg.edges)
     return RouteSegment(
         instruction=instruction,
         distance_m=round(length, 1),
@@ -278,8 +281,9 @@ def _to_segment(seg: _Segment, profile: RoutingProfile, prev: _Segment | None) -
         incline_percent=max(inclines, key=abs) if inclines else None,
         warnings=warnings,
         difficulty=difficulty,
+        accessibility_score=accessibility_score(seg.edges, profile),
         data_status=AttributeStatus.UNVERIFIED,
-        confidence=confidence,
+        confidence=data_confidence(seg.edges),
         sources=["OpenStreetMap"],
     )
 
@@ -318,18 +322,6 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
     if unknown >= 30:
         warnings.append(f"Brak danych o nawierzchni na {round(unknown)} m.")
     return warnings
-
-
-def _confidence(edges: list[dict[str, Any]]) -> float:
-    """Pewność danych odcinka: OSM to jedno źródło, więc max 0.6; braki ją obniżają."""
-    total = sum(float(e["length"]) for e in edges) or 1.0
-    score = 0.0
-    for e in edges:
-        c = 0.6 if tag(e, "surface") else 0.35
-        if has_unknown_incline(e) and incline_percent(e) is None:
-            c -= 0.1
-        score += c * float(e["length"])
-    return round(score / total, 2)
 
 
 # --- statystyki i porównanie ---------------------------------------------------------------
