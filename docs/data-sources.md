@@ -1,5 +1,8 @@
 # Źródła danych
 
+Zasady cyklicznego odświeżania, obsługi awarii i moderacji opisuje
+[plan utrzymania danych i moderacji zgłoszeń](data-operations.md).
+
 | Źródło | Provider | Typ | Licencja | Status | Co daje |
 |---|---|---|---|---|---|
 | OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy |

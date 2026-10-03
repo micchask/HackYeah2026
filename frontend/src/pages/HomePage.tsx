@@ -14,6 +14,7 @@ import { MapView } from '../components/MapView'
 import { PlaceList } from '../components/PlaceList'
 import { PreferencesForm } from '../components/PreferencesForm'
 import { ProfilePicker } from '../components/ProfilePicker'
+import { RouteAlternatives } from '../components/RouteAlternatives'
 import { RouteDescription } from '../components/RouteDescription'
 import {
   RoutePoints,
@@ -22,6 +23,7 @@ import {
   type Preset,
 } from '../components/RoutePoints'
 import { RouteSummary } from '../components/RouteSummary'
+import { routeForVariant, selectedVariantLabel } from '../components/routeVariants'
 
 const CITY = 'krakow'
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
@@ -60,6 +62,7 @@ export function HomePage() {
   const [destination, setDestination] = useState<NamedPoint | null>(null)
   const [pickTarget, setPickTarget] = useState<PickTarget | null>(null)
   const [route, setRoute] = useState<RouteResponse | null>(null)
+  const [selectedVariant, setSelectedVariant] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -88,6 +91,7 @@ export function HomePage() {
           controller.signal,
         )
         setRoute(result)
+        setSelectedVariant(0)
         setSelected(null)
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
@@ -134,6 +138,7 @@ export function HomePage() {
   )
 
   const pickLetter = activeTarget === 'origin' ? 'A' : activeTarget === 'destination' ? 'B' : null
+  const activeRoute = route ? routeForVariant(route, selectedVariant) : null
 
   return (
     <div className="layout">
@@ -201,10 +206,21 @@ export function HomePage() {
               </ol>
             </section>
           )}
-          {route && (
+          {route && activeRoute && (
             <div className={loading ? 'stale' : undefined}>
-              <RouteSummary route={route} />
-              <RouteDescription route={route} selected={selected} onSelect={setSelected} />
+              <RouteAlternatives
+                route={route}
+                selected={selectedVariant}
+                onChange={(index) => {
+                  setSelectedVariant(index)
+                  setSelected(null)
+                }}
+              />
+              <RouteSummary
+                route={activeRoute}
+                heading={selectedVariantLabel(route, selectedVariant)}
+              />
+              <RouteDescription route={activeRoute} selected={selected} onSelect={setSelected} />
             </div>
           )}
         </div>
@@ -217,7 +233,7 @@ export function HomePage() {
           center={KRAKOW_CENTER}
           zoom={14}
           places={places}
-          route={route}
+          route={activeRoute}
           origin={origin?.point ?? null}
           destination={destination?.point ?? null}
           selectedSegment={selected}

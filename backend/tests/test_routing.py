@@ -1,6 +1,55 @@
-from app.models import LatLon, RoutePreferences, RouteSegment
+import networkx as nx
+import numpy as np
+
+from app.models import LatLon, RoutePreferences, RouteRequest, RouteResponse, RouteSegment
 from app.routing import PROFILES, edge_cost, profile_from_preferences
+from app.routing.graph import CityGraph
+from app.routing.planner import _compromise_profile, plan_route
 from app.routing.scores import accessibility_score, aggregate_route_scores, data_confidence
+
+
+def _city_graph(paths: list[list[tuple[float, str]]]) -> CityGraph:
+    """Graf z rozłącznymi wariantami między wspólnymi punktami A i B."""
+    graph = nx.MultiDiGraph(created_date="2026-10-03 12:00:00")
+    graph.add_node(0, y=50.0, x=19.0)
+    graph.add_node(99, y=50.01, x=19.01)
+    for index, edges in enumerate(paths, start=1):
+        previous = 0
+        for step, (length, surface) in enumerate(edges):
+            target = 99 if step == len(edges) - 1 else index * 10 + step
+            if target != 99:
+                graph.add_node(
+                    target,
+                    y=50.0 + index / 1000 + step / 10000,
+                    x=19.0 + index / 1000 + step / 10000,
+                )
+            graph.add_edge(
+                previous,
+                target,
+                length=length,
+                surface=surface,
+                highway="footway",
+                name=f"Wariant {index}",
+            )
+            previous = target
+    nodes = list(graph.nodes(data=True))
+    return CityGraph(
+        graph=graph,
+        node_ids=np.array([node for node, _ in nodes]),
+        node_lat=np.array([data["y"] for _, data in nodes]),
+        node_lon=np.array([data["x"] for _, data in nodes]),
+        named_lat=np.array([], dtype=float),
+        named_lon=np.array([], dtype=float),
+        named=[],
+    )
+
+
+def _request() -> RouteRequest:
+    return RouteRequest(
+        origin=LatLon(lat=50.0, lon=19.0),
+        destination=LatLon(lat=50.01, lon=19.01),
+        preferences=RoutePreferences(profile="wheelchair"),
+    )
 
 
 def test_stairs_impassable_for_wheelchair():
@@ -96,3 +145,65 @@ def test_graph_fetched_at_from_osmnx_metadata():
 
     assert graph_fetched_at({"created_date": "2026-10-03 16:01:57"}).hour == 16
     assert graph_fetched_at({}) is None
+
+
+def test_route_response_keeps_main_route_and_adds_full_alternatives():
+    city_graph = _city_graph(
+        [
+            [(310, "asphalt")],
+            [(90, "ground")],
+            [(120, "sett")],
+        ]
+    )
+
+    route = plan_route(_request(), city_graph)
+
+    assert isinstance(route, RouteResponse)
+    assert route.distance_m == 310
+    assert route.explanation
+    assert [alternative.label for alternative in route.alternatives] == [
+        "Najkrótsza trasa piesza",
+        "Trasa kompromisowa",
+    ]
+    assert [alternative.distance_m for alternative in route.alternatives] == [90, 120]
+    for alternative in route.alternatives:
+        assert alternative.duration_s > 0
+        assert alternative.geometry
+        assert alternative.segments
+        assert all(segment.instruction for segment in alternative.segments)
+        assert alternative.explanation
+
+
+def test_routes_with_more_than_80_percent_shared_length_are_rejected():
+    graph = nx.MultiDiGraph(created_date="2026-10-03 12:00:00")
+    for node, lat, lon in [(0, 50.0, 19.0), (1, 50.005, 19.005), (2, 50.01, 19.01)]:
+        graph.add_node(node, y=lat, x=lon)
+    graph.add_edge(0, 1, length=90, surface="asphalt", highway="footway", name="Wspólna")
+    graph.add_edge(1, 2, length=10, surface="sett", highway="footway", name="Meta")
+    graph.add_edge(1, 2, length=20, surface="asphalt", highway="footway", name="Meta")
+    city_graph = CityGraph(
+        graph=graph,
+        node_ids=np.array([0, 1, 2]),
+        node_lat=np.array([50.0, 50.005, 50.01]),
+        node_lon=np.array([19.0, 19.005, 19.01]),
+        named_lat=np.array([], dtype=float),
+        named_lon=np.array([], dtype=float),
+        named=[],
+    )
+
+    route = plan_route(_request(), city_graph)
+
+    assert route.distance_m == 110
+    assert route.baseline and route.baseline.distance_m == 100
+    assert route.alternatives == []
+
+
+def test_compromise_profile_only_relaxes_surface_penalties():
+    profile = PROFILES["wheelchair"]
+
+    compromise = _compromise_profile(profile)
+
+    assert compromise.surface_penalty["sett"] == 2.5
+    assert compromise.surface_penalty["ground"] == 3.5
+    assert compromise.avoid_stairs == profile.avoid_stairs
+    assert compromise.max_incline_percent == profile.max_incline_percent

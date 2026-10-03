@@ -1,14 +1,17 @@
 """Planowanie trasy na grafie i opis tekstowy segment po segmencie (tekstowa alternatywa mapy)."""
 
+import logging
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import Any
 
 from app.models import (
     AttributeStatus,
     Difficulty,
     LatLon,
+    RouteAlternative,
     RouteBaseline,
     RouteRequest,
     RouteResponse,
@@ -73,6 +76,9 @@ COMPASS_PL = [
     "północny zachód",
 ]
 MIN_SEGMENT_M = 25
+MAX_SHARED_LENGTH_RATIO = 0.8
+
+logger = logging.getLogger(__name__)
 
 
 class NoRouteError(Exception):
@@ -91,48 +97,156 @@ class _Segment:
         return sum(float(e["length"]) for e in self.edges)
 
 
+@dataclass
+class _RouteCandidate:
+    label: str
+    edges: list[dict[str, Any]]
+    segments: list[RouteSegment]
+    distance_m: float
+    duration_s: float
+    stairs_count: int
+    rough_surface_m: float
+    geometry: list[LatLon]
+
+
 def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     profile = profile_from_preferences(req.preferences)
     graph = city_graph.graph
     source, d_source = city_graph.nearest_node(req.origin.lat, req.origin.lon)
     target, d_target = city_graph.nearest_node(req.destination.lat, req.destination.lon)
 
+    timings_ms: dict[str, float] = {}
+    started = perf_counter()
     try:
         path = shortest_path(graph, source, target, profile)
     except Exception as exc:
         raise NoRouteError from exc
-    edges = path_edges(graph, path, profile)
-    grouped = _group(edges, city_graph)
-    fetched_at = graph_fetched_at(graph.graph)
-    segments = [
-        _to_segment(seg, profile, grouped[i - 1] if i else None, fetched_at)
-        for i, seg in enumerate(grouped)
-    ]
+    timings_ms["main"] = (perf_counter() - started) * 1000
 
-    distance = sum(s.distance_m for s in segments)
-    route_accessibility, route_confidence = aggregate_route_scores(segments)
-    rough_m = _rough_m(edges)
-    stairs = _stairs_count(edges)
+    fetched_at = graph_fetched_at(graph.graph)
+    main = _candidate(
+        "Trasa najbardziej dostępna",
+        path_edges(graph, path, profile),
+        city_graph,
+        profile,
+        fetched_at,
+    )
+
+    shortest = _optional_candidate(
+        "Najkrótsza trasa piesza",
+        city_graph,
+        source,
+        target,
+        route_profile=None,
+        description_profile=profile,
+        fetched_at=fetched_at,
+        timings_ms=timings_ms,
+        timing_key="shortest",
+    )
+    compromise_profile = _compromise_profile(profile)
+    compromise = _optional_candidate(
+        "Trasa kompromisowa",
+        city_graph,
+        source,
+        target,
+        route_profile=compromise_profile,
+        description_profile=compromise_profile,
+        fetched_at=fetched_at,
+        timings_ms=timings_ms,
+        timing_key="compromise",
+    )
+
+    route_accessibility, route_confidence = aggregate_route_scores(main.segments)
     warnings: list[str] = []
     for label, d in (("A", d_source), ("B", d_target)):
         if d > 50:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
 
-    baseline = _baseline(city_graph, source, target)
+    baseline = _baseline(shortest)
+    alternatives = _alternatives(main, shortest, compromise)
+    explanation = _main_explanation(main, shortest)
+    logger.info(
+        "Dijkstra dla kandydatów tras [ms]: main=%.1f, shortest=%.1f, compromise=%.1f, total=%.1f",
+        timings_ms.get("main", 0.0),
+        timings_ms.get("shortest", 0.0),
+        timings_ms.get("compromise", 0.0),
+        sum(timings_ms.values()),
+    )
 
     return RouteResponse(
-        distance_m=round(distance, 1),
-        duration_s=round(distance / profile.speed_m_s),
-        segments=segments,
+        distance_m=main.distance_m,
+        duration_s=main.duration_s,
+        segments=main.segments,
         accessibility_score=route_accessibility,
         confidence=route_confidence,
         warnings=warnings,
         is_mock=False,
         profile=req.preferences.profile,
-        rough_surface_m=round(rough_m),
-        stairs_count=stairs,
+        rough_surface_m=main.rough_surface_m,
+        stairs_count=main.stairs_count,
         baseline=baseline,
+        explanation=explanation,
+        alternatives=alternatives,
     )
+
+
+def _optional_candidate(
+    label: str,
+    city_graph: CityGraph,
+    source: int,
+    target: int,
+    route_profile: RoutingProfile | None,
+    description_profile: RoutingProfile,
+    fetched_at: datetime | None,
+    timings_ms: dict[str, float],
+    timing_key: str,
+) -> _RouteCandidate | None:
+    started = perf_counter()
+    try:
+        if route_profile is None:
+            path = shortest_walking_path(city_graph.graph, source, target)
+        else:
+            path = shortest_path(city_graph.graph, source, target, route_profile)
+        edges = path_edges(city_graph.graph, path, route_profile)
+        return _candidate(label, edges, city_graph, description_profile, fetched_at)
+    except Exception:
+        logger.warning("Nie udało się wyznaczyć wariantu trasy: %s", label, exc_info=True)
+        return None
+    finally:
+        timings_ms[timing_key] = (perf_counter() - started) * 1000
+
+
+def _candidate(
+    label: str,
+    edges: list[dict[str, Any]],
+    city_graph: CityGraph,
+    profile: RoutingProfile,
+    fetched_at: datetime | None,
+) -> _RouteCandidate:
+    grouped = _group(edges, city_graph)
+    segments = [
+        _to_segment(seg, profile, grouped[i - 1] if i else None, fetched_at)
+        for i, seg in enumerate(grouped)
+    ]
+    distance = round(sum(segment.distance_m for segment in segments), 1)
+    return _RouteCandidate(
+        label=label,
+        edges=edges,
+        segments=segments,
+        distance_m=distance,
+        duration_s=round(distance / profile.speed_m_s),
+        stairs_count=_stairs_count(edges),
+        rough_surface_m=round(_rough_m(edges)),
+        geometry=_route_geometry(edges, city_graph),
+    )
+
+
+def _compromise_profile(profile: RoutingProfile) -> RoutingProfile:
+    """Zostawia bariery profilu, ale zmniejsza o połowę kary za nawierzchnię."""
+    penalties = {
+        surface: 1.0 + (penalty - 1.0) / 2 for surface, penalty in profile.surface_penalty.items()
+    }
+    return replace(profile, name=f"{profile.name}_compromise", surface_penalty=penalties)
 
 
 # --- grupowanie krawędzi w odcinki -------------------------------------------------------
@@ -368,19 +482,120 @@ def _stairs_count(edges: list[dict[str, Any]]) -> int:
     return count
 
 
-def _baseline(city_graph: CityGraph, source: int, target: int) -> RouteBaseline | None:
-    try:
-        path = shortest_walking_path(city_graph.graph, source, target)
-    except Exception:
-        return None
-    edges = path_edges(city_graph.graph, path, None)
+def _route_geometry(edges: list[dict[str, Any]], city_graph: CityGraph) -> list[LatLon]:
     geometry: list[LatLon] = []
-    for e in edges:
-        g = _edge_geometry(e, city_graph.graph)
-        geometry.extend(g if not geometry else g[1:])
+    for edge in edges:
+        edge_geometry = _edge_geometry(edge, city_graph.graph)
+        geometry.extend(edge_geometry if not geometry else edge_geometry[1:])
+    return geometry
+
+
+def _baseline(candidate: _RouteCandidate | None) -> RouteBaseline | None:
+    if candidate is None:
+        return None
     return RouteBaseline(
-        distance_m=round(sum(float(e["length"]) for e in edges), 1),
-        stairs_count=_stairs_count(edges),
-        rough_surface_m=round(_rough_m(edges)),
-        geometry=geometry,
+        distance_m=candidate.distance_m,
+        stairs_count=candidate.stairs_count,
+        rough_surface_m=candidate.rough_surface_m,
+        geometry=candidate.geometry,
     )
+
+
+def _alternatives(
+    main: _RouteCandidate,
+    shortest: _RouteCandidate | None,
+    compromise: _RouteCandidate | None,
+) -> list[RouteAlternative]:
+    accepted = [main]
+    alternatives: list[RouteAlternative] = []
+    for candidate in (shortest, compromise):
+        if candidate is None or any(
+            _shared_length_ratio(candidate, route) > MAX_SHARED_LENGTH_RATIO for route in accepted
+        ):
+            continue
+        accepted.append(candidate)
+        alternatives.append(
+            RouteAlternative(
+                label=candidate.label,
+                distance_m=candidate.distance_m,
+                duration_s=candidate.duration_s,
+                stairs_count=candidate.stairs_count,
+                rough_surface_m=candidate.rough_surface_m,
+                geometry=candidate.geometry,
+                segments=candidate.segments,
+                explanation=_alternative_explanation(candidate, main),
+            )
+        )
+    return alternatives
+
+
+def _shared_length_ratio(first: _RouteCandidate, second: _RouteCandidate) -> float:
+    """Część krótszej trasy biegnąca tymi samymi krawędziami grafu."""
+    first_edges = {_edge_identity(edge): float(edge["length"]) for edge in first.edges}
+    second_edges = {_edge_identity(edge): float(edge["length"]) for edge in second.edges}
+    shorter = min(sum(first_edges.values()), sum(second_edges.values()))
+    if shorter <= 0:
+        return 1.0
+    shared = sum(
+        min(length, second_edges[identity])
+        for identity, length in first_edges.items()
+        if identity in second_edges
+    )
+    return shared / shorter
+
+
+def _edge_identity(edge: dict[str, Any]) -> tuple[Any, Any, Any]:
+    return edge["_u"], edge["_v"], edge.get("_key")
+
+
+def _main_explanation(main: _RouteCandidate, shortest: _RouteCandidate | None) -> str:
+    if shortest is None:
+        return "Trasa została dobrana do wybranego profilu dostępności."
+
+    stairs_avoided = shortest.stairs_count - main.stairs_count
+    rough_avoided = round(shortest.rough_surface_m - main.rough_surface_m)
+    gains: list[str] = []
+    if stairs_avoided > 0:
+        gains.append(
+            f"omija {stairs_avoided} {_plural(stairs_avoided, 'odcinek', 'odcinki', 'odcinków')} "
+            "schodów"
+        )
+    if rough_avoided >= 20:
+        gains.append(f"ma {rough_avoided} m mniej nierównej nawierzchni")
+    if not gains:
+        return "Najkrótsza trasa jest już dostępna – nie trzeba nadkładać drogi."
+
+    extra = round(main.distance_m - shortest.distance_m)
+    cost = f"jest dłuższa o {extra} m" if extra > 0 else "nie jest dłuższa"
+    return f"W porównaniu z najkrótszą trasą {' i '.join(gains)}; {cost}."
+
+
+def _alternative_explanation(candidate: _RouteCandidate, main: _RouteCandidate) -> str:
+    if candidate.label == "Najkrótsza trasa piesza":
+        barriers: list[str] = []
+        extra_stairs = candidate.stairs_count - main.stairs_count
+        extra_rough = round(candidate.rough_surface_m - main.rough_surface_m)
+        if extra_stairs > 0:
+            barriers.append(
+                f"ma {extra_stairs} {_plural(extra_stairs, 'odcinek', 'odcinki', 'odcinków')} "
+                "schodów więcej"
+            )
+        if extra_rough >= 20:
+            barriers.append(f"ma {extra_rough} m więcej nierównej nawierzchni")
+        suffix = f", ale {' i '.join(barriers)}" if barriers else ""
+        return f"Najkrótszy wariant pieszy{suffix}."
+
+    saved = round(main.distance_m - candidate.distance_m)
+    distance = f"skraca drogę o {saved} m" if saved > 0 else "ma podobną długość"
+    return (
+        "Kompromis między dostępnością a długością: "
+        f"{distance}, łagodniej traktując nierówne nawierzchnie."
+    )
+
+
+def _plural(value: int, one: str, few: str, many: str) -> str:
+    if value == 1:
+        return one
+    if value % 10 in (2, 3, 4) and value % 100 not in (12, 13, 14):
+        return few
+    return many
