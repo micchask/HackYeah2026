@@ -22,6 +22,8 @@ export type ReportCreate = components['schemas']['ReportCreate']
 export type Report = components['schemas']['Report']
 export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
+export type Institution = components['schemas']['Institution']
+export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -104,6 +106,8 @@ export const api = {
       `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
       { signal },
     ),
+  institutions: (city: string) =>
+    request<Institution[]>(`/institutions?${new URLSearchParams({ city })}`),
   report: (body: ReportCreate, city: string) =>
     request<Report>(`/reports?${new URLSearchParams({ city })}`, {
       method: 'POST',

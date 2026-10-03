@@ -3,12 +3,14 @@ import {
   api,
   DEFAULT_PREFERENCES,
   PROFILE_PRESETS,
+  type Institution,
   type LatLon,
   type Place,
   type RoutePreferences,
   type RouteResponse,
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
+import { InstitutionList } from '../components/InstitutionList'
 import { Legend } from '../components/Legend'
 import { MapView } from '../components/MapView'
 import { PlaceList } from '../components/PlaceList'
@@ -65,12 +67,20 @@ export function HomePage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [institutions, setInstitutions] = useState<Institution[]>([])
+  const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
 
   useEffect(() => {
     api
       .places(CITY)
       .then(setPlaces)
       .catch((e: Error) => setError(e.message))
+    api
+      .institutions(CITY)
+      .then(setInstitutions)
+      .catch(() => {
+        // bez warstwy instytucji aplikacja dalej działa
+      })
   }, [])
 
   useEffect(() => {
@@ -116,6 +126,17 @@ export function HomePage() {
   const setPoint = useCallback(
     (target: PickTarget, value: NamedPoint) => setterFor(target)(value),
     [setterFor],
+  )
+
+  // "Start (A)" / "Cel (B)" w okienku instytucji na mapie
+  const routeFromInstitution = useCallback(
+    (inst: Institution, target: PickTarget) => {
+      if (!inst.location) return
+      setPoint(target, { label: inst.name, point: inst.location.point })
+      setPickTarget(null)
+      setSelectedInstitution(null)
+    },
+    [setPoint],
   )
 
   const handleMapClick = useCallback(
@@ -243,6 +264,12 @@ export function HomePage() {
           segmentPoint={segmentPoint}
         />
 
+        <InstitutionList
+          institutions={institutions}
+          selected={selectedInstitution}
+          onSelect={setSelectedInstitution}
+        />
+
         <PlaceList places={places} />
       </aside>
 
@@ -259,6 +286,10 @@ export function HomePage() {
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
           onSegmentClick={setSelected}
+          institutions={institutions}
+          selectedInstitution={selectedInstitution}
+          onInstitutionSelect={setSelectedInstitution}
+          onInstitutionRoute={routeFromInstitution}
         />
         {pickLetter && (
           <div className="map-banner">
@@ -284,7 +315,13 @@ export function HomePage() {
             <span className="spinner" /> Szukam trasy…
           </div>
         )}
-        {route && <Legend showBaseline={!!route.baseline && !route.is_mock} />}
+        {(route || institutions.length > 0) && (
+          <Legend
+            showRoute={!!route}
+            showBaseline={!!route?.baseline && !route.is_mock}
+            showInstitutions={institutions.length > 0}
+          />
+        )}
       </div>
     </div>
   )
