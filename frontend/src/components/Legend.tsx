@@ -1,4 +1,6 @@
 import type { Difficulty } from '../api/client'
+import { BarrierIcon } from './BarrierIcon'
+import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
 import { INSTITUTION_COLOR } from './institutionStyle'
 
@@ -7,10 +9,17 @@ interface Props {
   showBaseline: boolean
   showInstitutions: boolean
   otherRoutes?: { index: number; label: string }[]
+  showBarriers?: boolean
 }
 
 /** Legenda kolorów trasy. Kolor nigdy nie jest jedynym nośnikiem - opis trasy ma te same etykiety. */
-export function Legend({ showRoute, showBaseline, showInstitutions, otherRoutes = [] }: Props) {
+export function Legend({
+  showRoute,
+  showBaseline,
+  showInstitutions,
+  otherRoutes = [],
+  showBarriers = false,
+}: Props) {
   return (
     <section className="map-legend" aria-labelledby="legend-heading">
       <h2 id="legend-heading" className="legend-title">
@@ -53,6 +62,13 @@ export function Legend({ showRoute, showBaseline, showInstitutions, otherRoutes 
             zwykła trasa piesza
           </li>
         )}
+        {showBarriers &&
+          BARRIER_TYPES.map((t) => (
+            <li key={t}>
+              <BarrierIcon type={t} size={18} />
+              {BARRIER_LABEL[t].toLowerCase()}
+            </li>
+          ))}
       </ul>
     </section>
   )

@@ -4,6 +4,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from app.models.accessibility import AttributeStatus
+from app.models.barrier import RouteBarrier
 from app.models.geo import LatLon
 
 
@@ -65,6 +66,9 @@ class RouteSegment(BaseModel):
     last_verified: datetime | None = Field(
         default=None,
         description="Najstarsza data weryfikacji w terenie (OSM check_date); brak = brak",
+    )
+    barriers: list[RouteBarrier] = Field(
+        default_factory=list, description="Bariery na odcinku (schody, krawężnik, bruk…)"
     )
 
 

@@ -5,6 +5,7 @@ from app.models.accessibility import (
     Provenance,
     SourceType,
 )
+from app.models.barrier import Barrier, BarrierList, BarrierType, RouteBarrier
 from app.models.geo import LatLon
 from app.models.geocode import GeocodeResult
 from app.models.institution import (
@@ -35,6 +36,9 @@ __all__ = [
     "AccessibilityAttribute",
     "AttributeKey",
     "AttributeStatus",
+    "Barrier",
+    "BarrierList",
+    "BarrierType",
     "Difficulty",
     "GeocodeResult",
     "Institution",
@@ -50,6 +54,7 @@ __all__ = [
     "RouteAlternative",
     "ReportType",
     "ReportUpdate",
+    "RouteBarrier",
     "RouteBaseline",
     "RoutePreferences",
     "RouteRequest",

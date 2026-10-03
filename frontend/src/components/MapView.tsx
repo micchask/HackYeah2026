@@ -2,7 +2,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import * as maplibregl from 'maplibre-gl'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import type { Institution, LatLon, Place, RouteResponse } from '../api/client'
+import type { Barrier, Institution, LatLon, Place, RouteResponse } from '../api/client'
+import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { shortInstitutionName } from './institutionStyle'
@@ -73,6 +74,11 @@ interface Props {
   searchPin: LatLon | null
   /** Środek widoku po każdym przesunięciu mapy (np. dla wyszukiwarki) */
   onViewChange?: (center: LatLon) => void
+  barriers?: Barrier[]
+  showBarriers?: boolean
+  selectedBarrier?: string | null
+  /** Klik w ikonę bariery na mapie */
+  onBarrierSelect?: (id: string | null) => void
 }
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
@@ -84,6 +90,116 @@ const OTHER_ROUTE_PATTERNS = [
   [3, 1.6],
   [0.4, 1.2],
 ]
+
+const BARRIER_LINES = 'barrier-lines'
+const BARRIER_SELECTED = 'barrier-selected'
+const BARRIER_ICONS = 'barrier-icons'
+const BARRIER_ICON_SELECTED = 'barrier-icon-selected'
+// Ikony dopiero od tego zoomu - wcześniej setki barier zasłoniłyby mapę
+const BARRIER_ICON_MIN_ZOOM = 15
+
+function barrierColorExpression(): maplibregl.ExpressionSpecification {
+  return [
+    'match',
+    ['get', 'type'],
+    ...BARRIER_TYPES.flatMap((t) => [t, BARRIER_COLOR[t]]),
+    BARRIER_COLOR.reported,
+  ] as unknown as maplibregl.ExpressionSpecification
+}
+
+/** Obrazki ikon z tych samych SVG co w legendzie; pixelRatio 2 = ostre na ekranach HiDPI. */
+function loadBarrierIcons(map: maplibregl.Map): Promise<void> {
+  return Promise.all(
+    BARRIER_TYPES.map(
+      (type) =>
+        new Promise<void>((resolve) => {
+          const img = new Image(56, 56)
+          img.onload = () => {
+            if (!map.hasImage(`barrier-${type}`))
+              map.addImage(`barrier-${type}`, img, { pixelRatio: 2 })
+            resolve()
+          }
+          img.onerror = () => resolve()
+          img.src = `data:image/svg+xml;utf8,${encodeURIComponent(barrierIconSvg(type, 56))}`
+        }),
+    ),
+  ).then(() => undefined)
+}
+
+function addBarrierLayers(map: maplibregl.Map) {
+  map.addSource('barriers', { type: 'geojson', data: EMPTY })
+  map.addLayer({
+    id: BARRIER_LINES,
+    type: 'line',
+    source: 'barriers',
+    filter: ['==', ['geometry-type'], 'LineString'],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': barrierColorExpression(), 'line-width': 4, 'line-opacity': 0.55 },
+  })
+  map.addLayer({
+    id: BARRIER_SELECTED,
+    type: 'line',
+    source: 'barriers',
+    filter: ['==', ['get', 'id'], ''],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#111827', 'line-width': 9, 'line-opacity': 0.85 },
+  })
+  void loadBarrierIcons(map).then(() => {
+    if (!map.getStyle() || map.getLayer(BARRIER_ICONS)) return
+    const icon = ['concat', 'barrier-', ['get', 'type']] as maplibregl.ExpressionSpecification
+    map.addLayer({
+      id: BARRIER_ICONS,
+      type: 'symbol',
+      source: 'barriers',
+      minzoom: BARRIER_ICON_MIN_ZOOM,
+      filter: ['all', ['==', ['geometry-type'], 'Point'], ['!=', ['get', 'selected'], true]],
+      layout: {
+        'icon-image': icon,
+        // przy kolizji zostają ważniejsze: schody, krawężnik, zgłoszenia…
+        'symbol-sort-key': ['get', 'rank'],
+      },
+    })
+    // Wybrana bariera zawsze widoczna (icon-allow-overlap nie przyjmuje wyrażeń z danych)
+    map.addLayer({
+      id: BARRIER_ICON_SELECTED,
+      type: 'symbol',
+      source: 'barriers',
+      filter: ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'selected'], true]],
+      layout: { 'icon-image': icon, 'icon-allow-overlap': true, 'icon-size': 1.3 },
+    })
+  })
+}
+
+function barrierData(barriers: Barrier[], selected: string | null): GeoJSONData {
+  return {
+    type: 'FeatureCollection',
+    features: barriers.flatMap((b) => {
+      const properties = {
+        id: b.id,
+        type: b.type,
+        rank: BARRIER_TYPES.indexOf(b.type),
+        selected: b.id === selected,
+      }
+      const icon = {
+        type: 'Feature' as const,
+        properties,
+        geometry: { type: 'Point' as const, coordinates: [b.location.lon, b.location.lat] },
+      }
+      if (b.geometry.length < 2) return [icon]
+      return [
+        {
+          type: 'Feature' as const,
+          properties,
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: b.geometry.map((p) => [p.lon, p.lat]),
+          },
+        },
+        icon,
+      ]
+    }),
+  }
+}
 
 function institutionMarker(inst: Institution): HTMLButtonElement {
   const el = document.createElement('button')
@@ -128,6 +244,10 @@ export function MapView({
   onPopupClose,
   searchPin,
   onViewChange,
+  barriers = [],
+  showBarriers = true,
+  selectedBarrier = null,
+  onBarrierSelect,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -141,13 +261,19 @@ export function MapView({
   const onSelect = useRef(onInstitutionSelect)
   const onPopupCloseRef = useRef(onPopupClose)
   const onView = useRef(onViewChange)
+  const onBarrier = useRef(onBarrierSelect)
   const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
+  const barriersRef = useRef(barriers)
 
   useEffect(() => {
     routeRef.current = route
   }, [route])
+
+  useEffect(() => {
+    barriersRef.current = barriers
+  }, [barriers])
 
   useEffect(() => {
     onClick.current = onMapClick
@@ -156,7 +282,16 @@ export function MapView({
     onSelect.current = onInstitutionSelect
     onPopupCloseRef.current = onPopupClose
     onView.current = onViewChange
-  }, [onMapClick, onSegmentClick, onBoundsChange, onInstitutionSelect, onPopupClose, onViewChange])
+    onBarrier.current = onBarrierSelect
+  }, [
+    onMapClick,
+    onSegmentClick,
+    onBoundsChange,
+    onInstitutionSelect,
+    onPopupClose,
+    onViewChange,
+    onBarrierSelect,
+  ])
 
   useEffect(() => {
     if (!container.current) return
@@ -206,6 +341,13 @@ export function MapView({
         [x - HIT_PX, y - HIT_PX],
         [x + HIT_PX, y + HIT_PX],
       ]
+      if (!picking.current && instance.getLayer(BARRIER_ICONS)) {
+        const [barrier] = instance.queryRenderedFeatures(box, { layers: [BARRIER_ICONS] })
+        if (barrier) {
+          onBarrier.current?.(String(barrier.properties.id))
+          return
+        }
+      }
       if (!picking.current && instance.getLayer('route')) {
         const [hit] = instance.queryRenderedFeatures(box, { layers: ['route'] })
         if (hit) {
@@ -216,6 +358,7 @@ export function MapView({
       onClick.current({ lat: e.lngLat.lat, lon: e.lngLat.lng })
     })
     instance.on('load', () => {
+      addBarrierLayers(instance)
       instance.addSource('baseline', { type: 'geojson', data: EMPTY })
       instance.addSource('other-routes', { type: 'geojson', data: EMPTY })
       instance.addSource('route', { type: 'geojson', data: EMPTY })
@@ -421,6 +564,50 @@ export function MapView({
       currentMap.fitBounds(bounds, { padding: 120, maxZoom: 18, duration: 600 })
     }
   }, [selectedSegment, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const source = currentMap.getSource('barriers') as maplibregl.GeoJSONSource | undefined
+    source?.setData(barrierData(barriers, selectedBarrier))
+  }, [barriers, selectedBarrier, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const apply = () => {
+      for (const layer of [BARRIER_LINES, BARRIER_SELECTED, BARRIER_ICONS, BARRIER_ICON_SELECTED]) {
+        if (currentMap.getLayer(layer))
+          currentMap.setLayoutProperty(layer, 'visibility', showBarriers ? 'visible' : 'none')
+      }
+    }
+    apply()
+    // warstwa ikon dochodzi po wczytaniu obrazków
+    currentMap.once('styledata', apply)
+    return () => {
+      currentMap.off('styledata', apply)
+    }
+  }, [showBarriers, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady || !currentMap.getLayer(BARRIER_SELECTED)) return
+    currentMap.setFilter(BARRIER_SELECTED, ['==', ['get', 'id'], selectedBarrier ?? ''])
+    // z refa: odświeżenie listy po przesunięciu mapy nie ma przesuwać jej znowu
+    const barrier = barriersRef.current.find((b) => b.id === selectedBarrier)
+    if (!barrier) return
+    if (barrier.geometry.length > 1) {
+      const bounds = new maplibregl.LngLatBounds()
+      barrier.geometry.forEach((p) => bounds.extend([p.lon, p.lat]))
+      currentMap.fitBounds(bounds, { padding: 140, maxZoom: 18, duration: 600 })
+    } else {
+      currentMap.easeTo({
+        center: [barrier.location.lon, barrier.location.lat],
+        zoom: Math.max(currentMap.getZoom(), 17),
+        duration: 600,
+      })
+    }
+  }, [selectedBarrier, mapReady])
 
   // Znaczniki instytucji: kropka + podpis z nazwą (jak na mapach Google)
   useEffect(() => {
