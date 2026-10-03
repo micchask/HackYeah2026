@@ -13,32 +13,39 @@ export type City = components['schemas']['CityConfig']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
-/** Gotowe zestawy preferencji. Nazwy opisują sprzęt, nie osobę. */
-export const PROFILE_PRESETS: Record<ProfileId, { label: string; preferences: RoutePreferences }> =
-  {
-    wheelchair: {
-      label: 'Wózek inwalidzki',
-      preferences: {
-        profile: 'wheelchair',
-        avoid_stairs: true,
-        max_incline_percent: 6,
-        max_kerb_height_cm: 2,
-        avoid_rough_surface: true,
-        prefer_lit_paths: false,
-      },
+export interface ProfilePreset {
+  label: string
+  description: string
+  preferences: RoutePreferences
+}
+
+/** Gotowe zestawy preferencji. Opisują sposób poruszania się, nie osobę. */
+export const PROFILE_PRESETS: Record<ProfileId, ProfilePreset> = {
+  wheelchair: {
+    label: 'Wózek inwalidzki',
+    description: 'Bez schodów, nachylenie do 6%, omija bruk i kocie łby.',
+    preferences: {
+      profile: 'wheelchair',
+      avoid_stairs: true,
+      max_incline_percent: 6,
+      max_kerb_height_cm: 2,
+      avoid_rough_surface: true,
+      prefer_lit_paths: false,
     },
-    stroller: {
-      label: 'Wózek dziecięcy',
-      preferences: {
-        profile: 'stroller',
-        avoid_stairs: true,
-        max_incline_percent: 10,
-        max_kerb_height_cm: 5,
-        avoid_rough_surface: true,
-        prefer_lit_paths: false,
-      },
+  },
+  stroller: {
+    label: 'Rodzina z wózkiem dziecięcym',
+    description: 'Bez schodów, nachylenie do 10%, krótki bruk jest akceptowalny.',
+    preferences: {
+      profile: 'stroller',
+      avoid_stairs: true,
+      max_incline_percent: 10,
+      max_kerb_height_cm: 5,
+      avoid_rough_surface: true,
+      prefer_lit_paths: false,
     },
-  }
+  },
+}
 
 export const DEFAULT_PREFERENCES: RoutePreferences = PROFILE_PRESETS.wheelchair.preferences
 

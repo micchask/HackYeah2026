@@ -1,4 +1,5 @@
 import type { LatLon } from '../api/client'
+import { PinIcon, SwapIcon } from './icons'
 
 export interface NamedPoint {
   label: string
@@ -23,10 +24,10 @@ interface Props {
   onSwap: () => void
 }
 
-function describe(p: NamedPoint | null) {
-  if (!p) return 'nie wybrano'
-  return p.label
-}
+const ROWS = [
+  { target: 'origin', letter: 'A', title: 'Start', empty: 'Wybierz punkt startu' },
+  { target: 'destination', letter: 'B', title: 'Cel', empty: 'Wybierz cel' },
+] as const
 
 /** Punkty A/B: gotowe trasy (dostępne z klawiatury) albo kliknięcie na mapie. */
 export function RoutePoints({
@@ -38,75 +39,72 @@ export function RoutePoints({
   onPreset,
   onSwap,
 }: Props) {
+  const values = { origin, destination }
+  const activePreset = presets.find(
+    (p) => p.origin === origin && p.destination === destination,
+  )?.label
+
   return (
-    <fieldset>
-      <legend>Skąd i dokąd</legend>
+    <fieldset className="route-points">
+      <legend className="card-title">Zaplanuj trasę</legend>
+
+      <div className="points">
+        <ol className="points-list">
+          {ROWS.map(({ target, letter, title, empty }) => {
+            const value = values[target]
+            const picking = pickTarget === target
+            return (
+              <li key={target} className={picking ? 'point-row picking' : 'point-row'}>
+                <span
+                  className={`point-badge point-badge-${letter.toLowerCase()}`}
+                  aria-hidden="true"
+                >
+                  {letter}
+                </span>
+                <span className="point-text">
+                  <span className="point-title">{title}</span>
+                  <span className={value ? 'point-value' : 'point-value empty'}>
+                    {picking ? 'Kliknij na mapie…' : (value?.label ?? empty)}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-pressed={picking}
+                  onClick={() => onPick(picking ? null : target)}
+                >
+                  <PinIcon size={18} />
+                  <span className="visually-hidden">Wskaż punkt {letter} na mapie</span>
+                </button>
+              </li>
+            )
+          })}
+        </ol>
+        <button
+          type="button"
+          className="icon-button swap-button"
+          onClick={onSwap}
+          disabled={!origin || !destination}
+        >
+          <SwapIcon size={18} />
+          <span className="visually-hidden">Zamień start i cel</span>
+        </button>
+      </div>
+
       <fieldset className="presets">
-        <legend className="presets-label">Gotowe trasy demo:</legend>
+        <legend className="presets-label">Szybki wybór – trasy demo</legend>
         {presets.map((preset) => (
           <button
             key={preset.label}
             type="button"
-            className="secondary"
+            className="chip"
+            aria-pressed={activePreset === preset.label}
             onClick={() => onPreset(preset)}
           >
             {preset.label}
           </button>
         ))}
       </fieldset>
-
-      <dl className="points">
-        <div>
-          <dt>
-            <span className="point-badge point-badge-a" aria-hidden="true">
-              A
-            </span>{' '}
-            Start
-          </dt>
-          <dd>{describe(origin)}</dd>
-        </div>
-        <div>
-          <dt>
-            <span className="point-badge point-badge-b" aria-hidden="true">
-              B
-            </span>{' '}
-            Cel
-          </dt>
-          <dd>{describe(destination)}</dd>
-        </div>
-      </dl>
-
-      <div className="presets">
-        <button
-          type="button"
-          className="secondary"
-          aria-pressed={pickTarget === 'origin'}
-          onClick={() => onPick(pickTarget === 'origin' ? null : 'origin')}
-        >
-          Wskaż A na mapie
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          aria-pressed={pickTarget === 'destination'}
-          onClick={() => onPick(pickTarget === 'destination' ? null : 'destination')}
-        >
-          Wskaż B na mapie
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={onSwap}
-          disabled={!origin || !destination}
-        >
-          Zamień A i B
-        </button>
-      </div>
-      {pickTarget && (
-        <p className="hint" aria-live="polite">
-          Kliknij na mapie, aby ustawić punkt {pickTarget === 'origin' ? 'A' : 'B'}.
-        </p>
-      )}
     </fieldset>
   )
 }
