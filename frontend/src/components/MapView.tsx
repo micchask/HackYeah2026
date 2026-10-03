@@ -46,7 +46,11 @@ interface Props {
   center: [number, number] // [lat, lon]
   zoom: number
   places: Place[]
+  /** Aktywny wariant, rysowany kolorami trudności i używany do wyboru odcinka. */
   route: RouteResponse | null
+  /** Wszystkie warianty; nieaktywne są rysowane szaro, każdy innym wzorem. */
+  routeVariants?: RouteResponse[]
+  selectedRoute?: number
   origin: LatLon | null
   destination: LatLon | null
   /** Miejsce zgłaszanej bariery (formularz „Zgłoś barierę”) */
@@ -81,6 +85,11 @@ interface Props {
 const HIT_PX = 6
 // Poniżej tego zoomu podpisy instytucji by się nakładały - zostają same kropki
 const LABEL_MIN_ZOOM = 14
+const OTHER_ROUTE_PATTERNS = [
+  [1, 1.4],
+  [3, 1.6],
+  [0.4, 1.2],
+]
 
 const BARRIER_LINES = 'barrier-lines'
 const BARRIER_SELECTED = 'barrier-selected'
@@ -218,6 +227,8 @@ export function MapView({
   zoom,
   places,
   route,
+  routeVariants = [],
+  selectedRoute = 0,
   origin,
   destination,
   reportPoint = null,
@@ -349,6 +360,7 @@ export function MapView({
     instance.on('load', () => {
       addBarrierLayers(instance)
       instance.addSource('baseline', { type: 'geojson', data: EMPTY })
+      instance.addSource('other-routes', { type: 'geojson', data: EMPTY })
       instance.addSource('route', { type: 'geojson', data: EMPTY })
       instance.addLayer({
         id: 'baseline',
@@ -361,6 +373,21 @@ export function MapView({
           'line-opacity': 0.75,
           'line-dasharray': [1, 1.6],
         },
+      })
+      OTHER_ROUTE_PATTERNS.forEach((pattern, index) => {
+        instance.addLayer({
+          id: `route-other-${index}`,
+          type: 'line',
+          source: 'other-routes',
+          filter: ['==', ['get', 'variant'], index],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#59636f',
+            'line-width': 5,
+            'line-opacity': 0.72,
+            'line-dasharray': pattern,
+          },
+        })
       })
       instance.addLayer({
         id: 'route-casing',
@@ -463,6 +490,7 @@ export function MapView({
     if (!currentMap || !mapReady) return
 
     const draw = () => {
+      const displayedRoutes = routeVariants.length ? routeVariants : route ? [route] : []
       const routeData: GeoJSONData = {
         type: 'FeatureCollection',
         features:
@@ -474,6 +502,21 @@ export function MapView({
               coordinates: segment.geometry.map((p) => [p.lon, p.lat]),
             },
           })) ?? [],
+      }
+      const otherRoutesData: GeoJSONData = {
+        type: 'FeatureCollection',
+        features: displayedRoutes.flatMap((variant, variantIndex) =>
+          variantIndex === selectedRoute
+            ? []
+            : variant.segments.map((segment) => ({
+                type: 'Feature',
+                properties: { variant: variantIndex },
+                geometry: {
+                  type: 'LineString',
+                  coordinates: segment.geometry.map((p) => [p.lon, p.lat]),
+                },
+              })),
+        ),
       }
       const baselineData: GeoJSONData =
         route?.baseline && !route.is_mock
@@ -492,10 +535,11 @@ export function MapView({
             }
           : EMPTY
       ;(currentMap.getSource('route') as maplibregl.GeoJSONSource).setData(routeData)
+      ;(currentMap.getSource('other-routes') as maplibregl.GeoJSONSource).setData(otherRoutesData)
       ;(currentMap.getSource('baseline') as maplibregl.GeoJSONSource).setData(baselineData)
 
       const coords = [
-        ...(route?.segments.flatMap((s) => s.geometry) ?? []),
+        ...displayedRoutes.flatMap((variant) => variant.segments.flatMap((s) => s.geometry)),
         ...(route?.baseline?.geometry ?? []),
       ]
       if (coords.length > 1) {
@@ -506,7 +550,7 @@ export function MapView({
     }
 
     draw()
-  }, [route, mapReady])
+  }, [route, routeVariants, selectedRoute, mapReady])
 
   useEffect(() => {
     const currentMap = map.current

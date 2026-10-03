@@ -59,6 +59,8 @@ describe('RouteAlternatives', () => {
     expect(screen.getByRole('radio', { name: /Najbardziej dostępna/ })).toBeChecked()
     expect(screen.getByText('Najkrótsza trasa piesza')).toBeInTheDocument()
     expect(screen.getByText('Krócej, ale przez schody.')).toBeInTheDocument()
+    expect(screen.getByText(/dostępność 90\/100 · pewność danych 80%/)).toBeInTheDocument()
+    expect(screen.getByText(/dostępność 50\/100 · pewność danych 70%/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: /Najkrótsza trasa piesza/ }))
     expect(onChange).toHaveBeenCalledWith(1)

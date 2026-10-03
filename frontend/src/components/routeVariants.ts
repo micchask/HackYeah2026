@@ -1,5 +1,23 @@
 import type { RouteResponse, RouteSegment } from '../api/client'
 
+export interface RouteVariant {
+  index: number
+  label: string
+  route: RouteResponse
+}
+
+/** Jedna lista wariantów współdzielona przez wybór, tabelę porównawczą i mapę. */
+export function buildRouteVariants(route: RouteResponse): RouteVariant[] {
+  return [
+    { index: 0, label: 'Najbardziej dostępna', route },
+    ...(route.alternatives ?? []).map((alternative, index) => ({
+      index: index + 1,
+      label: alternative.label,
+      route: routeForVariant(route, index + 1),
+    })),
+  ]
+}
+
 /** Buduje pełny widok wybranego wariantu, aby wszystkie części UI pokazywały tę samą trasę. */
 export function routeForVariant(route: RouteResponse, selected: number): RouteResponse {
   if (selected === 0) return route
@@ -21,8 +39,7 @@ export function routeForVariant(route: RouteResponse, selected: number): RouteRe
 }
 
 export function selectedVariantLabel(route: RouteResponse, selected: number): string {
-  if (selected === 0) return 'Twoja trasa'
-  return route.alternatives?.[selected - 1]?.label ?? 'Twoja trasa'
+  return buildRouteVariants(route)[selected]?.label ?? 'Najbardziej dostępna'
 }
 
 function aggregateScores(segments: RouteSegment[]): [number, number] {

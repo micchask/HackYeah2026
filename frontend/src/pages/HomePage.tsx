@@ -32,7 +32,7 @@ import {
   type Preset,
 } from '../components/RoutePoints'
 import { RouteSummary } from '../components/RouteSummary'
-import { routeForVariant, selectedVariantLabel } from '../components/routeVariants'
+import { buildRouteVariants, selectedVariantLabel } from '../components/routeVariants'
 
 const CITY = 'krakow'
 // Tyle miejsc naraz trafia na mapę - więcej spowalnia mapę i czytnik ekranu
@@ -292,10 +292,19 @@ export function HomePage() {
           : null
   // useMemo: nowy obiekt przy każdym renderze = mapa w kółko dopasowuje widok do trasy,
   // a przesunięcie mapy (obszar dla listy miejsc, środek dla wyszukiwarki) renderuje stronę od nowa
-  const activeRoute = useMemo(
-    () => (route ? routeForVariant(route, selectedVariant) : null),
-    [route, selectedVariant],
+  const availableRoutes = useMemo(() => (route ? buildRouteVariants(route) : []), [route])
+  const routeVariantResponses = useMemo(
+    () => availableRoutes.map((variant) => variant.route),
+    [availableRoutes],
   )
+  const otherRoutes = useMemo(
+    () =>
+      availableRoutes
+        .filter((variant) => variant.index !== selectedVariant)
+        .map((variant) => ({ index: variant.index, label: variant.label })),
+    [availableRoutes, selectedVariant],
+  )
+  const activeRoute = availableRoutes[selectedVariant]?.route ?? null
 
   // Środek odcinka zaznaczonego w opisie trasy - można go użyć jako miejsca zgłoszenia
   const segmentPoint = useMemo<NamedPoint | null>(() => {
@@ -384,6 +393,8 @@ export function HomePage() {
               <RouteSummary
                 route={activeRoute}
                 heading={selectedVariantLabel(route, selectedVariant)}
+                comparisonRoute={route}
+                selectedVariant={selectedVariant}
                 onSelectSegment={setSelected}
               />
               <RouteDescription route={activeRoute} selected={selected} onSelect={setSelected} />
@@ -434,6 +445,8 @@ export function HomePage() {
           zoom={14}
           places={places}
           route={activeRoute}
+          routeVariants={routeVariantResponses}
+          selectedRoute={selectedVariant}
           origin={origin?.point ?? null}
           destination={destination?.point ?? null}
           reportPoint={reportPoint?.point ?? null}
@@ -484,6 +497,7 @@ export function HomePage() {
             showRoute={!!route}
             showBaseline={!!route?.baseline && !route.is_mock}
             showInstitutions={institutions.length > 0}
+            otherRoutes={otherRoutes}
             showBarriers={showBarriers && barriers.length > 0}
           />
         )}
