@@ -1,0 +1,7 @@
+# Każdy PR wymaga review. Podmień na loginy osób odpowiedzialnych za obszar.
+*                       @micchask
+/backend/app/providers/ @micchask
+/backend/app/routing/   @micchask
+/backend/app/api/       @micchask
+/frontend/              @micchask
+/docs/                  @micchask

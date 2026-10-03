@@ -1,0 +1,10 @@
+{
+  "name": "HackYeah2026 – dostępne trasy",
+  "short_name": "Trasy",
+  "lang": "pl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5cad",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

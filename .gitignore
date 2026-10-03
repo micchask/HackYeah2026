@@ -147,3 +147,22 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- Frontend ---
+dist/
+
+# --- Dane (surowe pliki i cache providerów/grafu) ---
+data/*
+!data/README.md
+
+# --- System / IDE ---
+.DS_Store
+.idea/

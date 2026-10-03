@@ -1,0 +1,47 @@
+"""Ładowanie konfiguracji miast z backend/cities/*.yaml."""
+
+from functools import lru_cache
+from typing import Any
+
+import yaml
+from pydantic import BaseModel, Field
+
+from app.config import get_settings
+
+
+class ProviderConfig(BaseModel):
+    name: str
+    enabled: bool = True
+    options: dict[str, Any] = Field(default_factory=dict)
+
+
+class RoutingConfig(BaseModel):
+    network_type: str = "walk"
+
+
+class CityConfig(BaseModel):
+    id: str
+    name: str
+    country: str
+    timezone: str
+    bbox: tuple[float, float, float, float]  # south, west, north, east
+    center: tuple[float, float]  # lat, lon
+    default_zoom: int = 13
+    providers: list[ProviderConfig] = Field(default_factory=list)
+    routing: RoutingConfig = Field(default_factory=RoutingConfig)
+
+
+@lru_cache
+def load_cities() -> dict[str, CityConfig]:
+    cities: dict[str, CityConfig] = {}
+    for path in sorted(get_settings().cities_dir.glob("*.yaml")):
+        city = CityConfig.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+        cities[city.id] = city
+    return cities
+
+
+def get_city(city_id: str) -> CityConfig:
+    cities = load_cities()
+    if city_id not in cities:
+        raise KeyError(f"Nieznane miasto: {city_id}. Dostępne: {', '.join(cities)}")
+    return cities[city_id]

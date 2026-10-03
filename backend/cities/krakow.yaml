@@ -1,0 +1,38 @@
+# Konfiguracja miasta. Nowe miasto = nowy plik w tym katalogu (bez if-ów w kodzie).
+id: krakow
+name: Kraków
+country: PL
+timezone: Europe/Warsaw
+
+# [south, west, north, east] w WGS84
+bbox: [49.97, 19.79, 50.13, 20.22]
+center: [50.0614, 19.9366]
+default_zoom: 13
+
+# Kolejność ma znaczenie: przy konfliktach wyżej = większe zaufanie bazowe
+# (patrz app/normalization/merge.py). Każdy wpis to klasa z app/providers/.
+providers:
+  - name: osm
+    enabled: true
+    options:
+      overpass_url: https://overpass-api.de/api/interpreter
+      timeout_s: 60
+
+  - name: krakow_open_data
+    enabled: false # TODO(dane): uzupełnić URL-e zbiorów z portalu otwartych danych Krakowa
+    options:
+      datasets: []
+
+  - name: msip
+    enabled: false # TODO(dane): MSIP Kraków (WMS/WFS) - warstwy chodników, przejść, schodów
+    options:
+      wfs_url: ""
+      layers: []
+
+  - name: user_reports
+    enabled: true
+    options: {}
+
+routing:
+  # Graf pieszy z OSM (osmnx), cache'owany w data/cache/<city>/graph.graphml
+  network_type: walk
