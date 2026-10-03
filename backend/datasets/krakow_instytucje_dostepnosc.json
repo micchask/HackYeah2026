@@ -1,0 +1,955 @@
+[
+  {
+    "id": "teatr-kto",
+    "institution": "Teatr KTO",
+    "address": "ul. Zamoyskiego 50, Kraków",
+    "poiType": "teatr",
+    "attributes": [
+      {
+        "category": "wejscie",
+        "value": "z poziomu chodnika, bez barier",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "krawezniki",
+        "value": "obniżony krawężnik umożliwiający wjazd wózkiem (brak przejścia dla pieszych w pobliżu)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "parking",
+        "value": "miejsce typu 'koperta' ok. 50 m od wejścia",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "toaleta",
+        "value": "dostępna, osobna dla osób z niepełnosprawnościami",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "bariery_progowe_poziom_0",
+        "value": "brak barier progowych, dostosowane do wózków",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "oznaczenia_kontrastowe",
+        "value": "brak oznaczenia kontrastowego wejścia do sali",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "petla_indukcyjna",
+        "value": "brak",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "brak możliwości tłumaczenia na język migowy (na miejscu i online)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "oznaczenia_brajl",
+        "value": "brak oznaczeń Braille'a, kontrastowych i druku powiększonego",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "zdmk-centralna",
+    "institution": "Zarząd Dróg Miasta Krakowa — siedziba główna",
+    "address": "ul. Centralna, budynki A i B, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "wejscie_glowne",
+        "value": "po kilku stopniach (schody)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "wejscie_boczne",
+        "value": "dostosowane dla osób z niepełnosprawnością ruchową",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "podjazd",
+        "value": "w remoncie",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty",
+        "note": "TYMCZASOWA niedostępność — dobry przykład danych nieaktualnych/w zmianie"
+      },
+      {
+        "category": "winda",
+        "value": "brak, dostępny tylko parter",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "toaleta",
+        "value": "dostępna, parter budynków A i B, z systemem przywoławczym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "parking_niepelnosprawni",
+        "value": "4 miejsca w pobliżu podjazdu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "petla_indukcyjna",
+        "value": "tylko budynek A",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "po wcześniejszym zgłoszeniu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "oznaczenia_niewidomi",
+        "value": "budynek nie przystosowany",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "dojazd_transportem",
+        "value": "przystanek autobusowy (ul. Nowohucka) ok. 400 m",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "zdmk-spp-reymonta",
+    "institution": "ZDMK — Biuro Strefy Płatnego Parkowania",
+    "address": "ul. Reymonta 20, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "wejscie",
+        "value": "z poziomu terenu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "toaleta",
+        "value": "brak toalet dla interesantów",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "stanowiska_kasa",
+        "value": "dostosowane do obsługi osób na wózkach",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "petla_indukcyjna",
+        "value": "tak",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "po wcześniejszym zgłoszeniu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "parking_niepelnosprawni",
+        "value": "brak w bezpośrednim sąsiedztwie",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "dojazd_transportem",
+        "value": "przystanek tramwajowy (al. 3-go Maja) ok. 300 m",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "zdmk-galicyjska",
+    "institution": "ZDMK — wynajmowana część budynku",
+    "address": "ul. Galicyjska 1, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "wejscie",
+        "value": "jedno wejście główne, dostosowane dla niepełnosprawnych",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "winda",
+        "value": "dostosowana (barierki, lustra, system przyzywowy); NIE do ewakuacji pożarowej",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "toaleta",
+        "value": "dostosowana dla osób z niepełnosprawnościami",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "mk-krzysztofory",
+    "institution": "Muzeum Krakowa — Pałac Krzysztofory",
+    "address": "Rynek Główny 35 (wejście także od ul. Szczepańskiej 2), Kraków",
+    "poiType": "muzeum",
+    "attributes": [
+      {
+        "category": "trasa",
+        "value": "wolna od przeszkód architektonicznych",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "winda",
+        "value": "2 windy osobowe (skrzydła A, B) + winda administracyjna (skrzydło C); zapowiedzi głosowe, przyciski Braille",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "platforma",
+        "value": "platforma do podziemi, piętro -1, udźwig max 160 kg; platforma przy wejściu administracyjnym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "toaleta",
+        "value": "dostępna: hol parter (skrzydło A) oraz I piętro",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "petla_indukcyjna",
+        "value": "w kasie (Centrum Obsługi Zwiedzających)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "linie_naprowadzajace",
+        "value": "tak — hol, szatnia, sklep muzealny, wystawa stała",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "wozek_do_wypozyczenia",
+        "value": "tak, na miejscu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "parking_niepelnosprawni",
+        "value": "ul. Szczepańska, strefa płatna, abonament typu N bez opłat",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "możliwość zwiedzania z tłumaczem po wcześniejszym zgłoszeniu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "przewijak",
+        "value": "I piętro, skrzydło A, przy Sali Fontanowskiej",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "mk-stara-synagoga",
+    "institution": "Muzeum Krakowa — Stara Synagoga",
+    "address": "ul. Szeroka 24, Kraków",
+    "poiType": "muzeum",
+    "attributes": [
+      {
+        "category": "trasa",
+        "value": "budynek z barierami architektonicznymi",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "wejscie",
+        "value": "kilkanaście schodów w dół do placu przed budynkiem; brak windy/podjazdu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "winda",
+        "value": "brak",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "toaleta",
+        "value": "brak toalety dla osób z niepełnosprawnościami",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "parking_niepelnosprawni",
+        "value": "brak na miejscu; najbliższe płatne: Szeroka 15/30/38, abonament N bez opłat",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "możliwość zwiedzania z tłumaczem po wcześniejszym zgłoszeniu",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "mk-fabryka-schindlera",
+    "institution": "Muzeum Krakowa — Fabryka Emalia Oskara Schindlera",
+    "address": "ul. Lipowa 4, Kraków",
+    "poiType": "muzeum",
+    "attributes": [
+      {
+        "category": "winda",
+        "value": "tak, kabina 1,1x2,2 m, udźwig 1000 kg, przyciski Braille",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "nawierzchnia",
+        "value": "zmieniająca się na wystawie",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "toaleta",
+        "value": "dostępna, parter, obok kasy",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "petla_indukcyjna",
+        "value": "w kasie",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "tlumacz_migowy",
+        "value": "oprowadzanie w PJM przez przewodnika Głuchego lub tłumaczenie na zamówienie",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "pies_asystujacy",
+        "value": "dozwolony",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      },
+      {
+        "category": "przewijak",
+        "value": "parter, obok kasy",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": "2026-03-31",
+        "confidence": 0.95,
+        "status": "potwierdzone"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-magistrat",
+    "institution": "Urząd Miasta Krakowa — Magistrat (Kancelaria Prezydenta)",
+    "address": "plac Wszystkich Świętych 3-4, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "platforma przyschodowa w klatce F; WC przystosowane; obsługa w języku migowym; możliwość zejścia urzędnika do osoby z niepełnosprawnością",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-geodezja",
+    "institution": "Urząd Miasta Krakowa — Wydział Geodezji",
+    "address": "ul. Grunwaldzka 8, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podjazd; WC przystosowane; obsługa w języku migowym; dostępny schodołaz; możliwość zejścia urzędnika",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-skarb",
+    "institution": "Urząd Miasta Krakowa — Wydział Skarbu Miasta",
+    "address": "ul. Kasprowicza 29, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "WC przystosowane; obsługa w języku migowym; możliwość zejścia urzędnika; winda bezpośrednio z podwórka",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-stachowicza",
+    "institution": "Urząd Miasta Krakowa — Krakowskie Centrum Świadczeń / Wydział Edukacji i Projektów Edukacyjnych",
+    "address": "ul. Stachowicza 18, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podjazd od dziedzińca wewnętrznego; winda; WC przystosowane; obsługa w języku migowym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-rynek-podgorski-1",
+    "institution": "Urząd Miasta Krakowa — Wydział Mieszkalnictwa / Wydział Środowiska, Klimatu i Powietrza",
+    "address": "Rynek Podgórski 1, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podjazd; wideodomofon; szeroka winda; WC przystosowane na parterze",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-rynek-podgorski-2",
+    "institution": "Urząd Miasta Krakowa — jednostki UMK (budynek nr 2)",
+    "address": "Rynek Podgórski 2, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "budynek architektonicznie bardzo trudny; wiele ciągów schodowych; BRAK dostosowania",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-wielicka-28a",
+    "institution": "Urząd Miasta Krakowa — Wydział Ewidencji Pojazdów i Kierowców / Spraw Administracyjnych / Podatków i Opłat / PINB",
+    "address": "ul. Wielicka 28A, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podjazd; winda; WC przystosowane",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-zgody-2",
+    "institution": "Urząd Miasta Krakowa — Urząd Stanu Cywilnego i inne wydziały",
+    "address": "os. Zgody 2, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podjazd; winda; WC przystosowane; obsługa w języku migowym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-wielopole-17a",
+    "institution": "Urząd Miasta Krakowa — Wydział Kultury / Gospodarki Komunalnej / ds. Dzielnic",
+    "address": "ul. Wielopole 17a, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny schodołaz; obsługa w języku migowym; możliwość zejścia urzędnika",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-powstania-warszawskiego-10",
+    "institution": "Urząd Miasta Krakowa — Wydziały + ZIS + Kancelaria Prezydenta",
+    "address": "al. Powstania Warszawskiego 10, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dwa podjazdy; winda; WC przystosowane; obsługa w języku migowym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-lubelska",
+    "institution": "Urząd Miasta Krakowa — Urząd Stanu Cywilnego",
+    "address": "ul. Lubelska 27 i 29, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny schodołaz; WC przystosowane; obsługa w języku migowym; możliwość zejścia urzędnika",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-jozefinska",
+    "institution": "Urząd Miasta Krakowa — Miejski Ośrodek Pomocy Społecznej",
+    "address": "ul. Józefińska 14, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "BRAK SZCZEGÓŁÓW w tym dokumencie — odsyła do osobnej strony BIP MOPS",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-centrum-c10",
+    "institution": "Urząd Miasta Krakowa — Punkt NPP",
+    "address": "os. Centrum C 10, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "platforma przyschodowa; podjazd od strony portierni",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-sarego-4",
+    "institution": "Urząd Miasta Krakowa — Wydział Kontroli Wewnętrznej i Ewidencji Mienia / Organizacji i Nadzoru",
+    "address": "ul. Sarego 4, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "schodołaz; WC przystosowane; możliwość zejścia urzędnika",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-dekerta-24",
+    "institution": "Urząd Miasta Krakowa — Wydział Polityki Społecznej, Równości i Zdrowia",
+    "address": "ul. Dekerta 24, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "winda; WC przystosowane; obsługa w języku migowym",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-wielopole-1",
+    "institution": "Urząd Miasta Krakowa — Wydział Gospodarki Komunalnej i Infrastruktury",
+    "address": "ul. Wielopole 1, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "winda JEST; WC NIEPRZYSTOSOWANE; wejście do budynku NIEPRZYSTOSOWANE — dostępność częściowa",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-mogilska-41",
+    "institution": "Urząd Miasta Krakowa — Wydział Architektury i Urbanistyki / Planowania Przestrzennego",
+    "address": "ul. Mogilska 41, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "winda; WC przystosowane; pętle indukcyjne",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-nowohucka-1",
+    "institution": "Urząd Miasta Krakowa — Wydział Podatków i Opłat",
+    "address": "ul. Nowohucka 1, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "WC przystosowane; pętle indukcyjne",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-bora-komorowskiego-41",
+    "institution": "Urząd Miasta Krakowa — Wydział Ewidencji Pojazdów i Kierowców (lokal)",
+    "address": "ul. Bora-Komorowskiego 41, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny (bez dalszych szczegółów w dokumencie)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-kamienskiego-11",
+    "institution": "Urząd Miasta Krakowa — Wydział Ewidencji Pojazdów i Kierowców (lokal)",
+    "address": "ul. Kamieńskiego 11, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny (bez dalszych szczegółów w dokumencie)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-stawowa-61",
+    "institution": "Urząd Miasta Krakowa — Wydział Ewidencji Pojazdów i Kierowców / Spraw Administracyjnych (lokal)",
+    "address": "ul. Stawowa 61, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny (bez dalszych szczegółów w dokumencie)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-wadowicka-8w",
+    "institution": "Urząd Miasta Krakowa — Urząd Stanu Cywilnego (lokal)",
+    "address": "ul. Wadowicka 8W, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny (bez dalszych szczegółów w dokumencie)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-zablocie-22",
+    "institution": "Urząd Miasta Krakowa — Wydział ds. Przedsiębiorczości i Innowacji",
+    "address": "ul. Zabłocie 22, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "podnośnik pionowy przed wejściem; winda; WC przystosowane",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-bracka-10",
+    "institution": "Urząd Miasta Krakowa — Wydział ds. Turystyki",
+    "address": "ul. Bracka 10, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "BRAK dostosowania na miejscu — kontakt telefoniczny i spotkanie w Magistracie (pl. Wszystkich Świętych 3-4)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  },
+  {
+    "id": "umk-slawka-10",
+    "institution": "Urząd Miasta Krakowa — Wydział Sportu",
+    "address": "ul. Walerego Sławka 10, Kraków",
+    "poiType": "urząd",
+    "attributes": [
+      {
+        "category": "opis_dostepnosci",
+        "value": "dostępny (bez dalszych szczegółów w dokumencie)",
+        "source": "Deklaracja dostępności (BIP)",
+        "lastVerified": null,
+        "confidence": 0.75,
+        "status": "potwierdzone_brak_daty"
+      }
+    ],
+    "geometry": null
+  }
+]
