@@ -257,7 +257,12 @@ export function HomePage() {
         : activeTarget === 'report'
           ? '!'
           : null
-  const activeRoute = route ? routeForVariant(route, selectedVariant) : null
+  // useMemo: nowy obiekt przy każdym renderze = mapa w kółko dopasowuje widok do trasy,
+  // a przesunięcie mapy (obszar dla listy miejsc, środek dla wyszukiwarki) renderuje stronę od nowa
+  const activeRoute = useMemo(
+    () => (route ? routeForVariant(route, selectedVariant) : null),
+    [route, selectedVariant],
+  )
 
   // Środek odcinka zaznaczonego w opisie trasy - można go użyć jako miejsca zgłoszenia
   const segmentPoint = useMemo<NamedPoint | null>(() => {
