@@ -24,6 +24,7 @@ export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
 export type Institution = components['schemas']['Institution']
 export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
+export type SearchResult = components['schemas']['SearchResult']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -104,6 +105,15 @@ export const api = {
   reverseGeocode: (point: LatLon, city: string, signal?: AbortSignal) =>
     request<GeocodeResult | null>(
       `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
+      { signal },
+    ),
+  search: (q: string, city: string, near: LatLon | null, signal?: AbortSignal) =>
+    request<SearchResult[]>(
+      `/search?${new URLSearchParams({
+        q,
+        city,
+        ...(near ? { lat: String(near.lat), lon: String(near.lon) } : {}),
+      })}`,
       { signal },
     ),
   institutions: (city: string) =>
