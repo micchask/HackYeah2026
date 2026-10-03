@@ -1091,6 +1091,234 @@ button.step-body:hover {
   }
 }
 
+/* ---------- instytucje publiczne ---------- */
+
+.legend-dot {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+  vertical-align: middle;
+}
+
+/* znacznik na mapie: kropka + podpis z nazwą */
+.inst-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.inst-marker-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: #00707a;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+}
+.inst-marker-label {
+  max-width: 14rem;
+  overflow: hidden;
+  color: #0b3d42;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* biała obwódka tekstu - czytelny na każdym podkładzie */
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 3px #fff;
+}
+.inst-marker:hover .inst-marker-label {
+  text-decoration: underline;
+}
+.inst-marker[aria-pressed='true'] .inst-marker-dot {
+  width: 18px;
+  height: 18px;
+  margin-left: -2px;
+  background: #0b3d42;
+  box-shadow: 0 0 0 3px var(--focus);
+}
+.map[data-labels='off'] .inst-marker-label {
+  display: none;
+}
+
+/* okienko przy punkcie */
+.institution-popup-wrap .maplibregl-popup-content {
+  padding: 0.75rem 0.9rem 0.8rem;
+  color: var(--text);
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.institution-popup-wrap .maplibregl-popup-close-button {
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  color: var(--muted);
+}
+.institution-popup h2 {
+  margin: 0 1.6rem 0.2rem 0;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+.institution-popup h2:focus {
+  outline: none;
+}
+.institution-popup h2:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.institution-popup h3 {
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.institution-popup .meta {
+  margin: 0 0 0.4rem;
+}
+.institution-kind {
+  margin: 0 0 0.15rem;
+  color: #00707a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.institution-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  margin-top: 0.5rem;
+}
+.institution-more {
+  /* górna część okienka (nazwa, adres, przyciski) zajmuje ok. 15rem - reszta mapy na szczegóły */
+  max-height: max(6rem, min(24rem, calc(var(--map-h, 70vh) - 15rem)));
+  margin-top: 0.5rem;
+  padding-right: 0.25rem;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+.institution-more .callout {
+  margin-top: 0.5rem;
+}
+.institution-attribute {
+  border-top: 1px solid var(--border);
+}
+.institution-attribute:first-child {
+  border-top: none;
+}
+.institution-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+/* lista w panelu - wybór z klawiatury */
+.institution-list summary {
+  min-height: 32px;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.institution-list ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.institution-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.institution-button:hover {
+  border-color: var(--accent);
+}
+.institution-button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.institution-button .meta {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+/* "dzióbek" okienka w kolorze tła (także w trybie ciemnym) */
+.institution-popup-wrap.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.institution-popup-wrap.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.institution-popup-wrap.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--surface);
+}
+.institution-popup-wrap.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.institution-popup-wrap.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.institution-popup-wrap.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--surface);
+}
+.institution-popup-wrap.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--surface);
+}
+.institution-popup-wrap.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--surface);
+}
+
+/* "Więcej informacji" - wyraźny przycisk na całą szerokość okienka */
+.more-button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--accent-text);
+  font-weight: 700;
+  text-align: left;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+}
+.more-button:hover {
+  background: var(--accent-strong);
+}
+.more-button span {
+  flex: 1;
+}
+.more-chevron {
+  transition: transform 0.2s;
+}
+.more-button[aria-expanded='true'] {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.more-button[aria-expanded='true'] .more-chevron {
+  transform: rotate(180deg);
+}
+
 /* ---------- zgłoś barierę ---------- */
 
 .point-marker-report {

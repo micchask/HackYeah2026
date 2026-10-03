@@ -38,6 +38,22 @@ export function PreferencesForm({ value, onChange }: Props) {
         value={value.max_incline_percent}
         onChange={(e) => set({ max_incline_percent: Number(e.target.value) })}
       />
+      <label htmlFor="max-kerb">
+        Maksymalna wysokość krawężnika: {value.max_kerb_height_cm ?? 3} cm
+      </label>
+      <input
+        id="max-kerb"
+        type="range"
+        min={0}
+        max={15}
+        step={1}
+        value={value.max_kerb_height_cm ?? 3}
+        aria-describedby="max-kerb-hint"
+        onChange={(e) => set({ max_kerb_height_cm: Number(e.target.value) })}
+      />
+      <p id="max-kerb-hint" className="meta">
+        Obniżony krawężnik przy przejściu ma ok. 2 cm, zwykły ok. 10 cm.
+      </p>
     </fieldset>
   )
 }
