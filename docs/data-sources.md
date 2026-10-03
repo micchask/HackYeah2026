@@ -2,7 +2,7 @@
 
 | Źródło | Provider | Typ | Licencja | Status | Co daje |
 |---|---|---|---|---|---|
-| OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy |
+| OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy, krawężniki (węzły `barrier=kerb` / `kerb=*` / `kerb:height`) |
 | Kraków – otwarte dane | `krakow_open_data` | pliki/API | TODO | stub | TODO: wybrać zbiory |
 | MSIP Kraków | `msip` | WMS/WFS | TODO | stub | TODO: chodniki, przejścia, schody |
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |
@@ -17,6 +17,14 @@
 3. Wpis w `backend/cities/krakow.yaml` (`providers:`).
 4. Test parsowania na zapisanej próbce odpowiedzi (bez sieci) w `backend/tests/`.
 5. Uzupełnij tę tabelę (licencja!).
+
+## Krawężniki w grafie
+
+Krawężnik jest w OSM **węzłem** (`barrier=kerb`, `kerb=raised|lowered|flush|rolled`, czasem `kerb:height`),
+a nie drogą. `routing/graph.py` (`add_kerbs`) przenosi go na krawędzie, które dotykają tego węzła:
+`kerb_height_cm` (raised ≈ 10, rolled ≈ 6, lowered ≈ 2, flush/no = 0) albo `kerb_unknown`, gdy wysokości brak.
+Za wysoki krawężnik dla profilu = krawędź nieprzejezdna, nieznana wysokość = kara za niepewność.
+W obszarze demo (3.10.2026): 183 węzły, w większości `lowered` i `flush`, tylko 2 `raised`, 26 bez wysokości.
 
 ## Confidence bazowe
 
