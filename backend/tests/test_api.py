@@ -32,6 +32,9 @@ def test_route_mock(client):
     assert 0 <= data["confidence"] <= 1
     assert all(0 <= s["accessibility_score"] <= 100 for s in data["segments"])
     assert all(0 <= s["confidence"] <= 1 for s in data["segments"])
+    assert isinstance(data, dict)
+    assert data["explanation"]
+    assert data["alternatives"] == []
 
 
 def test_create_report(client):

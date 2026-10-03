@@ -12,6 +12,7 @@ const route: RouteResponse = {
   confidence: 0.68,
   is_mock: true,
   warnings: [],
+  explanation: 'Trasa przykładowa.',
   segments: [
     {
       instruction: 'Idź prosto',

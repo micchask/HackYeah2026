@@ -4,6 +4,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from app.models.accessibility import AttributeStatus
+from app.models.barrier import RouteBarrier
 from app.models.geo import LatLon
 
 
@@ -66,6 +67,9 @@ class RouteSegment(BaseModel):
         default=None,
         description="Najstarsza data weryfikacji w terenie (OSM check_date); brak = brak",
     )
+    barriers: list[RouteBarrier] = Field(
+        default_factory=list, description="Bariery na odcinku (schody, krawężnik, bruk…)"
+    )
 
 
 class RouteBaseline(BaseModel):
@@ -75,6 +79,19 @@ class RouteBaseline(BaseModel):
     stairs_count: int
     rough_surface_m: float
     geometry: list[LatLon]
+
+
+class RouteAlternative(BaseModel):
+    """Pełna alternatywa trasy, gotowa do pokazania obok trasy głównej."""
+
+    label: str
+    distance_m: float
+    duration_s: float
+    stairs_count: int
+    rough_surface_m: float
+    geometry: list[LatLon]
+    segments: list[RouteSegment]
+    explanation: str
 
 
 class RouteResponse(BaseModel):
@@ -97,3 +114,5 @@ class RouteResponse(BaseModel):
     rough_surface_m: float | None = None
     stairs_count: int | None = None
     baseline: RouteBaseline | None = None
+    explanation: str
+    alternatives: list[RouteAlternative] = Field(default_factory=list)
