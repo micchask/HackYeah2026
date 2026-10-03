@@ -745,6 +745,48 @@ button.step-body:hover {
   background: var(--accent);
 }
 
+/* panel szczegółów wybranego odcinka */
+.segment-details {
+  margin: 0.2rem 0 0.6rem;
+  padding: 0.7rem 0.8rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.segment-details dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.6rem;
+}
+.segment-details .wide {
+  grid-column: 1 / -1;
+}
+.segment-details dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.segment-details dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.link-button {
+  min-height: 32px;
+  padding: 0.2rem 0;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 /* ---------- miejsca ---------- */
 
 .places {

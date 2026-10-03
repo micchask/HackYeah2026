@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from app.models import (
@@ -102,8 +103,10 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
         raise NoRouteError from exc
     edges = path_edges(graph, path, profile)
     grouped = _group(edges, city_graph)
+    fetched_at = graph_fetched_at(graph.graph)
     segments = [
-        _to_segment(seg, profile, grouped[i - 1] if i else None) for i, seg in enumerate(grouped)
+        _to_segment(seg, profile, grouped[i - 1] if i else None, fetched_at)
+        for i, seg in enumerate(grouped)
     ]
 
     distance = sum(s.distance_m for s in segments)
@@ -253,7 +256,9 @@ def _turn(prev: _Segment, seg: _Segment) -> str:
     return "Zawróć"
 
 
-def _to_segment(seg: _Segment, profile: RoutingProfile, prev: _Segment | None) -> RouteSegment:
+def _to_segment(
+    seg: _Segment, profile: RoutingProfile, prev: _Segment | None, fetched_at: datetime | None
+) -> RouteSegment:
     length = seg.length
     street, steps = seg.key
     difficulty = _segment_difficulty(seg.edges)
@@ -283,6 +288,8 @@ def _to_segment(seg: _Segment, profile: RoutingProfile, prev: _Segment | None) -
         data_status=AttributeStatus.UNVERIFIED,
         confidence=data_confidence(seg.edges),
         sources=["OpenStreetMap"],
+        fetched_at=fetched_at,
+        last_verified=last_verified(seg.edges),
     )
 
 
@@ -320,6 +327,29 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
     if unknown >= 30:
         warnings.append(f"Brak danych o nawierzchni na {round(unknown)} m.")
     return warnings
+
+
+def graph_fetched_at(meta: dict[str, Any]) -> datetime | None:
+    """Data pobrania grafu z OSM (osmnx zapisuje ją w `created_date`, czas UTC)."""
+    try:
+        return datetime.fromisoformat(str(meta["created_date"])).replace(tzinfo=UTC)
+    except (KeyError, ValueError):
+        return None
+
+
+def last_verified(edges: list[dict[str, Any]]) -> datetime | None:
+    """Najstarszy `check_date` odcinka; None, gdy choć jedna krawędź go nie ma."""
+    dates = []
+    for e in edges:
+        raw = tag(e, "check_date")
+        if not raw:
+            return None
+        try:
+            # OSM dopuszcza też samo "2024-05"
+            dates.append(datetime.fromisoformat(str(raw) + ("-01" if len(str(raw)) == 7 else "")))
+        except ValueError:
+            return None
+    return min(dates).replace(tzinfo=UTC) if dates else None
 
 
 # --- statystyki i porównanie ---------------------------------------------------------------

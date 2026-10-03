@@ -420,6 +420,16 @@ export interface components {
              * @description Źródła danych odcinka
              */
             sources?: string[];
+            /**
+             * Fetched At
+             * @description Kiedy dane odcinka pobrano ze źródła (np. z OSM)
+             */
+            fetched_at?: string | null;
+            /**
+             * Last Verified
+             * @description Najstarsza data weryfikacji w terenie (OSM check_date); brak = brak
+             */
+            last_verified?: string | null;
         };
         /** RoutingConfig */
         RoutingConfig: {
