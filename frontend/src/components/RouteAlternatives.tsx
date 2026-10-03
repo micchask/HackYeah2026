@@ -1,5 +1,6 @@
-import type { RouteResponse } from '../api/client'
 import { formatKm } from './format'
+import { buildRouteVariants } from './routeVariants'
+import type { RouteResponse } from '../api/client'
 
 interface Props {
   route: RouteResponse
@@ -7,31 +8,10 @@ interface Props {
   onChange: (index: number) => void
 }
 
-interface RouteChoice {
-  label: string
-  distance_m: number
-  duration_s: number
-  stairs_count: number
-  rough_surface_m: number
-  explanation: string
-}
-
 /** Wybór między trasą główną a różniącymi się od niej wariantami z API. */
 export function RouteAlternatives({ route, selected, onChange }: Props) {
-  const alternatives = route.alternatives ?? []
-  if (!alternatives.length) return null
-
-  const choices: RouteChoice[] = [
-    {
-      label: 'Najbardziej dostępna',
-      distance_m: route.distance_m,
-      duration_s: route.duration_s,
-      stairs_count: route.stairs_count ?? 0,
-      rough_surface_m: route.rough_surface_m ?? 0,
-      explanation: route.explanation,
-    },
-    ...alternatives,
-  ]
+  const choices = buildRouteVariants(route)
+  if (choices.length < 2) return null
 
   return (
     <section className="card route-alternatives" aria-labelledby="route-alternatives-heading">
@@ -39,10 +19,10 @@ export function RouteAlternatives({ route, selected, onChange }: Props) {
       <p className="meta">Porównaj warianty i wybierz ten, który chcesz zobaczyć na mapie.</p>
       <fieldset className="route-choices">
         <legend className="visually-hidden">Dostępne warianty trasy</legend>
-        {choices.map((choice, index) => {
+        {choices.map(({ index, label, route: choice }) => {
           const minutes = Math.max(1, Math.round(choice.duration_s / 60))
           return (
-            <div key={`${choice.label}-${index}`} className="route-choice">
+            <div key={`${label}-${index}`} className="route-choice">
               <input
                 id={`route-choice-${index}`}
                 type="radio"
@@ -54,12 +34,16 @@ export function RouteAlternatives({ route, selected, onChange }: Props) {
               />
               <label htmlFor={`route-choice-${index}`} className="route-choice-content">
                 <span className="route-choice-head">
-                  <span className="route-choice-label">{choice.label}</span>
+                  <span className="route-choice-label">{label}</span>
                   <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
                 </span>
                 <span className="route-choice-stats">
-                  ok. {minutes} min · schody: {choice.stairs_count || 'brak'} · nierówna
-                  nawierzchnia: {Math.round(choice.rough_surface_m)} m
+                  ok. {minutes} min · schody: {choice.stairs_count || 'brak'} · bruk / nierówna
+                  nawierzchnia: {Math.round(choice.rough_surface_m ?? 0)} m
+                </span>
+                <span className="route-choice-scores">
+                  dostępność {choice.accessibility_score}/100 · pewność danych{' '}
+                  {Math.round(choice.confidence * 100)}%
                 </span>
                 <span id={`route-choice-${index}-description`} className="route-choice-description">
                   {choice.explanation}

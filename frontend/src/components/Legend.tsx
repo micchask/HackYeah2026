@@ -6,10 +6,11 @@ interface Props {
   showRoute: boolean
   showBaseline: boolean
   showInstitutions: boolean
+  otherRoutes?: { index: number; label: string }[]
 }
 
 /** Legenda kolorów trasy. Kolor nigdy nie jest jedynym nośnikiem - opis trasy ma te same etykiety. */
-export function Legend({ showRoute, showBaseline, showInstitutions }: Props) {
+export function Legend({ showRoute, showBaseline, showInstitutions, otherRoutes = [] }: Props) {
   return (
     <section className="map-legend" aria-labelledby="legend-heading">
       <h2 id="legend-heading" className="legend-title">
@@ -37,6 +38,15 @@ export function Legend({ showRoute, showBaseline, showInstitutions }: Props) {
               {DIFFICULTY_LABEL[d]}
             </li>
           ))}
+        {otherRoutes.map((route) => (
+          <li key={route.index}>
+            <span
+              className={`legend-swatch legend-swatch-route-${route.index % 3}`}
+              aria-hidden="true"
+            />
+            pozostały wariant: {route.label}
+          </li>
+        ))}
         {showBaseline && (
           <li>
             <span className="legend-swatch legend-swatch-dashed" aria-hidden="true" />
