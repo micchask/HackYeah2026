@@ -6,6 +6,7 @@
 | Kraków – otwarte dane | `krakow_open_data` | pliki/API | TODO | stub | TODO: wybrać zbiory |
 | MSIP Kraków | `msip` | WMS/WFS | TODO | stub | TODO: chodniki, przejścia, schody |
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |
+| Deklaracje dostępności (BIP) | – (plik `backend/datasets/krakow_instytucje_dostepnosc.json`) | plik JSON, opracowany ręcznie | informacja publiczna | dane gotowe, bez providera | 32 instytucje (UMK, ZDMK, Muzeum Krakowa, Teatr KTO): wejścia, windy, toalety, pętle indukcyjne, tłumacz PJM. Brak współrzędnych (`geometry: null`) – do geokodowania po adresie |
 
 ## Jak dodać źródło
 
