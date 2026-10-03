@@ -211,3 +211,20 @@ Telefon i responsywność, routing samochodowy (#64), prawdziwe API ławek/parki
 - **#59** („Miejsca dla mnie”, Faza 5) → minimalna wersja w FE4 („Dostępne w pobliżu”).
 - **#56** (paszport, Faza 5) → FE6 pokazuje istniejące atrybuty; nowe dane zostają w #56.
 - **#33, #34, #32** (a11y, Faza 3) → zostają, ale testują nowy układ; #34 bez telefonu.
+
+## 12. Zadania na tablicy (Faza 3)
+
+| Zadanie | Issue | Czas | Zależy od |
+|---|---|---|---|
+| FE1 Stan aplikacji i szkielet układu (**pierwsze**) | #86 | 1 h | – |
+| BE1 Presety trybów + `/api/profiles` | #87 | 1 h | – |
+| FE9 Dane przykładowe | #89 | 1 h | – |
+| FE2 Ekran wyboru trybu + chip | #88 | 1 h | #86, #87 |
+| FE7 Personalizacja (szuflada) | #94 | 1 h | #86 |
+| FE3 Górny pasek, chipy warstw, porządek na mapie | #90 | 2 h | #86 (zamyka #81) |
+| FE4 Panel „Dla Ciebie” | #91 | 1 h | #86, #89 |
+| FE5 Panel trasy | #92 | 1 h | #86, #89 |
+| FE6 Karta miejsca | #93 | 1,5 h | #86 |
+| FE8 Zgłoszenie jako stan panelu | #95 | 45 min | #86 |
+| FE10 Warstwy z danymi przykładowymi | #96 | 1 h | #90, #89 |
+| BE2 Ławki i przewijaki z OSM (jeśli starczy czasu) | #97 | 1,5 h | #89 |
