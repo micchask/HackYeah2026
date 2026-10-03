@@ -1,7 +1,7 @@
 import os
 
-# Testy nie wymagają bazy
-os.environ.setdefault("DB_ENABLED", "false")
+# Testy nie wymagają bazy (także gdy odpalane w kontenerze, gdzie DB_ENABLED=true)
+os.environ["DB_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
