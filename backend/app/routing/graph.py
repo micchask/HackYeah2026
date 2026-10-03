@@ -39,6 +39,18 @@ ACCESSIBILITY_TAGS = [
 ]
 # Węzły, w których zmieniają się te atrybuty, zostają po uproszczeniu grafu
 SPLIT_ON = ["highway", "name", "surface", "incline", "ramp:stroller", "ramp:wheelchair"]
+# Krawężniki są w OSM węzłami (barrier=kerb, kerb=*), nie drogami
+KERB_NODE_TAGS = ["kerb", "barrier", "kerb:height"]
+# Wysokość krawężnika [cm] wg tagu kerb=*; None = krawężnik jest, ale wysokość nieznana
+KERB_HEIGHT_CM: dict[str, float | None] = {
+    "raised": 10.0,
+    "regular": 10.0,
+    "rolled": 6.0,
+    "lowered": 2.0,
+    "flush": 0.0,
+    "no": 0.0,
+    "yes": None,
+}
 
 
 def graph_cache_path(city: CityConfig) -> Path:
@@ -52,11 +64,55 @@ def download_graph(city: CityConfig) -> nx.MultiDiGraph:
     ox.settings.useful_tags_way = list(
         dict.fromkeys([*ox.settings.useful_tags_way, *ACCESSIBILITY_TAGS])
     )
+    ox.settings.useful_tags_node = list(
+        dict.fromkeys([*ox.settings.useful_tags_node, *KERB_NODE_TAGS])
+    )
     if city.routing.overpass_url:
         ox.settings.overpass_url = city.routing.overpass_url.removesuffix("/interpreter")
     s, w, n, e = city.area_bbox
     graph = ox.graph_from_bbox((w, s, e, n), network_type=city.routing.network_type, simplify=False)
-    return ox.simplify_graph(graph, edge_attrs_differ=SPLIT_ON)
+    # węzły z krawężnikiem zostają końcami krawędzi, żeby nie zniknęły przy upraszczaniu
+    graph = ox.simplify_graph(
+        graph, node_attrs_include=["kerb", "barrier"], edge_attrs_differ=SPLIT_ON
+    )
+    return add_kerbs(graph)
+
+
+def kerb_height_cm(tags: dict[str, Any]) -> tuple[bool, float | None]:
+    """(czy jest krawężnik, wysokość w cm). Wysokość None = krawężnik o nieznanej wysokości."""
+    raw_height = tags.get("kerb:height")
+    if raw_height:
+        try:
+            value = float(str(raw_height).replace("cm", "").replace(",", ".").strip())
+            # OSM zaleca metry ("0.03"), ale bywa też "3 cm"
+            return True, value * 100 if value < 1 else value
+        except ValueError:
+            pass
+    kerb = tags.get("kerb")
+    if kerb in KERB_HEIGHT_CM:
+        return True, KERB_HEIGHT_CM[kerb]
+    if kerb or tags.get("barrier") == "kerb":
+        return True, None
+    return False, None
+
+
+def add_kerbs(graph: nx.MultiDiGraph) -> nx.MultiDiGraph:
+    """Przenosi krawężniki z węzłów na krawędzie: `kerb_height_cm` albo `kerb_unknown`.
+
+    Krawędź dostaje najwyższy krawężnik ze swoich końców - żeby przez niego przejść,
+    trzeba wejść na któryś koniec.
+    """
+    kerbs = {n: kerb_height_cm(d) for n, d in graph.nodes(data=True)}
+    for u, v, data in graph.edges(data=True):
+        found = [kerbs[n] for n in (u, v) if kerbs[n][0]]
+        if not found:
+            continue
+        heights = [h for _, h in found if h is not None]
+        if heights:
+            data["kerb_height_cm"] = max(heights)
+        if len(heights) < len(found):
+            data["kerb_unknown"] = "yes"
+    return graph
 
 
 def load_graph(city: CityConfig) -> nx.MultiDiGraph:
