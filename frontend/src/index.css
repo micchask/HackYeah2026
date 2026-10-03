@@ -977,6 +977,16 @@ button.step-body:hover {
   margin: 0;
   font-size: 0.78rem;
 }
+.attribute-alt {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+}
+.place-search {
+  display: grid;
+  gap: 0.15rem;
+  margin-bottom: 0.75rem;
+}
 
 /* ---------- stany puste / ładowanie ---------- */
 
@@ -1568,4 +1578,70 @@ button.step-body:hover {
   .report-fields {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- wyszukiwarka miejsc na mapie ---------- */
+
+.map-search {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 3;
+  width: min(24rem, calc(100% - 5rem)); /* miejsce na przyciski zoomu po prawej */
+}
+.map-search-input {
+  min-height: 46px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  font-weight: 500;
+}
+.map-search-results {
+  max-height: min(60vh, 26rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.map-search-results .suggestion-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.search-badge {
+  font-size: 0.68rem;
+}
+.suggestion.active .search-badge {
+  color: var(--accent);
+  background: var(--surface);
+}
+.map-search-hint {
+  margin: 0.35rem 0 0;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+/* baner "Kliknij na mapie..." pod wyszukiwarką, żeby się nie nakładały */
+.map-wrap .map-banner {
+  top: 4.5rem;
+}
+
+/* pinezka wybranego wyniku (jak w mapach Google) */
+.search-pin {
+  width: 26px;
+  height: 26px;
+  background: #c4122f;
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 40%);
+  transform: rotate(-45deg);
+  transform-origin: center;
+  margin-bottom: 6px;
+}
+
+.no-data {
+  margin-top: 0.6rem;
 }

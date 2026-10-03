@@ -36,6 +36,11 @@ providers:
     enabled: true
     options: {}
 
+  # Ręczne uzupełnienia (data/seed/krakow/manual.json.gz), np. miejsca ze sceny 4 demo
+  - name: manual
+    enabled: true
+    options: {}
+
 routing:
   # Graf pieszy z OSM (osmnx), cache'owany w data/cache/<city>/graph.graphml
   network_type: walk

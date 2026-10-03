@@ -4,6 +4,7 @@ import {
   DEFAULT_PREFERENCES,
   PROFILE_PRESETS,
   type Institution,
+  type SearchResult,
   type LatLon,
   type Place,
   type RoutePreferences,
@@ -11,8 +12,11 @@ import {
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
 import { InstitutionList } from '../components/InstitutionList'
+import { InstitutionPopup } from '../components/InstitutionPopup'
+import { MapSearch } from '../components/MapSearch'
 import { Legend } from '../components/Legend'
-import { MapView } from '../components/MapView'
+import { MapView, type MapPopup } from '../components/MapView'
+import { PlacePopup } from '../components/PlacePopup'
 import { PlaceList } from '../components/PlaceList'
 import { PreferencesForm } from '../components/PreferencesForm'
 import { ProfilePicker } from '../components/ProfilePicker'
@@ -29,6 +33,8 @@ import { RouteSummary } from '../components/RouteSummary'
 import { routeForVariant, selectedVariantLabel } from '../components/routeVariants'
 
 const CITY = 'krakow'
+// Tyle miejsc naraz trafia na mapę - więcej spowalnia mapę i czytnik ekranu
+const PLACES_LIMIT = 200
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 
 // Punkty ze scenariusza demo (docs/demo-scenario.md)
@@ -60,6 +66,8 @@ function mapPoint(point: LatLon): NamedPoint {
 
 export function HomePage() {
   const [places, setPlaces] = useState<Place[]>([])
+  const [placesQuery, setPlacesQuery] = useState('')
+  const [mapBbox, setMapBbox] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<RoutePreferences>(DEFAULT_PREFERENCES)
   const [origin, setOrigin] = useState<NamedPoint | null>(null)
   const [destination, setDestination] = useState<NamedPoint | null>(null)
@@ -72,12 +80,34 @@ export function HomePage() {
   const [loading, setLoading] = useState(false)
   const [institutions, setInstitutions] = useState<Institution[]>([])
   const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
+  // Wynik wyszukiwarki, który nie jest instytucją (miejsce z OSM albo adres)
+  const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  const [mapCenter, setMapCenter] = useState<LatLon | null>(null)
 
   useEffect(() => {
-    api
-      .places(CITY)
-      .then(setPlaces)
-      .catch((e: Error) => setError(e.message))
+    if (!mapBbox) return
+    const q = placesQuery.trim()
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      api
+        // Wyszukiwanie po nazwie obejmuje cały obszar demo, nie tylko widok mapy
+        .places(
+          CITY,
+          { q: q || undefined, bbox: q ? undefined : mapBbox, limit: PLACES_LIMIT },
+          controller.signal,
+        )
+        .then(setPlaces)
+        .catch((e: Error) => {
+          if (e.name !== 'AbortError') setError(e.message)
+        })
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [mapBbox, placesQuery])
+
+  useEffect(() => {
     api
       .institutions(CITY)
       .then(setInstitutions)
@@ -119,8 +149,9 @@ export function HomePage() {
     }
   }, [origin, destination, prefs])
 
-  const activeTarget: PickTarget | null =
-    pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
+  // Kliknięcie w mapę ustawia punkt tylko po "Wskaż na mapie" - domyślnie (jak w mapach Google)
+  // klik w mapę nic nie ustawia; punkty A/B: wyszukiwarka, okienko miejsca, trasy demo
+  const activeTarget: PickTarget | null = pickTarget
 
   const setterFor = useCallback(
     (target: PickTarget) =>
@@ -132,16 +163,69 @@ export function HomePage() {
     [setterFor],
   )
 
-  // "Start (A)" / "Cel (B)" w okienku instytucji na mapie
-  const routeFromInstitution = useCallback(
-    (inst: Institution, target: PickTarget) => {
-      if (!inst.location) return
-      setPoint(target, { label: inst.name, point: inst.location.point })
+  const closePopup = useCallback(() => {
+    setSelectedInstitution(null)
+    setSearchResult(null)
+  }, [])
+
+  // "Start (A)" / "Cel (B)" w okienku na mapie - punkt trafia do trasy, okienko się zamyka
+  const routeTo = useCallback(
+    (target: PickTarget, value: NamedPoint) => {
+      setPoint(target, value)
       setPickTarget(null)
-      setSelectedInstitution(null)
+      closePopup()
     },
-    [setPoint],
+    [setPoint, closePopup],
   )
+
+  const selectInstitution = useCallback((id: string) => {
+    setSearchResult(null)
+    setSelectedInstitution(id)
+  }, [])
+
+  const selectSearchResult = useCallback((result: SearchResult) => {
+    if (result.source === 'institution' && result.institution_id) {
+      setSearchResult(null)
+      setSelectedInstitution(result.institution_id)
+    } else {
+      setSelectedInstitution(null)
+      setSearchResult(result)
+    }
+  }, [])
+
+  const institution = institutions.find((i) => i.id === selectedInstitution)
+  let popup: MapPopup | null = null
+  if (institution?.location) {
+    const point = { label: institution.name, point: institution.location.point }
+    popup = {
+      key: `institution:${institution.id}`,
+      point: institution.location.point,
+      render: () => (
+        <InstitutionPopup
+          key={institution.id}
+          institution={institution}
+          onSetOrigin={() => routeTo('origin', point)}
+          onSetDestination={() => routeTo('destination', point)}
+          onClose={closePopup}
+        />
+      ),
+    }
+  } else if (searchResult) {
+    const point = { label: searchResult.label, point: searchResult.point }
+    popup = {
+      key: searchResult.id,
+      point: searchResult.point,
+      render: () => (
+        <PlacePopup
+          key={searchResult.id}
+          result={searchResult}
+          onSetOrigin={() => routeTo('origin', point)}
+          onSetDestination={() => routeTo('destination', point)}
+          onClose={closePopup}
+        />
+      ),
+    }
+  }
 
   const handleMapClick = useCallback(
     (point: LatLon) => {
@@ -283,10 +367,15 @@ export function HomePage() {
         <InstitutionList
           institutions={institutions}
           selected={selectedInstitution}
-          onSelect={setSelectedInstitution}
+          onSelect={selectInstitution}
         />
 
-        <PlaceList places={places} />
+        <PlaceList
+          places={places}
+          query={placesQuery}
+          onQueryChange={setPlacesQuery}
+          limit={PLACES_LIMIT}
+        />
       </aside>
 
       <div className="map-wrap">
@@ -302,11 +391,16 @@ export function HomePage() {
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
           onSegmentClick={setSelected}
+          onBoundsChange={setMapBbox}
           institutions={institutions}
           selectedInstitution={selectedInstitution}
-          onInstitutionSelect={setSelectedInstitution}
-          onInstitutionRoute={routeFromInstitution}
+          onInstitutionSelect={selectInstitution}
+          popup={popup}
+          onPopupClose={closePopup}
+          searchPin={searchResult?.point ?? null}
+          onViewChange={setMapCenter}
         />
+        <MapSearch city={CITY} near={mapCenter} onSelect={selectSearchResult} />
         {pickLetter && (
           <div className="map-banner">
             <PinIcon size={18} />

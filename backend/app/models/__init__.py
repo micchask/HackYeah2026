@@ -24,6 +24,12 @@ from app.models.route import (
     RouteResponse,
     RouteSegment,
 )
+from app.models.segment import (
+    LineStringGeometry,
+    SegmentCollection,
+    SegmentFeature,
+    SegmentProperties,
+)
 
 __all__ = [
     "AccessibilityAttribute",
@@ -49,5 +55,9 @@ __all__ = [
     "RouteRequest",
     "RouteResponse",
     "RouteSegment",
+    "LineStringGeometry",
+    "SegmentCollection",
+    "SegmentFeature",
+    "SegmentProperties",
     "SourceType",
 ]
