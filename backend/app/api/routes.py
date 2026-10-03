@@ -1,10 +1,12 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from app.cities import get_city
 from app.mocks.data import mock_route
 from app.models import RouteRequest, RouteResponse
+from app.routing.geojson import route_to_geojson
 from app.routing.graph import get_city_graph
 from app.routing.planner import NoRouteError, plan_route
 
@@ -44,3 +46,13 @@ def plan(req: RouteRequest) -> RouteResponse:
             status_code=422,
             detail="Nie znaleziono trasy spełniającej preferencje. Spróbuj złagodzić ustawienia.",
         ) from exc
+
+
+@router.post("/routes/geojson")
+def plan_geojson(req: RouteRequest) -> dict[str, Any]:
+    """Ta sama trasa co `POST /routes`, jako GeoJSON FeatureCollection.
+
+    Odcinki mają `properties.kind = "segment"` i `index`, trasa bazowa (najkrótsza zwykła)
+    `kind = "baseline"`. Podsumowanie trasy jest w `properties` kolekcji.
+    """
+    return route_to_geojson(plan(req))
