@@ -16,7 +16,7 @@ from app.models import AttributeKey, AttributeStatus
 from app.normalization.merge import STALE_AFTER, STALE_PENALTY
 from app.providers.osm import OsmProvider
 from app.routing.planner import edge_difficulty, graph_fetched_at, last_verified
-from app.routing.profiles import incline_percent, is_steps, tag
+from app.routing.profiles import incline_percent, is_steps, kerb_cm, tag
 from app.routing.scores import data_confidence
 
 Edge = tuple[int, int, int, dict[str, Any]]
@@ -50,6 +50,8 @@ def edge_attributes(data: dict[str, Any]) -> list[tuple[AttributeKey, bool | int
         attrs.append((AttributeKey.STEP_COUNT, steps))
     if (incline := incline_percent(data)) is not None:
         attrs.append((AttributeKey.INCLINE_PERCENT, incline))
+    if (kerb := kerb_cm(data)) is not None:
+        attrs.append((AttributeKey.KERB_HEIGHT_CM, kerb))
     if (width := _width_cm(tag(data, "width"))) is not None:
         attrs.append((AttributeKey.WIDTH_CM, width))
     ramp = tag(data, "ramp:wheelchair") or tag(data, "ramp")
@@ -122,6 +124,49 @@ def unique_edges(graph: nx.MultiDiGraph) -> Iterator[Edge]:
     for u, v, key, data in graph.edges(keys=True, data=True):
         if u < v or u == v or not graph.has_edge(v, u):
             yield u, v, key, data
+
+
+Coords = list[tuple[float, float]]
+
+
+def segments_in_bbox(
+    city_id: str,
+    bbox: tuple[float, float, float, float],
+    *,
+    difficulty: str | None = None,
+    max_confidence: float | None = None,
+    limit: int | None = None,
+) -> list[tuple[SegmentRow, Coords]]:
+    """Odcinki przecinające bbox (s, w, n, e) z atrybutami i geometrią [lon, lat].
+
+    Rzuca SQLAlchemyError, gdy baza nie odpowiada.
+    """
+    import json
+
+    from sqlalchemy import func, select
+    from sqlalchemy.orm import selectinload
+
+    from app.db.session import SessionLocal
+
+    s, w, n, e = bbox
+    query = (
+        select(SegmentRow, func.ST_AsGeoJSON(SegmentRow.geom))
+        .where(SegmentRow.city == city_id)
+        .where(func.ST_Intersects(SegmentRow.geom, func.ST_MakeEnvelope(w, s, e, n, 4326)))
+        .options(selectinload(SegmentRow.attributes))
+        .order_by(SegmentRow.id)
+    )
+    if difficulty is not None:
+        query = query.where(SegmentRow.difficulty == difficulty)
+    if max_confidence is not None:
+        query = query.where(SegmentRow.confidence <= max_confidence)
+    if limit is not None:
+        query = query.limit(limit)
+    with SessionLocal() as session:
+        return [
+            (row, [tuple(p) for p in json.loads(geojson)["coordinates"]])
+            for row, geojson in session.execute(query).all()
+        ]
 
 
 def save_graph_to_db(city: CityConfig) -> int:

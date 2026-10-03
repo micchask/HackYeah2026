@@ -3,6 +3,7 @@ import {
   api,
   DEFAULT_PREFERENCES,
   PROFILE_PRESETS,
+  type Barrier,
   type Institution,
   type SearchResult,
   type LatLon,
@@ -11,6 +12,7 @@ import {
   type RouteResponse,
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
+import { BarrierList } from '../components/BarrierList'
 import { InstitutionList } from '../components/InstitutionList'
 import { InstitutionPopup } from '../components/InstitutionPopup'
 import { MapSearch } from '../components/MapSearch'
@@ -83,6 +85,37 @@ export function HomePage() {
   // Wynik wyszukiwarki, który nie jest instytucją (miejsce z OSM albo adres)
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
   const [mapCenter, setMapCenter] = useState<LatLon | null>(null)
+
+  const [barriers, setBarriers] = useState<Barrier[]>([])
+  const [barriersTruncated, setBarriersTruncated] = useState(false)
+  const [barriersLoading, setBarriersLoading] = useState(false)
+  const [barriersError, setBarriersError] = useState<string | null>(null)
+  const [showBarriers, setShowBarriers] = useState(true)
+  const [selectedBarrier, setSelectedBarrier] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!mapBbox) return
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      setBarriersLoading(true)
+      try {
+        const result = await api.barriers(CITY, mapBbox, controller.signal)
+        setBarriers(result.barriers)
+        setBarriersTruncated(result.truncated ?? false)
+        setBarriersError(null)
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        setBarriers([])
+        setBarriersError((err as Error).message)
+      } finally {
+        if (!controller.signal.aborted) setBarriersLoading(false)
+      }
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [mapBbox])
 
   useEffect(() => {
     if (!mapBbox) return
@@ -351,11 +384,23 @@ export function HomePage() {
               <RouteSummary
                 route={activeRoute}
                 heading={selectedVariantLabel(route, selectedVariant)}
+                onSelectSegment={setSelected}
               />
               <RouteDescription route={activeRoute} selected={selected} onSelect={setSelected} />
             </div>
           )}
         </div>
+
+        <BarrierList
+          barriers={barriers}
+          truncated={barriersTruncated}
+          loading={barriersLoading}
+          error={barriersError}
+          visible={showBarriers}
+          onVisibleChange={setShowBarriers}
+          selected={selectedBarrier}
+          onSelect={setSelectedBarrier}
+        />
 
         <ReportForm
           city={CITY}
@@ -404,6 +449,10 @@ export function HomePage() {
           onPopupClose={closePopup}
           searchPin={searchResult?.point ?? null}
           onViewChange={setMapCenter}
+          barriers={barriers}
+          showBarriers={showBarriers}
+          selectedBarrier={selectedBarrier}
+          onBarrierSelect={setSelectedBarrier}
         />
         <MapSearch city={CITY} near={mapCenter} onSelect={selectSearchResult} />
         {pickLetter && (
@@ -430,11 +479,12 @@ export function HomePage() {
             <span className="spinner" /> Szukam trasy…
           </div>
         )}
-        {(route || institutions.length > 0) && (
+        {(route || institutions.length > 0 || (showBarriers && barriers.length > 0)) && (
           <Legend
             showRoute={!!route}
             showBaseline={!!route?.baseline && !route.is_mock}
             showInstitutions={institutions.length > 0}
+            showBarriers={showBarriers && barriers.length > 0}
           />
         )}
       </div>

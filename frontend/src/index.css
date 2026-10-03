@@ -1580,6 +1580,120 @@ button.step-body:hover {
   }
 }
 
+/* ---------- bariery ---------- */
+
+.barrier-icon {
+  flex: none;
+  vertical-align: middle;
+}
+.map-legend .barrier-icon {
+  margin-right: 0.1rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 32px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.barrier-group {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.4rem;
+}
+.barrier-group summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 36px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.barrier-group ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.barrier-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.barrier-item:hover {
+  background: var(--surface-2);
+}
+.barrier-item.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.barrier-item-title {
+  font-weight: 600;
+}
+.barrier-item .meta {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.route-barriers {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: var(--warning-soft);
+}
+.route-barriers h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  color: var(--warning);
+}
+.route-barriers ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.route-barriers li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.route-barrier-text {
+  flex: 1;
+  min-width: 0;
+}
+.route-barriers .link-button {
+  flex: none;
+}
+.route-barriers-none {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
 /* ---------- wyszukiwarka miejsc na mapie ---------- */
 
 .map-search {
