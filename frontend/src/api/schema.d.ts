@@ -179,6 +179,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Segments
+         * @description Odcinki sieci pieszej z atrybutami dostępności jako GeoJSON.
+         */
+        get: operations["list_segments_api_segments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -293,6 +313,23 @@ export interface components {
             lat: number;
             /** Lon */
             lon: number;
+        };
+        /** LineStringGeometry */
+        LineStringGeometry: {
+            /**
+             * Type
+             * @default LineString
+             * @constant
+             */
+            type: "LineString";
+            /**
+             * Coordinates
+             * @description Punkty [lon, lat] (RFC 7946)
+             */
+            coordinates: [
+                number,
+                number
+            ][];
         };
         /** Place */
         Place: {
@@ -581,6 +618,64 @@ export interface components {
             network_type: string;
             /** Overpass Url */
             overpass_url?: string | null;
+        };
+        /**
+         * SegmentCollection
+         * @description Odcinki sieci pieszej jako GeoJSON - do podania wprost do źródła `geojson` w MapLibre.
+         */
+        SegmentCollection: {
+            /**
+             * Type
+             * @default FeatureCollection
+             * @constant
+             */
+            type: "FeatureCollection";
+            /** Features */
+            features: components["schemas"]["SegmentFeature"][];
+            /**
+             * Truncated
+             * @description True, gdy w bbox jest więcej odcinków niż limit
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** SegmentFeature */
+        SegmentFeature: {
+            /**
+             * Type
+             * @default Feature
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["LineStringGeometry"];
+            properties: components["schemas"]["SegmentProperties"];
+        };
+        /** SegmentProperties */
+        SegmentProperties: {
+            /**
+             * Id
+             * @description '{u}-{v}-{key}' - krawędź grafu OSM
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Highway
+             * @description Rodzaj drogi z OSM, np. 'footway'
+             */
+            highway?: string | null;
+            /** Osm Way Id */
+            osm_way_id?: number | null;
+            /** Length M */
+            length_m: number;
+            difficulty: components["schemas"]["Difficulty"];
+            /**
+             * Confidence
+             * @description Pewność danych odcinka - ta sama reguła co w opisie trasy
+             */
+            confidence: number;
+            /** Attributes */
+            attributes?: components["schemas"]["AccessibilityAttribute"][];
         };
         /**
          * SourceType
@@ -906,6 +1001,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeocodeResult"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_segments_api_segments_get: {
+        parameters: {
+            query: {
+                /** @description Obszar 's,w,n,e' (WGS84), obowiązkowy */
+                bbox: string;
+                city?: string;
+                /** @description Tylko odcinki z pewnością danych <= tej wartości */
+                max_confidence?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentCollection"];
                 };
             };
             /** @description Validation Error */
