@@ -1,5 +1,7 @@
 import type { RouteResponse } from '../api/client'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
+import { formatKm } from './format'
+import { AlertIcon } from './icons'
 
 const STATUS_LABEL: Record<string, string> = {
   verified: 'dane potwierdzone',
@@ -16,67 +18,68 @@ interface Props {
 
 /** Tekstowa alternatywa mapy: pełny opis trasy krok po kroku. */
 export function RouteDescription({ route, selected = null, onSelect }: Props) {
-  const km = (route.distance_m / 1000).toFixed(2)
-  const minutes = Math.round(route.duration_s / 60)
-
   return (
-    <section aria-labelledby="route-heading">
+    <section className="card" aria-labelledby="route-heading">
       <h2 id="route-heading">Opis trasy</h2>
-      <p className="route-summary">
-        Długość: {km} km, około {minutes} min.
-        {route.rough_surface_m != null && <> Nierówna nawierzchnia: {route.rough_surface_m} m.</>}
-        {route.stairs_count != null && (
-          <> Schody: {route.stairs_count === 0 ? 'brak' : route.stairs_count}.</>
-        )}
+      <p className="meta">
+        {route.segments.length} odcinków. Wybierz odcinek, aby zobaczyć go na mapie.
       </p>
-      {route.baseline && !route.is_mock && (
-        <p className="comparison">
-          Dla porównania najkrótsza zwykła trasa piesza:{' '}
-          {(route.baseline.distance_m / 1000).toFixed(2)} km, schody: {route.baseline.stairs_count},
-          nierówna nawierzchnia: {route.baseline.rough_surface_m} m.
-        </p>
-      )}
-      {route.warnings?.map((w) => (
-        <p key={w} role="note" className="warning">
-          {w}
-        </p>
-      ))}
-      <ol className="segments">
-        {route.segments.map((s, i) => (
-          <li key={i} className={selected === i ? 'segment selected' : 'segment'}>
-            <span
-              className="segment-swatch"
-              style={{ background: DIFFICULTY_COLOR[s.difficulty] }}
-              aria-hidden="true"
-            />
-            <div>
-              <p className="instruction">{s.instruction}</p>
-              <p className="meta">
-                {DIFFICULTY_LABEL[s.difficulty]}
-                {s.surface ? `, nawierzchnia: ${s.surface}` : ''}
-                {s.data_status ? ` – ${STATUS_LABEL[s.data_status] ?? s.data_status}` : ''}
-                {`, pewność ${Math.round(s.confidence * 100)}%`}
-                {s.sources?.length ? `, źródło: ${s.sources.join(', ')}` : ''}
-              </p>
+      <ol className="timeline">
+        {route.segments.map((s, i) => {
+          const isSelected = selected === i
+          const content = (
+            <>
+              <span className="instruction">{s.instruction}</span>
+              <span className="tags">
+                <span className={`tag tag-${s.difficulty}`}>
+                  <span
+                    className="tag-dot"
+                    style={{ background: DIFFICULTY_COLOR[s.difficulty] }}
+                    aria-hidden="true"
+                  />
+                  {DIFFICULTY_LABEL[s.difficulty]}
+                </span>
+                {s.surface && <span className="tag">{s.surface}</span>}
+                <span className="tag">{formatKm(s.distance_m)}</span>
+              </span>
               {s.warnings?.map((w) => (
-                <p key={w} className="warning">
-                  Uwaga: {w}
-                </p>
+                <span key={w} className="seg-warning">
+                  <AlertIcon size={16} />
+                  <span>Uwaga: {w}</span>
+                </span>
               ))}
-              {onSelect && (
+              <span className="provenance">
+                <span className="confidence" aria-hidden="true">
+                  <span style={{ width: `${Math.round(s.confidence * 100)}%` }} />
+                </span>
+                pewność {Math.round(s.confidence * 100)}%
+                {s.data_status ? ` · ${STATUS_LABEL[s.data_status] ?? s.data_status}` : ''}
+                {s.sources?.length ? ` · źródło: ${s.sources.join(', ')}` : ''}
+              </span>
+            </>
+          )
+          return (
+            <li
+              key={i}
+              className={
+                isSelected ? `step step-${s.difficulty} selected` : `step step-${s.difficulty}`
+              }
+            >
+              {onSelect ? (
                 <button
                   type="button"
-                  className="link-button"
-                  aria-pressed={selected === i}
-                  onClick={() => onSelect(selected === i ? null : i)}
+                  className="step-body"
+                  aria-pressed={isSelected}
+                  onClick={() => onSelect(isSelected ? null : i)}
                 >
-                  {selected === i ? 'Ukryj na mapie' : 'Pokaż na mapie'}
-                  <span className="visually-hidden"> odcinek {i + 1}</span>
+                  {content}
                 </button>
+              ) : (
+                <div className="step-body">{content}</div>
               )}
-            </div>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )

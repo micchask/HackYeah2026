@@ -1,3 +1,4 @@
+import { LogoMark } from './components/icons'
 import { HomePage } from './pages/HomePage'
 
 export default function App() {
@@ -7,7 +8,16 @@ export default function App() {
         Przejdź do treści
       </a>
       <header className="header">
-        <h1>Dostępne trasy – Kraków</h1>
+        <div className="brand">
+          <LogoMark size={34} />
+          <div>
+            <h1>Dostępne trasy</h1>
+            <p className="brand-sub">Kraków · Stare Miasto, Wawel, Kazimierz</p>
+          </div>
+        </div>
+        <p className="header-note">
+          <span className="badge badge-demo">demo</span> dane: OpenStreetMap
+        </p>
       </header>
       <main id="main" tabIndex={-1}>
         <HomePage />
