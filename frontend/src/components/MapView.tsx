@@ -1,8 +1,11 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import * as maplibregl from 'maplibre-gl'
-import { useEffect, useRef, useState } from 'react'
-import type { LatLon, Place, RouteResponse } from '../api/client'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import type { Institution, LatLon, Place, RouteResponse } from '../api/client'
 import { DIFFICULTY_COLOR } from './difficulty'
+import { InstitutionPopup } from './InstitutionPopup'
+import { shortInstitutionName } from './institutionStyle'
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -36,6 +39,8 @@ interface Props {
   route: RouteResponse | null
   origin: LatLon | null
   destination: LatLon | null
+  /** Miejsce zgłaszanej bariery (formularz „Zgłoś barierę”) */
+  reportPoint?: LatLon | null
   selectedSegment: number | null
   /** Etykieta punktu, który ustawi kliknięcie w mapę, np. "A" */
   pickLabel: string | null
@@ -44,10 +49,35 @@ interface Props {
   onSegmentClick: (index: number) => void
   /** Widoczny obszar mapy "south,west,north,east" - po załadowaniu i po każdym przesunięciu */
   onBoundsChange?: (bbox: string) => void
+  institutions: Institution[]
+  selectedInstitution: string | null
+  /** Wybór instytucji (klik w znacznik) albo zamknięcie okienka (null) */
+  onInstitutionSelect: (id: string | null) => void
+  /** "Start (A)" / "Cel (B)" w okienku instytucji */
+  onInstitutionRoute: (institution: Institution, target: 'origin' | 'destination') => void
 }
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
 const HIT_PX = 6
+// Poniżej tego zoomu podpisy instytucji by się nakładały - zostają same kropki
+const LABEL_MIN_ZOOM = 14
+
+function institutionMarker(inst: Institution): HTMLButtonElement {
+  const el = document.createElement('button')
+  el.type = 'button'
+  el.className = 'inst-marker'
+  // Klawiatura i czytniki ekranu korzystają z listy instytucji w panelu - bez 32 przystanków Tab na mapie
+  el.tabIndex = -1
+  el.title = inst.name
+  el.setAttribute('aria-label', `${inst.name} – pokaż szczegóły`)
+  const dot = document.createElement('span')
+  dot.className = 'inst-marker-dot'
+  const label = document.createElement('span')
+  label.className = 'inst-marker-label'
+  label.textContent = shortInstitutionName(inst.name)
+  el.append(dot, label)
+  return el
+}
 
 /**
  * Mapa jest uzupełnieniem, nie jedynym źródłem informacji.
@@ -60,19 +90,28 @@ export function MapView({
   route,
   origin,
   destination,
+  reportPoint = null,
   selectedSegment,
   pickLabel,
   onMapClick,
   onSegmentClick,
   onBoundsChange,
+  institutions,
+  selectedInstitution,
+  onInstitutionSelect,
+  onInstitutionRoute,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const markers = useRef<maplibregl.Marker[]>([])
   const pointMarkers = useRef<maplibregl.Marker[]>([])
+  const institutionMarkers = useRef(new Map<string, maplibregl.Marker>())
+  const popup = useRef<maplibregl.Popup | null>(null)
+  const [popupEl, setPopupEl] = useState<HTMLElement | null>(null)
   const onClick = useRef(onMapClick)
   const onSegment = useRef(onSegmentClick)
   const onBounds = useRef(onBoundsChange)
+  const onSelect = useRef(onInstitutionSelect)
   const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
@@ -85,7 +124,8 @@ export function MapView({
     onClick.current = onMapClick
     onSegment.current = onSegmentClick
     onBounds.current = onBoundsChange
-  }, [onMapClick, onSegmentClick, onBoundsChange])
+    onSelect.current = onInstitutionSelect
+  }, [onMapClick, onSegmentClick, onBoundsChange, onInstitutionSelect])
 
   useEffect(() => {
     if (!container.current) return
@@ -106,16 +146,31 @@ export function MapView({
       )
     }
     instance.on('moveend', reportBounds)
+    const updateLabels = () => {
+      const el = container.current
+      if (el) el.dataset.labels = instance.getZoom() >= LABEL_MIN_ZOOM ? 'on' : 'off'
+    }
+    updateLabels()
+    instance.on('zoom', updateLabels)
+    // Wysokość mapy dla CSS: rozwinięte okienko instytucji nie może być wyższe niż mapa
+    const updateHeight = () => {
+      container.current?.style.setProperty('--map-h', `${instance.getContainer().clientHeight}px`)
+    }
+    updateHeight()
+    instance.on('resize', updateHeight)
     instance.on('click', (e) => {
+      // Klik w znacznik instytucji albo w okienko nie ustawia punktu A/B
+      const target = e.originalEvent.target as Element | null
+      if (target?.closest('.inst-marker, .maplibregl-popup')) return
+      // Klik w mapę zamyka okienko instytucji (jak na mapach Google)
+      onSelect.current(null)
+      const { x, y } = e.point
+      const box: [maplibregl.PointLike, maplibregl.PointLike] = [
+        [x - HIT_PX, y - HIT_PX],
+        [x + HIT_PX, y + HIT_PX],
+      ]
       if (!picking.current && instance.getLayer('route')) {
-        const { x, y } = e.point
-        const [hit] = instance.queryRenderedFeatures(
-          [
-            [x - HIT_PX, y - HIT_PX],
-            [x + HIT_PX, y + HIT_PX],
-          ],
-          { layers: ['route'] },
-        )
+        const [hit] = instance.queryRenderedFeatures(box, { layers: ['route'] })
         if (hit) {
           onSegment.current(Number(hit.properties.index))
           return
@@ -216,23 +271,23 @@ export function MapView({
     const currentMap = map.current
     if (!currentMap) return
 
-    pointMarkers.current = (
-      [
-        ['A', origin],
-        ['B', destination],
-      ] as const
-    )
-      .filter((entry): entry is ['A' | 'B', LatLon] => entry[1] !== null)
-      .map(([label, point]) => {
+    const points: [string, string, LatLon | null][] = [
+      ['A', 'a', origin],
+      ['B', 'b', destination],
+      ['!', 'report', reportPoint],
+    ]
+    pointMarkers.current = points
+      .filter((entry): entry is [string, string, LatLon] => entry[2] !== null)
+      .map(([label, kind, point]) => {
         const el = document.createElement('div')
-        el.className = `point-marker point-marker-${label.toLowerCase()}`
+        el.className = `point-marker point-marker-${kind}`
         el.textContent = label
         el.setAttribute('aria-hidden', 'true')
         return new maplibregl.Marker({ element: el })
           .setLngLat([point.lon, point.lat])
           .addTo(currentMap)
       })
-  }, [origin, destination])
+  }, [origin, destination, reportPoint])
 
   useEffect(() => {
     const currentMap = map.current
@@ -297,11 +352,111 @@ export function MapView({
     }
   }, [selectedSegment, mapReady])
 
+  // Znaczniki instytucji: kropka + podpis z nazwą (jak na mapach Google)
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const created = new Map<string, maplibregl.Marker>()
+    for (const inst of institutions) {
+      if (!inst.location) continue
+      const el = institutionMarker(inst)
+      el.addEventListener('click', () => onSelect.current(inst.id))
+      created.set(
+        inst.id,
+        // kotwica z lewej: środek kropki (14 px) dokładnie w punkcie, podpis obok
+        new maplibregl.Marker({ element: el, anchor: 'left', offset: [-7, 0] })
+          .setLngLat([inst.location.point.lon, inst.location.point.lat])
+          .addTo(currentMap),
+      )
+    }
+    institutionMarkers.current = created
+    return () => created.forEach((marker) => marker.remove())
+  }, [institutions, mapReady])
+
+  // Okienko przy wybranym punkcie; treść renderuje React (portal) - patrz niżej
+  useEffect(() => {
+    const currentMap = map.current
+    institutionMarkers.current.forEach((marker, id) =>
+      marker.getElement().setAttribute('aria-pressed', String(id === selectedInstitution)),
+    )
+    const point = institutions.find((i) => i.id === selectedInstitution)?.location?.point
+    if (!currentMap || !mapReady || !point) {
+      setPopupEl(null)
+      return
+    }
+    const el = document.createElement('div')
+    const onClose = () => onSelect.current(null)
+    const instance = new maplibregl.Popup({
+      offset: 14,
+      maxWidth: '340px',
+      // zamykanie kliknięciem w mapę obsługujemy sami - inaczej klik w inny znacznik
+      // najpierw wybrałby nową instytucję, a potem zamknięcie starego okienka by ją skasowało
+      closeOnClick: false,
+      focusAfterOpen: false,
+      className: 'institution-popup-wrap',
+    })
+      .setLngLat([point.lon, point.lat])
+      .setDOMContent(el)
+      .addTo(currentMap)
+    instance.on('close', onClose)
+    popup.current = instance
+    setPopupEl(el)
+    currentMap.easeTo({
+      center: [point.lon, point.lat],
+      zoom: Math.max(currentMap.getZoom(), 15),
+      duration: 600,
+    })
+    return () => {
+      // usuwamy bez zdarzenia 'close' - to zmiana wyboru, nie zamknięcie przez użytkownika
+      instance.off('close', onClose)
+      instance.remove()
+      popup.current = null
+    }
+  }, [selectedInstitution, institutions, mapReady])
+
+  // Po rozwinięciu okienko jest wyższe: MapLibre wybiera stronę na nowo (setLngLat),
+  // a jeśli dalej wystaje poza mapę - przesuwamy mapę o brakujące piksele
+  const fitPopup = useCallback(() => {
+    const p = popup.current
+    const m = map.current
+    if (!p || !m) return
+    p.setLngLat(p.getLngLat())
+    requestAnimationFrame(() => {
+      const box = p.getElement().getBoundingClientRect()
+      const area = m.getContainer().getBoundingClientRect()
+      const margin = 12
+      let dx = 0
+      let dy = 0
+      if (box.top < area.top + margin) dy = box.top - area.top - margin
+      else if (box.bottom > area.bottom - margin) dy = box.bottom - area.bottom + margin
+      if (box.left < area.left + margin) dx = box.left - area.left - margin
+      else if (box.right > area.right - margin) dx = box.right - area.right + margin
+      if (dx || dy) m.panBy([dx, dy], { duration: 300 })
+    })
+  }, [])
+
+  const selected = institutions.find((i) => i.id === selectedInstitution)
+
   return (
-    <section
-      ref={container}
-      className="map"
-      aria-label="Mapa. Te same informacje, w tym szczegóły odcinków, znajdziesz w opisie trasy i liście miejsc."
-    />
+    <>
+      <section
+        ref={container}
+        className="map"
+        aria-label="Mapa. Te same informacje, w tym szczegóły odcinków i instytucji, znajdziesz w panelu obok."
+      />
+      {popupEl &&
+        selected &&
+        createPortal(
+          <InstitutionPopup
+            key={selected.id}
+            institution={selected}
+            onSetOrigin={() => onInstitutionRoute(selected, 'origin')}
+            onSetDestination={() => onInstitutionRoute(selected, 'destination')}
+            onClose={() => onInstitutionSelect(null)}
+            onResize={fitPopup}
+          />,
+          popupEl,
+        )}
+    </>
   )
 }

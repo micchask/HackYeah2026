@@ -19,8 +19,11 @@ export type RouteGeoJSON = FeatureCollection<LineString, RouteFeatureProperties>
 export type RoutePreferences = components['schemas']['RoutePreferences']
 export type Difficulty = components['schemas']['Difficulty']
 export type ReportCreate = components['schemas']['ReportCreate']
+export type Report = components['schemas']['Report']
 export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
+export type Institution = components['schemas']['Institution']
+export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -71,6 +74,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       const detail = (JSON.parse(text) as { detail?: unknown }).detail
       if (typeof detail === 'string') message = detail
+      // błędy walidacji FastAPI: [{ msg: "Value error, …" }, …]
+      else if (Array.isArray(detail))
+        message = detail
+          .map((d: { msg?: string }) => (d.msg ?? '').replace(/^Value error, /, ''))
+          .join(' ')
     } catch {
       // odpowiedź nie jest JSON-em - zostaje surowy tekst
     }
@@ -108,6 +116,13 @@ export const api = {
       `/geocode/reverse?${new URLSearchParams({ lat: String(point.lat), lon: String(point.lon), city })}`,
       { signal },
     ),
+  institutions: (city: string) =>
+    request<Institution[]>(`/institutions?${new URLSearchParams({ city })}`),
   report: (body: ReportCreate, city: string) =>
-    request(`/reports?city=${city}`, { method: 'POST', body: JSON.stringify(body) }),
+    request<Report>(`/reports?${new URLSearchParams({ city })}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  reports: (city: string, signal?: AbortSignal) =>
+    request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
 }

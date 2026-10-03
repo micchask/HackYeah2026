@@ -1,31 +1,9 @@
 import { useId, useState } from 'react'
 import type { Place } from '../api/client'
+import { ATTRIBUTE_LABEL, VALUE_LABEL } from './attributes'
 
 // Lista pokazuje miejsca porcjami - setki pozycji naraz to męczarnia z czytnikiem ekranu
 const PAGE = 20
-
-const ATTRIBUTE_LABEL: Record<string, string> = {
-  wheelchair: 'dostępność dla wózka',
-  step_free_entrance: 'wejście bez schodów',
-  stairs: 'schody',
-  step_count: 'liczba stopni',
-  ramp: 'rampa',
-  elevator: 'winda',
-  accessible_toilet: 'toaleta dostępna',
-  surface: 'nawierzchnia',
-  incline_percent: 'nachylenie [%]',
-  kerb_height_cm: 'krawężnik [cm]',
-  width_cm: 'szerokość [cm]',
-  tactile_paving: 'ścieżka dotykowa',
-}
-
-const VALUE_LABEL: Record<string, string> = {
-  true: 'tak',
-  false: 'nie',
-  yes: 'tak',
-  no: 'nie',
-  limited: 'częściowo',
-}
 
 const SOURCE_LABEL: Record<string, string> = {
   osm: 'OpenStreetMap',

@@ -13,7 +13,7 @@ export interface Preset {
   destination: NamedPoint
 }
 
-export type PickTarget = 'origin' | 'destination'
+export type PickTarget = 'origin' | 'destination' | 'report'
 
 interface Props {
   city: string

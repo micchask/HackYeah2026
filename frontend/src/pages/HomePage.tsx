@@ -1,19 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   api,
   DEFAULT_PREFERENCES,
   PROFILE_PRESETS,
+  type Institution,
   type LatLon,
   type Place,
   type RoutePreferences,
   type RouteResponse,
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
+import { InstitutionList } from '../components/InstitutionList'
 import { Legend } from '../components/Legend'
 import { MapView } from '../components/MapView'
 import { PlaceList } from '../components/PlaceList'
 import { PreferencesForm } from '../components/PreferencesForm'
 import { ProfilePicker } from '../components/ProfilePicker'
+import { ReportForm } from '../components/ReportForm'
 import { RouteDescription } from '../components/RouteDescription'
 import {
   RoutePoints,
@@ -62,11 +65,14 @@ export function HomePage() {
   const [prefs, setPrefs] = useState<RoutePreferences>(DEFAULT_PREFERENCES)
   const [origin, setOrigin] = useState<NamedPoint | null>(null)
   const [destination, setDestination] = useState<NamedPoint | null>(null)
+  const [reportPoint, setReportPoint] = useState<NamedPoint | null>(null)
   const [pickTarget, setPickTarget] = useState<PickTarget | null>(null)
   const [route, setRoute] = useState<RouteResponse | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [institutions, setInstitutions] = useState<Institution[]>([])
+  const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
 
   useEffect(() => {
     if (!mapBbox) return
@@ -90,6 +96,15 @@ export function HomePage() {
       controller.abort()
     }
   }, [mapBbox, placesQuery])
+
+  useEffect(() => {
+    api
+      .institutions(CITY)
+      .then(setInstitutions)
+      .catch(() => {
+        // bez warstwy instytucji aplikacja dalej działa
+      })
+  }, [])
 
   useEffect(() => {
     if (!origin || !destination) return
@@ -126,10 +141,26 @@ export function HomePage() {
   const activeTarget: PickTarget | null =
     pickTarget ?? (!origin ? 'origin' : !destination ? 'destination' : null)
 
-  const setPoint = useCallback((target: PickTarget, value: NamedPoint) => {
-    if (target === 'origin') setOrigin(value)
-    else setDestination(value)
-  }, [])
+  const setterFor = useCallback(
+    (target: PickTarget) =>
+      target === 'origin' ? setOrigin : target === 'destination' ? setDestination : setReportPoint,
+    [],
+  )
+  const setPoint = useCallback(
+    (target: PickTarget, value: NamedPoint) => setterFor(target)(value),
+    [setterFor],
+  )
+
+  // "Start (A)" / "Cel (B)" w okienku instytucji na mapie
+  const routeFromInstitution = useCallback(
+    (inst: Institution, target: PickTarget) => {
+      if (!inst.location) return
+      setPoint(target, { label: inst.name, point: inst.location.point })
+      setPickTarget(null)
+      setSelectedInstitution(null)
+    },
+    [setPoint],
+  )
 
   const handleMapClick = useCallback(
     (point: LatLon) => {
@@ -139,7 +170,7 @@ export function HomePage() {
       setPickTarget(activeTarget === 'origin' && !destination ? 'destination' : null)
 
       // Adres zamiast współrzędnych, jeśli geokoder odpowie; punkt zostaje ten sam
-      const setter = activeTarget === 'origin' ? setOrigin : setDestination
+      const setter = setterFor(activeTarget)
       api
         .reverseGeocode(point, CITY)
         .then((found) => {
@@ -150,10 +181,25 @@ export function HomePage() {
           // brak geokodera: zostają współrzędne
         })
     },
-    [activeTarget, destination, setPoint],
+    [activeTarget, destination, setPoint, setterFor],
   )
 
-  const pickLetter = activeTarget === 'origin' ? 'A' : activeTarget === 'destination' ? 'B' : null
+  const pickLetter =
+    activeTarget === 'origin'
+      ? 'A'
+      : activeTarget === 'destination'
+        ? 'B'
+        : activeTarget === 'report'
+          ? '!'
+          : null
+
+  // Środek odcinka zaznaczonego w opisie trasy - można go użyć jako miejsca zgłoszenia
+  const segmentPoint = useMemo<NamedPoint | null>(() => {
+    const segment = selected !== null ? route?.segments[selected] : undefined
+    if (!segment?.geometry.length) return null
+    const middle = segment.geometry[Math.floor(segment.geometry.length / 2)]
+    return { label: segment.street ?? `odcinek ${(selected ?? 0) + 1}`, point: middle }
+  }, [route, selected])
 
   return (
     <div className="layout">
@@ -229,6 +275,24 @@ export function HomePage() {
           )}
         </div>
 
+        <ReportForm
+          city={CITY}
+          point={reportPoint}
+          onPointChange={(value) => {
+            setReportPoint(value)
+            if (pickTarget === 'report') setPickTarget(null)
+          }}
+          picking={pickTarget === 'report'}
+          onPick={(on) => setPickTarget(on ? 'report' : null)}
+          segmentPoint={segmentPoint}
+        />
+
+        <InstitutionList
+          institutions={institutions}
+          selected={selectedInstitution}
+          onSelect={setSelectedInstitution}
+        />
+
         <PlaceList
           places={places}
           query={placesQuery}
@@ -245,17 +309,28 @@ export function HomePage() {
           route={route}
           origin={origin?.point ?? null}
           destination={destination?.point ?? null}
+          reportPoint={reportPoint?.point ?? null}
           selectedSegment={selected}
           pickLabel={pickLetter}
           onMapClick={handleMapClick}
           onSegmentClick={setSelected}
           onBoundsChange={setMapBbox}
+          institutions={institutions}
+          selectedInstitution={selectedInstitution}
+          onInstitutionSelect={setSelectedInstitution}
+          onInstitutionRoute={routeFromInstitution}
         />
         {pickLetter && (
           <div className="map-banner">
             <PinIcon size={18} />
             <span>
-              Kliknij na mapie, aby ustawić punkt <strong>{pickLetter}</strong>
+              {activeTarget === 'report' ? (
+                'Kliknij na mapie, aby wskazać miejsce bariery'
+              ) : (
+                <>
+                  Kliknij na mapie, aby ustawić punkt <strong>{pickLetter}</strong>
+                </>
+              )}
             </span>
             {pickTarget && (
               <button type="button" className="banner-button" onClick={() => setPickTarget(null)}>
@@ -269,7 +344,13 @@ export function HomePage() {
             <span className="spinner" /> Szukam trasy…
           </div>
         )}
-        {route && <Legend showBaseline={!!route.baseline && !route.is_mock} />}
+        {(route || institutions.length > 0) && (
+          <Legend
+            showRoute={!!route}
+            showBaseline={!!route?.baseline && !route.is_mock}
+            showInstitutions={institutions.length > 0}
+          />
+        )}
       </div>
     </div>
   )

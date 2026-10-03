@@ -139,3 +139,9 @@ export const LogoMark = (p: IconProps) => (
     <circle cx="23" cy="10" r="2.6" fill="#fff" />
   </svg>
 )
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+)
