@@ -12,9 +12,10 @@ import networkx as nx
 
 from app.cities import CityConfig
 from app.db.tables import SegmentAttributeRow, SegmentRow
-from app.models import AttributeKey, AttributeStatus
+from app.models import AttributeKey, AttributeStatus, SourceType
 from app.normalization.merge import STALE_AFTER, STALE_PENALTY
 from app.providers.osm import OsmProvider
+from app.routing.elevation import COVERAGE_ID
 from app.routing.planner import edge_difficulty, graph_fetched_at, last_verified
 from app.routing.profiles import incline_percent, is_steps, kerb_cm, tag
 from app.routing.scores import data_confidence
@@ -64,6 +65,24 @@ def edge_attributes(data: dict[str, Any]) -> list[tuple[AttributeKey, bool | int
     return attrs
 
 
+# Nachylenie z NMT GUGiK 1 m (#10): pomiar modelu terenu - pewniejsze niż opis w OSM
+NMT_CONFIDENCE = 0.8
+
+
+def _nmt_attribute(key: AttributeKey, value: Any, fetched_at: datetime) -> SegmentAttributeRow:
+    return SegmentAttributeRow(
+        key=key.value,
+        value={"v": value},
+        source="nmt_gugik",
+        source_type=SourceType.OPEN_DATA.value,
+        source_ref=COVERAGE_ID,
+        fetched_at=fetched_at,
+        last_verified=None,
+        confidence=NMT_CONFIDENCE,
+        status=AttributeStatus.UNVERIFIED.value,
+    )
+
+
 def edge_to_rows(
     u: int,
     v: int,
@@ -103,7 +122,9 @@ def edge_to_rows(
         confidence=data_confidence([data]),
         geom="SRID=4326;LINESTRING(" + ", ".join(f"{x} {y}" for x, y in coords) + ")",
         attributes=[
-            SegmentAttributeRow(
+            _nmt_attribute(attr_key, value, fetched_at)
+            if attr_key == AttributeKey.INCLINE_PERCENT and data.get("incline_source") == "nmt"
+            else SegmentAttributeRow(
                 key=attr_key.value,
                 value={"v": value},
                 source=OsmProvider.name,

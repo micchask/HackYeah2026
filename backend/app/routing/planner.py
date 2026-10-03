@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from time import perf_counter
 from typing import Any
 
+import networkx as nx
+
 from app.models import (
     AttributeStatus,
     BarrierType,
@@ -19,7 +21,14 @@ from app.models import (
     RouteResponse,
     RouteSegment,
 )
-from app.routing.graph import CityGraph, path_edges, shortest_path, shortest_walking_path
+from app.routing.elevation import NMT_SOURCE
+from app.routing.graph import (
+    CityGraph,
+    path_edges,
+    reachable_nodes,
+    shortest_path,
+    shortest_walking_path,
+)
 from app.routing.profiles import (
     ROUGH_SURFACES,
     UNPAVED_SURFACES,
@@ -95,6 +104,47 @@ class NoRouteError(Exception):
     pass
 
 
+# Gdy do samego punktu nie ma dojazdu (np. taras widokowy tylko po schodach), trasa kończy się
+# w najbliższym dostępnym miejscu - ale nie dalej niż tyle, bo to byłby już inny cel
+MAX_FALLBACK_M = 250
+
+
+def _route_with_fallback(
+    req: RouteRequest, city_graph: CityGraph, profile, source: int, target: int
+) -> tuple[list[int], int, int, list[str]]:
+    """Najkrótsza trasa; bez niej - do najbliższego osiągalnego celu albo od osiągalnego startu."""
+    graph = city_graph.graph
+    try:
+        return shortest_path(graph, source, target, profile), source, target, []
+    except nx.NetworkXNoPath:
+        pass
+
+    reach = reachable_nodes(graph, source, profile)
+    if len(reach) > 1:
+        alt, d = city_graph.nearest_node_among(
+            req.destination.lat, req.destination.lon, reach - {source}
+        )
+        if d <= MAX_FALLBACK_M:
+            warning = (
+                "Do wskazanego celu nie ma dojazdu bez przeszkód (schody, zbyt strome nachylenie "
+                f"albo wysoki krawężnik). Trasa kończy się ok. {round(d)} m od celu, "
+                "w najbliższym dostępnym miejscu."
+            )
+            return shortest_path(graph, source, alt, profile), source, alt, [warning]
+
+    back = reachable_nodes(graph, target, profile, reverse=True)
+    if len(back) > 1:
+        alt, d = city_graph.nearest_node_among(req.origin.lat, req.origin.lon, back - {target})
+        if d <= MAX_FALLBACK_M:
+            warning = (
+                "Z punktu startu nie ma wyjazdu bez przeszkód (schody, zbyt strome nachylenie "
+                f"albo wysoki krawężnik). Trasa zaczyna się ok. {round(d)} m od niego, "
+                "w najbliższym dostępnym miejscu."
+            )
+            return shortest_path(graph, alt, target, profile), alt, target, [warning]
+    raise NoRouteError
+
+
 @dataclass
 class _Segment:
     street: str
@@ -128,7 +178,11 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     timings_ms: dict[str, float] = {}
     started = perf_counter()
     try:
-        path = shortest_path(graph, source, target, profile)
+        path, source, target, fallback_warnings = _route_with_fallback(
+            req, city_graph, profile, source, target
+        )
+    except NoRouteError:
+        raise
     except Exception as exc:
         raise NoRouteError from exc
     timings_ms["main"] = (perf_counter() - started) * 1000
@@ -167,10 +221,21 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     )
 
     route_accessibility, route_confidence = aggregate_route_scores(main.segments)
-    warnings: list[str] = []
+    warnings: list[str] = list(fallback_warnings)
     for label, d in (("A", d_source), ("B", d_target)):
-        if d > 50:
+        if d > 50 and not fallback_warnings:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
+    over = [
+        abs(i)
+        for e in main.edges
+        if (i := incline_percent(e)) is not None and abs(i) > profile.max_incline_percent
+    ]
+    if over:
+        warnings.append(
+            f"Na trasie jest odcinek o nachyleniu {max(over):g}% - powyżej Twojego limitu "
+            f"{profile.max_incline_percent:g}%. Nie znaleźliśmy rozsądnej drogi w limicie; "
+            "może być potrzebna pomoc."
+        )
 
     baseline = _baseline(shortest)
     alternatives = _alternatives(main, shortest, compromise)
@@ -473,11 +538,19 @@ def _to_segment(
         accessibility_score=accessibility_score(seg.edges, profile),
         data_status=AttributeStatus.UNVERIFIED,
         confidence=data_confidence(seg.edges),
-        sources=["OpenStreetMap"],
+        sources=segment_sources(seg.edges),
         barriers=segment_barriers(seg.edges),
         fetched_at=fetched_at,
         last_verified=last_verified(seg.edges),
     )
+
+
+def segment_sources(edges: list[dict[str, Any]]) -> list[str]:
+    """Źródła danych odcinka: zawsze OSM; NMT GUGiK, gdy nachylenie policzono z modelu terenu."""
+    sources = ["OpenStreetMap"]
+    if any(e.get("incline_source") == "nmt" for e in edges):
+        sources.append(NMT_SOURCE)
+    return sources
 
 
 def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
@@ -508,8 +581,15 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
     if any(has_unknown_incline(e) and incline_percent(e) is None for e in seg.edges):
         warnings.append("Odcinek pochyły - brak dokładnych danych o nachyleniu.")
     steep = [i for e in seg.edges if (i := incline_percent(e)) is not None and abs(i) > 4]
-    if steep:
-        warnings.append(f"Nachylenie do {max(abs(i) for i in steep):g}%.")
+    worst = max((abs(i) for i in steep), default=0.0)
+    if worst > profile.max_incline_percent:
+        # trasa idzie tędy, bo nie ma innej drogi w limicie (patrz profiles.OVER_LIMIT_PENALTY)
+        warnings.append(
+            f"Nachylenie do {worst:g}% - powyżej Twojego limitu "
+            f"{profile.max_incline_percent:g}%. Może być potrzebna pomoc."
+        )
+    elif steep:
+        warnings.append(f"Nachylenie do {worst:g}%.")
     kerbs = [k for e in seg.edges if (k := kerb_cm(e)) is not None and k >= WARN_KERB_CM]
     if kerbs:
         warnings.append(f"Krawężnik ok. {max(kerbs):g} cm.")

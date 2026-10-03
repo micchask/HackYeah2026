@@ -61,9 +61,20 @@ def test_cobblestones_cost_more_for_wheelchair_than_stroller():
     assert edge_cost(edge, PROFILES["wheelchair"]) > edge_cost(edge, PROFILES["stroller"])
 
 
-def test_steep_edge_impassable():
-    edge = {"length": 50, "surface": "asphalt", "incline_percent": 12}
+def test_incline_over_limit_is_last_resort_not_blocked():
+    # 12% > limit 10% wózka dziecięcego: bardzo drogo (tylko gdy nie ma innej drogi), ale przejezdne
+    flat = {"length": 50, "surface": "asphalt", "incline_percent": 2}
+    steep = {"length": 50, "surface": "asphalt", "incline_percent": 12}
+    cost = edge_cost(steep, PROFILES["stroller"])
+    assert cost is not None
+    assert cost > 50 * edge_cost(flat, PROFILES["stroller"])
+
+
+def test_very_steep_edge_impassable():
+    # powyżej twardego limitu (15%): stromy stok albo błąd NMT - nigdy przez to nie prowadzimy
+    edge = {"length": 50, "surface": "asphalt", "incline_percent": 20}
     assert edge_cost(edge, PROFILES["stroller"]) is None
+    assert edge_cost(edge, PROFILES["wheelchair"]) is None
 
 
 def test_preferences_override_profile():
@@ -79,7 +90,8 @@ def test_stroller_can_use_stairs_with_stroller_ramp_wheelchair_cannot():
 
 def test_incline_parsed_from_osm_tag():
     edge = {"length": 10, "surface": "asphalt", "incline": "8%"}
-    assert edge_cost(edge, PROFILES["wheelchair"]) is None
+    # 8% > limit 6% wózka inwalidzkiego: ostateczność (bardzo drogo), dla wózka dziecięcego OK
+    assert edge_cost(edge, PROFILES["wheelchair"]) > 50 * 10
     assert edge_cost(edge, PROFILES["stroller"]) == 10
 
 

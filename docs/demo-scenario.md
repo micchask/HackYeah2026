@@ -92,10 +92,14 @@ Co pokazujemy:
 - trasa omija Grodzką, idzie Bracką, Poselską i alejką Plant (asfalt), potem Świętego Idziego i Drogą do Zamku,
 - szara przerywana linia to najkrótsza zwykła trasa piesza (Grodzka, Kanonicza, schody na wzgórze) – dla porównania,
 - schody na wzgórze są pominięte (`highway=steps` → krawędź nieprzejezdna),
-- wynik (stan grafu z 3.10.2026): 1,68 km i 131 m bruku, zamiast 1,07 km, 2 odcinków schodów i 764 m bruku na zwykłej trasie,
+- wynik (graf z nachyleniem z NMT, #10): ok. 1,70 km, zamiast 1,07 km, 2 odcinków schodów i 764 m bruku na zwykłej trasie,
 - segmenty na mapie mają kolory wg trudności + legenda (#25),
-- ostatni odcinek (Droga do Zamku) ma ostrzeżenie: **„bruk i podjazd, brak danych o nachyleniu – pewność niska”**.
-  To celowe: pokazujemy, że aplikacja **nie udaje, że wie**.
+- nachylenie każdego odcinka jest **zmierzone** z modelu terenu GUGiK (1 m) – źródła odcinka: „OpenStreetMap, NMT GUGiK”,
+- Droga do Zamku ma w najbardziej stromym miejscu **8,1%**, czyli powyżej limitu 6%. Innej rozsądnej drogi bez schodów
+  na wzgórze nie ma (strome brukowane skróty mają 10–13%), więc trasa idzie tędy z ostrzeżeniem:
+  **„Nachylenie do 8.1% – powyżej Twojego limitu 6%. Może być potrzebna pomoc.”**
+  To celowe: aplikacja **nie udaje, że wie, i nie udaje, że jest łatwo** – pokazuje konkretną wartość i co z niej wynika.
+- (opcjonalnie) w „Dostosuj szczegóły” podnoszę limit nachylenia do 9% – ostrzeżenie znika.
 
 > „Trasa jest o kilkaset metrów dłuższa, ale bez schodów i prawie bez bruku. A tam, gdzie nie mamy pewności, mówimy to wprost.”
 
@@ -163,7 +167,7 @@ Na podstawie scenariusza. **Musi być** = bez tego nie ma demo.
 |---|---|
 | **Overpass nie odpowiada.** 3.10.2026 `overpass-api.de` odrzucał połączenia z naszej sieci, a działał mirror `https://maps.mail.ru/osm/tools/overpass/api/interpreter` | demo **zawsze** z cache (`make seed`, #12); w `krakow.yaml` można zmienić `overpass_url` na mirror |
 | routing wyznacza dziwną trasę dla B (np. przez dziedziniec bez wejścia) | przed demo zapisać współrzędne A/B/C, które dają dobrą trasę, i trzymać je w presetach |
-| brak danych o nachyleniu podjazdu na Wawel | to nie błąd, to funkcja: ostrzeżenie + niska pewność (scena 2) |
+| nachylenie podjazdu na Wawel ponad limit profilu | to nie błąd, to funkcja: trasa z ostrzeżeniem i konkretną wartością z NMT (scena 2); nachylenie > 15% jest nieprzejezdne |
 | internet na sali | kafelki mapy i API lokalnie; w ostateczności nagrany film (#41) |
 | czas | sceny 1–4 to rdzeń (ok. 2,5 min), 5 i 6 skracamy w razie potrzeby |
 
