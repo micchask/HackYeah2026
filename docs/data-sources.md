@@ -9,7 +9,7 @@ Zasady cyklicznego odświeżania, obsługi awarii i moderacji opisuje
 | Kraków – otwarte dane | `krakow_open_data` | pliki/API | TODO | stub | TODO: wybrać zbiory |
 | MSIP Kraków | `msip` | WMS/WFS | TODO | stub | TODO: chodniki, przejścia, schody |
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |
-| Deklaracje dostępności (BIP) | – (plik `backend/datasets/krakow_instytucje_dostepnosc.json`) | plik JSON, opracowany ręcznie | informacja publiczna | dane gotowe, bez providera | 32 instytucje (UMK, ZDMK, Muzeum Krakowa, Teatr KTO): wejścia, windy, toalety, pętle indukcyjne, tłumacz PJM. Brak współrzędnych (`geometry: null`) – do geokodowania po adresie |
+| Deklaracje dostępności (BIP) | `accessibility_declarations` (zbiór: `backend/datasets/krakow_instytucje_dostepnosc.json`, snapshot `data/seed/krakow/accessibility_declarations.json.gz`) | plik JSON (opracowany ręcznie z deklaracji na stronach BIP) albo URL | informacja publiczna (ustawa o dostępie do informacji publicznej; deklaracje obowiązkowe wg ustawy o dostępności cyfrowej) | działa | 32 instytucje (UMK, ZDMK, Muzeum Krakowa, Teatr KTO), współrzędne z Photona (#75). Do miejsc trafiają: winda → `elevator`, toaleta → `accessible_toilet`, wejście/wejście główne/boczne → `step_free_entrance`; tekst zamieniany na tak/nie regułami z YAML, niejednoznaczny pomijany. Pozostałe kategorie (pętla, PJM) – tylko w `/api/institutions` |
 | GTFS ZTP Kraków (gtfs.ztp.krakow.pl) | – (plik `backend/datasets/krakow_przystanki_stare_miasto.json`) | plik JSON, wyciąg z GTFS | TODO: potwierdzić warunki ZTP | dane gotowe, bez providera | 29 przystanków w `demo_bbox` (18 tramwajowych, 11 autobusowych) ze współrzędnymi i liniami. `wheelchair_boarding` pusty w całym GTFS ZTP – zapisany jako `unknown`, confidence 0.0 |
 | Photon (komoot), geokoder | – (`backend/app/geocoding.py`, `GET /api/geocode`, `/api/geocode/reverse`) | API | dane OSM (ODbL); publiczna instancja w trybie fair use | działa | podpowiedzi adresów A/B i adres po kliknięciu na mapie, tylko w `demo_bbox`. Wymaga własnego `User-Agent` (inaczej 403) i nie obsługuje `lang=pl`. Wyniki w cache procesu przez 1 h. Bez internetu: komunikat w UI, zostają trasy demo i wybór na mapie |
 
@@ -28,6 +28,23 @@ a nie drogą. `routing/graph.py` (`add_kerbs`) przenosi go na krawędzie, które
 `kerb_height_cm` (raised ≈ 10, rolled ≈ 6, lowered ≈ 2, flush/no = 0) albo `kerb_unknown`, gdy wysokości brak.
 Za wysoki krawężnik dla profilu = krawędź nieprzejezdna, nieznana wysokość = kara za niepewność.
 W obszarze demo (3.10.2026): 183 węzły, w większości `lowered` i `flush`, tylko 2 `raised`, 26 bez wysokości.
+
+## Deklaracje dostępności – źródło uniwersalne
+
+Każdy podmiot publiczny w Polsce publikuje deklarację dostępności według jednego wzoru, więc provider
+`accessibility_declarations` nie zna żadnego miasta: zbiór (`url` – plik względem `backend/` albo
+`http(s)://`) i reguły zamiany tekstu na tak/nie są w `cities/<miasto>.yaml`. Nowe miasto = nowy zbiór
+i wpis w YAML. Pewność bierzemy z rekordu (0.95 z datą weryfikacji, 0.75 bez daty).
+
+**Łączenie z OSM** (`normalization/merge.py`, `match_places`): ten sam obiekt = odległość ≤ 30 m **i**
+podobna nazwa (≥ 70% słów krótszej nazwy w dłuższej, bez polskich znaków). Sama odległość nie wystarcza:
+26 m od Pałacu Krzysztofory jest siłownia, 37 m od Starej Synagogi bar sushi – ich `wheelchair=no`
+dałoby fałszywe konflikty. Dopasowane miejsce dostaje id źródła wyżej w YAML (OSM).
+
+Stan 3.10.2026: dopasowane 2 z 32 instytucji (Krakowskie Centrum Świadczeń, Urząd Stanu Cywilnego);
+muzea nie mają w OSM punktu z tagiem `wheelchair`, więc zostają osobnymi miejscami. Wspólna cecha z OSM
+to tylko `accessible_toilet`, więc konflikty pojawią się dopiero przy dopasowaniu obiektu z toaletą
+w obu źródłach.
 
 ## Confidence bazowe
 

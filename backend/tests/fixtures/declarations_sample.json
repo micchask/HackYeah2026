@@ -1,0 +1,37 @@
+[
+  {
+    "id": "mk-stara-synagoga",
+    "institution": "Muzeum Krakowa — Stara Synagoga",
+    "address": "ul. Szeroka 24, Kraków",
+    "poiType": "muzeum",
+    "geometry": { "type": "Point", "coordinates": [19.9488, 50.0515] },
+    "attributes": [
+      { "category": "wejscie", "value": "kilkanaście schodów w dół do placu przed budynkiem; brak windy/podjazdu", "source": "Deklaracja dostępności (BIP)", "lastVerified": "2025-03-31", "confidence": 0.95, "status": "potwierdzone" },
+      { "category": "winda", "value": "brak", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.95, "status": "potwierdzone" },
+      { "category": "toaleta", "value": "brak toalety dla osób z niepełnosprawnościami", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.95, "status": "potwierdzone" },
+      { "category": "tlumacz_migowy", "value": "dostępny po wcześniejszym zgłoszeniu", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.95, "status": "potwierdzone" }
+    ]
+  },
+  {
+    "id": "zdmk-centralna",
+    "institution": "Zarząd Dróg Miasta Krakowa — siedziba główna",
+    "address": "ul. Centralna 53, Kraków",
+    "poiType": "urzad",
+    "geometry": { "type": "Point", "coordinates": [20.0105, 50.0569] },
+    "attributes": [
+      { "category": "wejscie_glowne", "value": "po kilku stopniach (schody)", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.75, "status": "potwierdzone_brak_daty" },
+      { "category": "wejscie_boczne", "value": "dostosowane dla osób z niepełnosprawnością ruchową", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.75, "status": "potwierdzone_brak_daty" },
+      { "category": "winda", "value": "jest, ale bywa wyłączona", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.75, "status": "potwierdzone_brak_daty" }
+    ]
+  },
+  {
+    "id": "bez-wspolrzednych",
+    "institution": "Instytucja bez współrzędnych",
+    "address": "ul. Nieznana 1, Kraków",
+    "poiType": "urzad",
+    "geometry": null,
+    "attributes": [
+      { "category": "winda", "value": "tak", "source": "Deklaracja dostępności (BIP)", "lastVerified": null, "confidence": 0.75, "status": "potwierdzone_brak_daty" }
+    ]
+  }
+]
