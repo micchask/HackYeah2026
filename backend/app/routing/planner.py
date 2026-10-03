@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+import networkx as nx
+
 from app.models import (
     AttributeStatus,
     Difficulty,
@@ -15,7 +17,13 @@ from app.models import (
     RouteSegment,
 )
 from app.routing.elevation import NMT_SOURCE
-from app.routing.graph import CityGraph, path_edges, shortest_path, shortest_walking_path
+from app.routing.graph import (
+    CityGraph,
+    path_edges,
+    reachable_nodes,
+    shortest_path,
+    shortest_walking_path,
+)
 from app.routing.profiles import (
     ROUGH_SURFACES,
     UNPAVED_SURFACES,
@@ -86,6 +94,47 @@ class NoRouteError(Exception):
     pass
 
 
+# Gdy do samego punktu nie ma dojazdu (np. taras widokowy tylko po schodach), trasa kończy się
+# w najbliższym dostępnym miejscu - ale nie dalej niż tyle, bo to byłby już inny cel
+MAX_FALLBACK_M = 250
+
+
+def _route_with_fallback(
+    req: RouteRequest, city_graph: CityGraph, profile, source: int, target: int
+) -> tuple[list[int], int, int, list[str]]:
+    """Najkrótsza trasa; bez niej - do najbliższego osiągalnego celu albo od osiągalnego startu."""
+    graph = city_graph.graph
+    try:
+        return shortest_path(graph, source, target, profile), source, target, []
+    except nx.NetworkXNoPath:
+        pass
+
+    reach = reachable_nodes(graph, source, profile)
+    if len(reach) > 1:
+        alt, d = city_graph.nearest_node_among(
+            req.destination.lat, req.destination.lon, reach - {source}
+        )
+        if d <= MAX_FALLBACK_M:
+            warning = (
+                "Do wskazanego celu nie ma dojazdu bez przeszkód (schody, zbyt strome nachylenie "
+                f"albo wysoki krawężnik). Trasa kończy się ok. {round(d)} m od celu, "
+                "w najbliższym dostępnym miejscu."
+            )
+            return shortest_path(graph, source, alt, profile), source, alt, [warning]
+
+    back = reachable_nodes(graph, target, profile, reverse=True)
+    if len(back) > 1:
+        alt, d = city_graph.nearest_node_among(req.origin.lat, req.origin.lon, back - {target})
+        if d <= MAX_FALLBACK_M:
+            warning = (
+                "Z punktu startu nie ma wyjazdu bez przeszkód (schody, zbyt strome nachylenie "
+                f"albo wysoki krawężnik). Trasa zaczyna się ok. {round(d)} m od niego, "
+                "w najbliższym dostępnym miejscu."
+            )
+            return shortest_path(graph, alt, target, profile), alt, target, [warning]
+    raise NoRouteError
+
+
 @dataclass
 class _Segment:
     street: str
@@ -105,7 +154,11 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     target, d_target = city_graph.nearest_node(req.destination.lat, req.destination.lon)
 
     try:
-        path = shortest_path(graph, source, target, profile)
+        path, source, target, fallback_warnings = _route_with_fallback(
+            req, city_graph, profile, source, target
+        )
+    except NoRouteError:
+        raise
     except Exception as exc:
         raise NoRouteError from exc
     edges = path_edges(graph, path, profile)
@@ -120,9 +173,9 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     route_accessibility, route_confidence = aggregate_route_scores(segments)
     rough_m = _rough_m(edges)
     stairs = _stairs_count(edges)
-    warnings: list[str] = []
+    warnings: list[str] = list(fallback_warnings)
     for label, d in (("A", d_source), ("B", d_target)):
-        if d > 50:
+        if d > 50 and not fallback_warnings:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
     over = [
         abs(i)

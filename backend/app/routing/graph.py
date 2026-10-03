@@ -145,6 +145,14 @@ class CityGraph:
         i, dist = _nearest(self.node_lat, self.node_lon, lat, lon)
         return int(self.node_ids[i]), dist
 
+    def nearest_node_among(self, lat: float, lon: float, allowed: set[int]) -> tuple[int, float]:
+        """Najbliższy węzeł spośród `allowed` (np. osiągalnych dla profilu) i odległość [m]."""
+        mask = np.isin(self.node_ids, np.fromiter(allowed, dtype=self.node_ids.dtype))
+        if not mask.any():
+            raise ValueError("Pusty zbiór węzłów")
+        i, dist = _nearest(self.node_lat[mask], self.node_lon[mask], lat, lon)
+        return int(self.node_ids[mask][i]), dist
+
     def nearby_name(self, lat: float, lon: float, max_m: float = 30) -> str | None:
         if not self.named:
             return None
@@ -216,6 +224,14 @@ def shortest_path(
     graph: nx.MultiDiGraph, source: int, target: int, profile: RoutingProfile
 ) -> list[int]:
     return nx.shortest_path(graph, source, target, weight=_weight(profile))
+
+
+def reachable_nodes(
+    graph: nx.MultiDiGraph, source: int, profile: RoutingProfile, reverse: bool = False
+) -> set[int]:
+    """Węzły osiągalne z `source` dla profilu (reverse: te, z których da się dojść do `source`)."""
+    g = graph.reverse(copy=False) if reverse else graph
+    return set(nx.single_source_dijkstra_path_length(g, source, weight=_weight(profile)))
 
 
 def _weight(profile: RoutingProfile | None) -> Callable[[int, int, dict], float | None]:
