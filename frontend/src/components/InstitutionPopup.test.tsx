@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Institution } from '../api/client'
-import { InstitutionDetails } from './InstitutionDetails'
+import { InstitutionPopup } from './InstitutionPopup'
 
 const institution: Institution = {
   id: 'mk-test',
@@ -34,27 +34,37 @@ const institution: Institution = {
   ],
 }
 
-function renderDetails() {
+function renderPopup() {
   const handlers = { onSetOrigin: vi.fn(), onSetDestination: vi.fn(), onClose: vi.fn() }
-  render(<InstitutionDetails institution={institution} {...handlers} />)
+  render(<InstitutionPopup institution={institution} {...handlers} />)
   return handlers
 }
 
-describe('InstitutionDetails', () => {
-  it('pokazuje dostępność, a brak danych jako brak informacji (nie "dostępne")', () => {
-    renderDetails()
+describe('InstitutionPopup', () => {
+  it('na start pokazuje nazwę i akcje, szczegóły dopiero po "Więcej informacji"', () => {
+    renderPopup()
     expect(screen.getByRole('heading', { name: 'Muzeum testowe' })).toHaveFocus()
+    expect(screen.queryByText('tak, przyciski Braille')).not.toBeInTheDocument()
+
+    const more = screen.getByRole('button', { name: 'Więcej informacji' })
+    expect(more).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(more)
+
+    expect(screen.getByRole('button', { name: 'Mniej informacji' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
     expect(screen.getByText('tak, przyciski Braille')).toBeInTheDocument()
     expect(screen.getByText('potwierdzone')).toBeInTheDocument()
-    // wartość null i status unknown - dwa razy "brak informacji": w treści i na plakietce
+    // null + status unknown - "brak informacji" w treści i na plakietce, nigdy "dostępne"
     expect(screen.getAllByText('brak informacji')).toHaveLength(2)
     expect(screen.getByText(/punkt na mapie jest przybliżony/i)).toBeInTheDocument()
   })
 
-  it('pozwala ustawić instytucję jako start/cel i zamknąć kartę', () => {
-    const handlers = renderDetails()
-    fireEvent.click(screen.getByRole('button', { name: 'Trasa stąd (A)' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Trasa tutaj (B)' }))
+  it('ustawia start/cel i zamyka się Escape', () => {
+    const handlers = renderPopup()
+    fireEvent.click(screen.getByRole('button', { name: 'Start (A)' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cel (B)' }))
     fireEvent.keyDown(screen.getByRole('heading', { name: 'Muzeum testowe' }), { key: 'Escape' })
     expect(handlers.onSetOrigin).toHaveBeenCalledOnce()
     expect(handlers.onSetDestination).toHaveBeenCalledOnce()

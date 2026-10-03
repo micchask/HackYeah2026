@@ -10,7 +10,6 @@ import {
   type RouteResponse,
 } from '../api/client'
 import { AlertIcon, PinIcon, SlidersIcon } from '../components/icons'
-import { InstitutionDetails } from '../components/InstitutionDetails'
 import { InstitutionList } from '../components/InstitutionList'
 import { Legend } from '../components/Legend'
 import { MapView } from '../components/MapView'
@@ -82,12 +81,6 @@ export function HomePage() {
       })
   }, [])
 
-  const institution = institutions.find((i) => i.id === selectedInstitution) ?? null
-
-  function institutionPoint(inst: Institution): NamedPoint | null {
-    return inst.location ? { label: inst.name, point: inst.location.point } : null
-  }
-
   useEffect(() => {
     if (!origin || !destination) return
     const controller = new AbortController()
@@ -127,6 +120,17 @@ export function HomePage() {
     if (target === 'origin') setOrigin(value)
     else setDestination(value)
   }, [])
+
+  // "Start (A)" / "Cel (B)" w okienku instytucji na mapie
+  const routeFromInstitution = useCallback(
+    (inst: Institution, target: PickTarget) => {
+      if (!inst.location) return
+      setPoint(target, { label: inst.name, point: inst.location.point })
+      setPickTarget(null)
+      setSelectedInstitution(null)
+    },
+    [setPoint],
+  )
 
   const handleMapClick = useCallback(
     (point: LatLon) => {
@@ -226,23 +230,6 @@ export function HomePage() {
           )}
         </div>
 
-        {institution && (
-          <InstitutionDetails
-            institution={institution}
-            onSetOrigin={() => {
-              const p = institutionPoint(institution)
-              if (p) setPoint('origin', p)
-              setPickTarget(null)
-            }}
-            onSetDestination={() => {
-              const p = institutionPoint(institution)
-              if (p) setPoint('destination', p)
-              setPickTarget(null)
-            }}
-            onClose={() => setSelectedInstitution(null)}
-          />
-        )}
-
         <InstitutionList
           institutions={institutions}
           selected={selectedInstitution}
@@ -266,7 +253,8 @@ export function HomePage() {
           onSegmentClick={setSelected}
           institutions={institutions}
           selectedInstitution={selectedInstitution}
-          onInstitutionClick={setSelectedInstitution}
+          onInstitutionSelect={setSelectedInstitution}
+          onInstitutionRoute={routeFromInstitution}
         />
         {pickLetter && (
           <div className="map-banner">
