@@ -17,7 +17,9 @@ class RoutePreferences(BaseModel):
     avoid_rough_surface: bool = True  # kocie łby, żwir, bruk
     prefer_lit_paths: bool = False
     profile: str | None = Field(
-        default=None, description="Gotowy preset: 'wheelchair' lub 'stroller' (opcjonalnie)"
+        default=None,
+        description="Profil routingu: 'wheelchair', 'stroller', 'senior' albo 'walk'; "
+        "brak lub nieznany = 'walk'. Presety trybów: GET /api/profiles",
     )
 
 
