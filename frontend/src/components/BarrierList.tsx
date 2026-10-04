@@ -1,8 +1,10 @@
 import { useId, useState } from 'react'
-import type { Barrier, BarrierType } from '../api/client'
+import type { Barrier, BarrierType, Report } from '../api/client'
 import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { formatKm } from './format'
+import { reportVotesText } from './attributes'
+import { ReportVotes } from './ReportVotes'
 
 // Długie listy (np. bruk na całym Starym Mieście) skracamy - reszta po przybliżeniu mapy
 const PER_GROUP = 25
@@ -25,6 +27,8 @@ interface Props {
   onSelect: (id: string | null) => void
   /** Zwinięta lista: tylko tyle najważniejszych barier, reszta po „Pokaż wszystkie” */
   collapsedLimit?: number
+  /** Głos na zgłoszenie użytkownika zapisany (#62) - np. odśwież bariery */
+  onReportVoted?: (report: Report) => void
 }
 
 /** Tekstowa alternatywa warstwy barier: te same dane co na mapie, pogrupowane wg typu. */
@@ -38,12 +42,19 @@ export function BarrierList({
   selected,
   onSelect,
   collapsedLimit,
+  onReportVoted,
 }: Props) {
   const id = useId()
   const [showAll, setShowAll] = useState(false)
   // API zwraca bariery od najważniejszych (schody, krawężniki…) - zwinięta lista pokazuje je
   const collapsible = collapsedLimit !== undefined && barriers.length > collapsedLimit
-  const shown = collapsible && !showAll ? barriers.slice(0, collapsedLimit) : barriers
+  // …ale zgłoszeń użytkowników (#62) nie chowamy - jest ich mało, a czekają na potwierdzenie innych
+  const reports = barriers.filter((b) => b.type === 'reported')
+  const others = barriers.filter((b) => b.type !== 'reported')
+  const shown =
+    collapsible && !showAll
+      ? [...others.slice(0, Math.max(0, collapsedLimit - reports.length)), ...reports]
+      : barriers
   const groups = BARRIER_TYPES.map((type) => ({
     type,
     items: shown.filter((b) => b.type === type),
@@ -102,10 +113,15 @@ export function BarrierList({
                       ? ` · sprawdzone ${new Date(b.last_verified).toLocaleDateString('pl-PL')}`
                       : ''}
                   </span>
+                  {b.report && <span className="meta">{reportVotesText(b.report)}</span>}
                   <span className="visually-hidden">
                     {selected === b.id ? ' – pokazane na mapie' : ' – pokaż na mapie'}
                   </span>
                 </button>
+                {/* zaznaczone zgłoszenie: inni potwierdzają albo mówią, że problemu już nie ma */}
+                {selected === b.id && b.report && (
+                  <ReportVotes key={b.id} report={b.report} onVoted={onReportVoted} />
+                )}
               </li>
             ))}
           </ul>

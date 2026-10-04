@@ -65,6 +65,8 @@ describe('ReportForm', () => {
       type: 'elevator_broken',
       location: SUKIENNICE.point,
       comment: 'Winda stoi',
+      // losowy identyfikator urządzenia - autor nie potwierdzi własnego zgłoszenia (#62)
+      reporter: expect.any(String),
     })
     const confirmation = await screen.findByText(
       'Dziękujemy! Zgłoszenie „Niedziałająca winda” zapisane – czeka na weryfikację.',

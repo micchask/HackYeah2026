@@ -5,8 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.cities import CityConfig, get_city
-from app.models import Report, ReportCreate, ReportStatus, ReportUpdate
+from app.models import Report, ReportCreate, ReportStatus, ReportUpdate, ReportVote
 from app.report_store import ReportStore, StorageUnavailable, get_report_store
+from app.report_votes import VoteError, cast_vote, device_hash
 
 router = APIRouter(tags=["reports"])
 
@@ -42,8 +43,10 @@ def create_report(
     report = Report(
         **payload.model_dump(), id=str(uuid.uuid4()), city=config.id, created_at=datetime.now(UTC)
     )
+    # autor nie może potem potwierdzić własnego zgłoszenia - zapisujemy tylko skrót urządzenia
+    reporter = device_hash(payload.reporter) if payload.reporter else None
     try:
-        return store.create(report)
+        return store.create(report, reporter)
     except StorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
 
@@ -57,6 +60,21 @@ def list_reports(
     """Zgłoszenia miasta, najnowsze pierwsze; opcjonalnie tylko o danym statusie."""
     try:
         return store.list(_city(city).id, status)
+    except StorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
+
+
+@router.post("/reports/{report_id}/votes", response_model=Report)
+def vote_on_report(report_id: str, payload: ReportVote, store: Store) -> Report:
+    """Inna osoba potwierdza zgłoszenie albo mówi, że problemu już nie ma (#62).
+
+    Przewaga 2 głosów jednej strony zmienia status (patrz app/report_votes.py). Jeden głos
+    na zgłoszenie z urządzenia - kolejny zastępuje poprzedni.
+    """
+    try:
+        return cast_vote(store, report_id, payload, datetime.now(UTC))
+    except VoteError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     except StorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
 

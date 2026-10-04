@@ -13,6 +13,8 @@ export interface AppData {
   barriersTruncated: boolean
   barriersLoading: boolean
   barriersError: string | null
+  /** Pobiera bariery jeszcze raz (np. po głosie na zgłoszenie - zmienia status i liczniki) */
+  refreshBarriers: () => void
   /** Braki danych (#31) - pobierane tylko przy włączonej warstwie „gaps” */
   dataGaps: SegmentCollection | null
   dataGapsSummary: DataGapsSummary | null
