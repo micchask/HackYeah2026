@@ -12,3 +12,19 @@ export function fromSearchResult(result: SearchResult): SelectedPlace {
     ? { kind: 'institution', id: result.institution_id }
     : { kind: 'search', result }
 }
+
+/** Miejsce kliknięte na mapie - jako wynik wyszukiwania, żeby pokazać to samo okienko (PlacePopup). */
+export function fromPlace(place: Place, kind?: string): SelectedPlace {
+  return {
+    kind: 'search',
+    result: {
+      id: place.id,
+      source: 'place',
+      match: 'name',
+      label: place.name ?? 'Miejsce bez nazwy',
+      kind: kind ?? null,
+      point: place.location,
+      place,
+    },
+  }
+}

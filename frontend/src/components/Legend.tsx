@@ -1,24 +1,30 @@
-import type { Difficulty } from '../api/client'
+import type { BarrierType, Difficulty } from '../api/client'
 import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
 import { INSTITUTION_COLOR } from './institutionStyle'
+import { PlaceAccessIcon } from './PlaceAccessIcon'
+import { ACCESS_LABEL, ACCESS_LEVELS } from './placeCategories'
 
 interface Props {
   showRoute: boolean
   showBaseline: boolean
   showInstitutions: boolean
   otherRoutes?: { index: number; label: string }[]
-  showBarriers?: boolean
+  /** Typy barier widoczne na mapie (z włączonych chipów) */
+  barrierTypes?: BarrierType[]
+  /** Na mapie są miejsca (warstwa z klastrami) */
+  showPlaces?: boolean
 }
 
-/** Legenda kolorów trasy. Kolor nigdy nie jest jedynym nośnikiem - opis trasy ma te same etykiety. */
+/** Legenda pokazuje tylko to, co jest na mapie. Kolor nigdy nie jest jedynym nośnikiem informacji. */
 export function Legend({
   showRoute,
   showBaseline,
   showInstitutions,
   otherRoutes = [],
-  showBarriers = false,
+  barrierTypes = [],
+  showPlaces = false,
 }: Props) {
   return (
     <section className="map-legend" aria-labelledby="legend-heading">
@@ -62,13 +68,28 @@ export function Legend({
             zwykła trasa piesza
           </li>
         )}
-        {showBarriers &&
-          BARRIER_TYPES.map((t) => (
-            <li key={t}>
-              <BarrierIcon type={t} size={18} />
-              {BARRIER_LABEL[t].toLowerCase()}
+        {BARRIER_TYPES.filter((t) => barrierTypes.includes(t)).map((t) => (
+          <li key={t}>
+            <BarrierIcon type={t} size={18} />
+            {BARRIER_LABEL[t].toLowerCase()}
+          </li>
+        ))}
+        {showPlaces && (
+          <>
+            {ACCESS_LEVELS.map((access) => (
+              <li key={access}>
+                <PlaceAccessIcon access={access} size={18} />
+                miejsce: {ACCESS_LABEL[access]}
+              </li>
+            ))}
+            <li>
+              <span className="legend-cluster" aria-hidden="true">
+                12
+              </span>
+              grupa miejsc (kliknij, by przybliżyć)
             </li>
-          ))}
+          </>
+        )}
       </ul>
     </section>
   )
