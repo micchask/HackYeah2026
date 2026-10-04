@@ -19,8 +19,10 @@ from pathlib import Path
 
 from app.cities import CityConfig, get_city
 from app.config import get_settings
-from app.models import Place
+from app.models import Place, Poi
 from app.normalization import merge_places
+from app.providers.osm_pois import NAME as POIS_NAME
+from app.providers.osm_pois import fetch_pois
 from app.providers.service import cache_path, fetch_city_places
 
 logger = logging.getLogger(__name__)
@@ -90,6 +92,16 @@ def save_places_to_db(places: list[Place]) -> int:
     return len(places)
 
 
+def save_pois_cache(city: CityConfig, pois: list[Poi], data_dir: Path | None = None) -> Path:
+    path = cache_path(city.id, POIS_NAME, data_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps([p.model_dump(mode="json") for p in pois], ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return path
+
+
 def refresh_snapshot(city: CityConfig, data_dir: Path | None = None) -> list[Path]:
     """Pobiera świeże dane (Overpass) i zapisuje je jako nowy snapshot w data/seed/."""
     import osmnx as ox  # import leniwy: ciężki, potrzebny tylko przy odświeżaniu
@@ -109,6 +121,12 @@ def refresh_snapshot(city: CityConfig, data_dir: Path | None = None) -> list[Pat
             snapshot.append(cache_path(city.id, provider, data_dir))
         else:
             logger.warning("Provider %s: %s - zostawiam poprzedni snapshot", provider, source)
+
+    if city.pois:
+        try:
+            snapshot.append(save_pois_cache(city, fetch_pois(city), data_dir))
+        except ConnectionError as exc:
+            logger.warning("Ławki i przewijaki: %s - zostawiam poprzedni snapshot", exc)
 
     out_dir = seed_dir(city.id, data_dir)
     written = []

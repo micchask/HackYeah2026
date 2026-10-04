@@ -55,6 +55,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pois": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Pois
+         * @description Ławki i przewijaki z OSM dla warstw mapy (w obszarze demo ok. 1400 ławek).
+         */
+        get: operations["list_pois_api_pois_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profiles": {
         parameters: {
             query?: never;
@@ -401,6 +421,10 @@ export interface components {
             /** Providers */
             providers?: components["schemas"]["ProviderConfig"][];
             routing?: components["schemas"]["RoutingConfig"];
+            /** Pois */
+            pois?: {
+                [key: string]: unknown;
+            };
         };
         /**
          * Difficulty
@@ -593,6 +617,41 @@ export interface components {
             /** Attributes */
             attributes?: components["schemas"]["AccessibilityAttribute"][];
         };
+        /**
+         * Poi
+         * @description Punkt dla warstw mapy (odpoczynek, przewijaki). Kształt jak `DemoPoi` we froncie.
+         */
+        Poi: {
+            /**
+             * Id
+             * @description Np. 'osm:node/123'
+             */
+            id: string;
+            kind: components["schemas"]["PoiKind"];
+            /** Name */
+            name?: string | null;
+            location: components["schemas"]["LatLon"];
+            /**
+             * Details
+             * @description Szczegóły z OSM, np. ławka: backrest, armrest, seats, material; przewijak: place_type, location, fee, wheelchair, opening_hours
+             */
+            details?: {
+                [key: string]: string | number | boolean;
+            };
+            /**
+             * Source
+             * @description Źródło danych, np. 'osm'
+             */
+            source: string;
+            provenance: components["schemas"]["Provenance"];
+            /** Confidence */
+            confidence: number;
+        };
+        /**
+         * PoiKind
+         * @enum {string}
+         */
+        PoiKind: "bench" | "changing_table";
         /** Provenance */
         Provenance: {
             /**
@@ -1104,6 +1163,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Place"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pois_api_pois_get: {
+        parameters: {
+            query?: {
+                city?: string;
+                /** @description bench (ławki) i/lub changing_table (przewijaki); brak = oba */
+                kind?: components["schemas"]["PoiKind"][] | null;
+                /** @description Obszar 'south,west,north,east' (WGS84). Domyślnie obszar demo miasta. */
+                bbox?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Poi"][];
                 };
             };
             /** @description Validation Error */

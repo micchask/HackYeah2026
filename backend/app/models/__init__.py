@@ -15,6 +15,7 @@ from app.models.institution import (
     InstitutionLocation,
 )
 from app.models.place import Place
+from app.models.poi import Poi, PoiKind
 from app.models.profile import LayerId, ModeId, ModePreset
 from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
 from app.models.route import (
@@ -51,6 +52,8 @@ __all__ = [
     "ModeId",
     "ModePreset",
     "Place",
+    "Poi",
+    "PoiKind",
     "Provenance",
     "Report",
     "ReportCreate",
