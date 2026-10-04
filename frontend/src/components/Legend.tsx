@@ -3,6 +3,8 @@ import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { GAP_CLASSES, GAP_COLOR, GAP_LABEL } from './dataGapsStyle'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
+import { DemoLayerIcon } from './DemoLayerIcon'
+import { DEMO_LAYER_META, type DemoLayerId } from './demoLayerStyle'
 import { INSTITUTION_COLOR } from './institutionStyle'
 import { PlaceAccessIcon } from './PlaceAccessIcon'
 import { ACCESS_LABEL, ACCESS_LEVELS } from './placeCategories'
@@ -17,6 +19,7 @@ interface Props {
   /** Na mapie są miejsca (warstwa z klastrami) */
   showPlaces?: boolean
   showDataGaps?: boolean
+  demoLayers?: DemoLayerId[]
 }
 
 /** Legenda pokazuje tylko to, co jest na mapie. Kolor nigdy nie jest jedynym nośnikiem informacji. */
@@ -28,6 +31,7 @@ export function Legend({
   barrierTypes = [],
   showPlaces = false,
   showDataGaps = false,
+  demoLayers = [],
 }: Props) {
   return (
     <section className="map-legend" aria-labelledby="legend-heading">
@@ -93,6 +97,12 @@ export function Legend({
             </li>
           </>
         )}
+        {demoLayers.map((kind) => (
+          <li key={kind}>
+            <DemoLayerIcon kind={kind} size={22} />
+            {DEMO_LAYER_META[kind].label}
+          </li>
+        ))}
         {showDataGaps &&
           GAP_CLASSES.map((gap) => (
             <li key={gap}>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Institution, Place, SearchResult } from '../api/client'
-import type { DemoPoi } from '../api/demo'
+import type { DemoEvent, DemoPoi } from '../api/demo'
 import { fromPlace, placeCard } from './selectedPlace'
 
 const P = { lat: 50.06, lon: 19.94 }
@@ -142,10 +142,35 @@ describe('placeCard', () => {
     expect(card.demo).toBe(true)
     expect(card.kind).toBe('miejsce parkingowe dla OzN')
     expect(card.attributes[0]).toMatchObject({
-      label: 'liczba miejsc',
+      label: 'liczba kopert',
       value: '2',
       source: 'dane przykładowe',
       status: { label: 'dane przykładowe' },
     })
+  })
+
+  it('wydarzenie pokazuje datę, miejsce i udogodnienia z etykietą danych przykładowych', () => {
+    const event: DemoEvent = {
+      id: 'demo:event/1',
+      title: 'Pokaz filmu dostępnego',
+      start: '2026-10-05T16:00:00.000Z',
+      end: '2026-10-05T18:00:00.000Z',
+      venueName: 'Kino testowe',
+      location: P,
+      features: ['napisy', 'audiodeskrypcja'],
+      source: 'demo',
+    }
+    const card = placeCard({ kind: 'event', event }, [])!
+    expect(card).toMatchObject({
+      title: 'Pokaz filmu dostępnego',
+      kind: 'wydarzenie',
+      subtitle: 'Kino testowe',
+      demo: true,
+    })
+    expect(card.attributes.map((attribute) => [attribute.label, attribute.value])).toEqual([
+      ['data i godzina', expect.stringContaining('5 października')],
+      ['udogodnienia', 'napisy, audiodeskrypcja'],
+    ])
+    expect(card.attributes.every((attribute) => attribute.source === 'dane przykładowe')).toBe(true)
   })
 })

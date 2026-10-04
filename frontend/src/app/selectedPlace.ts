@@ -1,7 +1,7 @@
 // Co jest zaznaczone na mapie / pokazane w karcie miejsca (plan §5.5, #93).
 // Instytucję trzymamy po id, bo pełny obiekt przychodzi z /api/institutions (useAppData).
 import type { Institution, InstitutionAttribute, LatLon, Place, SearchResult } from '../api/client'
-import { isDemoData, type DemoPoi } from '../api/demo'
+import { isDemoData, type DemoEvent, type DemoPoi } from '../api/demo'
 import { ATTRIBUTE_LABEL, SOURCE_LABEL, VALUE_LABEL } from '../components/attributes'
 import { STATUS_LABEL } from '../components/dataStatus'
 import { formatKm } from '../components/format'
@@ -18,6 +18,7 @@ export type SelectedPlace =
   | { kind: 'place'; place: Place }
   /** Punkt z warstw ławek, przewijaków, parkingów (#89); `source: 'demo'` = dane przykładowe */
   | { kind: 'demo'; poi: DemoPoi }
+  | { kind: 'event'; event: DemoEvent }
 
 export function fromSearchResult(result: SearchResult): SelectedPlace {
   return result.source === 'institution' && result.institution_id
@@ -186,7 +187,10 @@ function poiCard(poi: DemoPoi): PlaceCard {
     accessNote: null,
     attributes: Object.entries(poi.details).map(([key, value]) => ({
       key,
-      label: DETAIL_LABEL[key] ?? key,
+      label:
+        poi.kind === 'parking_disabled' && key === 'spaces'
+          ? 'liczba kopert'
+          : (DETAIL_LABEL[key] ?? key),
       value: text(value),
       source: demo ? 'dane przykładowe' : sourceLabel(poi.provenance?.source ?? poi.source),
       date: poi.provenance?.last_verified ?? null,
@@ -195,6 +199,51 @@ function poiCard(poi: DemoPoi): PlaceCard {
       alternatives: [],
     })),
     demo,
+  }
+}
+
+function eventDate(iso: string): string {
+  return new Date(iso).toLocaleString('pl-PL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function eventCard(event: DemoEvent): PlaceCard {
+  return {
+    id: event.id,
+    title: event.title,
+    kind: 'wydarzenie',
+    subtitle: event.venueName,
+    point: event.location,
+    access: 'unknown',
+    accessNote: 'Sprawdź udogodnienia wydarzenia poniżej.',
+    attributes: [
+      {
+        key: 'start',
+        label: 'data i godzina',
+        value: eventDate(event.start),
+        source: 'dane przykładowe',
+        date: null,
+        confidence: null,
+        status: DEMO_STATUS,
+        alternatives: [],
+      },
+      {
+        key: 'features',
+        label: 'udogodnienia',
+        value: event.features.length ? event.features.join(', ') : 'brak informacji',
+        source: 'dane przykładowe',
+        date: null,
+        confidence: null,
+        status: DEMO_STATUS,
+        alternatives: [],
+      },
+    ],
+    demo: isDemoData(event),
   }
 }
 
@@ -209,6 +258,8 @@ export function placeCard(selection: SelectedPlace, institutions: Institution[])
       return placeCardOf(selection.place)
     case 'demo':
       return poiCard(selection.poi)
+    case 'event':
+      return eventCard(selection.event)
     case 'search': {
       const r = selection.result
       if (r.source === 'institution' && r.institution_id)

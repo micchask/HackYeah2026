@@ -5,6 +5,7 @@ import { visibleLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
 import { AlertIcon, PinIcon } from '../components/icons'
+import { DEMO_LAYER_IDS } from '../components/demoLayerStyle'
 import { InstitutionPopup } from '../components/InstitutionPopup'
 import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
@@ -75,6 +76,12 @@ export function MapArea() {
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
   const visible = visibleLayerData(data, layers)
   const showBarriers = layers.barriers || layers.reports
+  const demoLayers = DEMO_LAYER_IDS.filter(
+    (kind) =>
+      layers[kind] &&
+      data[kind === 'rest' ? 'restSpots' : kind === 'parking' ? 'parkingSpots' : 'events'].length >
+        0,
+  )
   // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
   const select = (selection: SelectedPlace) => {
     dispatch({ type: 'selectOnMap', selection })
@@ -88,6 +95,12 @@ export function MapArea() {
         zoom={14}
         places={visible.places}
         onPlaceClick={(place) => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
+        restSpots={data.restSpots}
+        parkingSpots={data.parkingSpots}
+        events={data.events}
+        demoLayers={layers}
+        onDemoPoiClick={(poi) => select({ kind: 'demo', poi })}
+        onDemoEventClick={(event) => select({ kind: 'event', event })}
         route={active}
         routeVariants={variants}
         selectedRoute={state.variant}
@@ -167,6 +180,7 @@ export function MapArea() {
         visible.institutions.length > 0 ||
         visible.barriers.length > 0 ||
         visible.places.length > 0 ||
+        demoLayers.length > 0 ||
         layers.gaps) && (
         <Legend
           showRoute={!!route}
@@ -175,6 +189,7 @@ export function MapArea() {
           otherRoutes={otherRoutes}
           barrierTypes={[...new Set(visible.barriers.map((b) => b.type))]}
           showPlaces={visible.places.length > 0}
+          demoLayers={demoLayers}
           showDataGaps={layers.gaps}
         />
       )}

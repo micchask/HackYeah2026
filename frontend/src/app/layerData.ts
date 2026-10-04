@@ -1,6 +1,7 @@
 // Co pokazuje mapa przy danych chipach warstw (#90) i ile obiektów każdej warstwy jest w widoku.
 // Czyste funkcje - te same reguły dla mapy, legendy, chipów i listy miejsc.
 import type { Barrier, Institution, Place } from '../api/client'
+import type { DemoEvent, DemoPoi } from '../api/demo'
 import { placeLayer } from '../components/placeCategories'
 import type { LayerId, Layers } from './state'
 
@@ -8,6 +9,9 @@ export interface LayerInput {
   places: Place[]
   institutions: Institution[]
   barriers: Barrier[]
+  restSpots?: DemoPoi[]
+  parkingSpots?: DemoPoi[]
+  events?: DemoEvent[]
 }
 
 export function visiblePlaces(places: Place[], layers: Layers): Place[] {
@@ -54,5 +58,14 @@ export function layerCounts(
     if (point && inBbox(bbox, point.lat, point.lon)) add('institutions')
   }
   for (const barrier of data.barriers) add(barrier.type === 'reported' ? 'reports' : 'barriers')
+  for (const spot of data.restSpots ?? []) {
+    if (inBbox(bbox, spot.location.lat, spot.location.lon)) add('rest')
+  }
+  for (const spot of data.parkingSpots ?? []) {
+    if (inBbox(bbox, spot.location.lat, spot.location.lon)) add('parking')
+  }
+  for (const event of data.events ?? []) {
+    if (inBbox(bbox, event.location.lat, event.location.lon)) add('events')
+  }
   return counts
 }
