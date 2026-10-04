@@ -5,7 +5,7 @@ import { MapPopupCard } from './MapPopupCard'
 describe('MapPopupCard', () => {
   it('„Zgłoś problem tutaj” tylko gdy jest akcja zgłoszenia', () => {
     const onReport = vi.fn()
-    const props = { id: 'x', title: 'Apteka', onDetails: vi.fn(), onClose: vi.fn() }
+    const props = { id: 'x', title: 'Apteka', onClose: vi.fn() }
     const { rerender } = render(<MapPopupCard {...props} />)
     expect(screen.queryByRole('button', { name: 'Zgłoś problem tutaj' })).not.toBeInTheDocument()
 
