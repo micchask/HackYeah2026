@@ -4043,7 +4043,8 @@ a.browse-link {
   min-height: 88px;
   padding: 14px 18px;
   color: #fff;
-  background: #0d6b3a;
+  /* niebieski z palety (--accent w trybie jasnym), na stałe - w ciemnym --accent jest jasny; 6,6:1 */
+  background: #1a56c4;
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
 }
