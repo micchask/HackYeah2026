@@ -15,6 +15,9 @@ function mapPoint(point: LatLon): NamedPoint {
 export function setPointAction(target: PickTarget, point: NamedPoint | null): Action {
   if (target === 'origin') return { type: 'setOrigin', point }
   if (target === 'destination') return { type: 'setDestination', point }
+  if (typeof target === 'object' && target !== null && 'waypoint' in target) {
+    return { type: 'setWaypoint', index: target.waypoint, point }
+  }
   return { type: 'setReportPoint', point }
 }
 
