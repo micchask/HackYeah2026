@@ -1,7 +1,7 @@
 // Pełnoekranowa mapa + nakładki: kontrolki (Warstwy, Legenda), zgłoszenie, baner wskazywania punktu.
 import { useApp, useAppData } from '../app/context'
 import { openReport, useMapClick } from '../app/mapActions'
-import { visibleLayerData } from '../app/layerData'
+import { mapLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
 import { AlertIcon, PinIcon } from '../components/icons'
@@ -90,8 +90,10 @@ export function MapArea() {
   const pickLetter =
     pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
-  const visible = visibleLayerData(data, layers)
-  const showBarriers = layers.barriers || layers.reports
+  // Wyniki „Pokaż wszystkie” (np. „hotele”): na mapie tylko one - reszta warstw wraca po „Wyczyść”
+  const showingResults = !!state.resultSet
+  const visible = mapLayerData(data, layers, showingResults)
+  const showBarriers = !showingResults && (layers.barriers || layers.reports)
   // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
   const select = (selection: SelectedPlace) => {
     dispatch({ type: 'selectOnMap', selection })
@@ -137,7 +139,7 @@ export function MapArea() {
         showBarriers={showBarriers}
         selectedBarrier={state.selectedBarrier}
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
-        dataGaps={data.dataGaps}
+        dataGaps={showingResults ? null : data.dataGaps}
         focus={state.mapFocus}
         baseMap={state.baseMap}
       />
