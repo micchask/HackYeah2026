@@ -15,6 +15,7 @@ from app.models.institution import (
     InstitutionLocation,
 )
 from app.models.place import Place
+from app.models.poi import Poi, PoiKind
 from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
 from app.models.route import (
     Difficulty,
@@ -47,6 +48,8 @@ __all__ = [
     "InstitutionLocation",
     "LatLon",
     "Place",
+    "Poi",
+    "PoiKind",
     "Provenance",
     "Report",
     "ReportCreate",

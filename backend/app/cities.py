@@ -32,6 +32,8 @@ class CityConfig(BaseModel):
     default_zoom: int = 13
     providers: list[ProviderConfig] = Field(default_factory=list)
     routing: RoutingConfig = Field(default_factory=RoutingConfig)
+    # Ławki i przewijaki dla warstw mapy (app/providers/osm_pois.py): overpass_urls, timeout_s
+    pois: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def area_bbox(self) -> tuple[float, float, float, float]:
