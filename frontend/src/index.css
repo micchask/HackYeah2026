@@ -2592,3 +2592,34 @@ button.step-body:hover {
 .explore-item .meta {
   margin: 0;
 }
+
+/* ---------- potwierdzanie zgłoszeń przez innych (#62) ---------- */
+
+.report-votes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0.2rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.report-votes-state {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.report-votes-pending {
+  color: var(--warning);
+}
+.report-votes-confirmed {
+  color: var(--success);
+}
+.report-votes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.report-votes-message {
+  margin: 0;
+}

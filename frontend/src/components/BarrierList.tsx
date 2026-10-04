@@ -1,8 +1,10 @@
 import { useId, useState } from 'react'
-import type { Barrier, BarrierType } from '../api/client'
+import type { Barrier, BarrierType, Report } from '../api/client'
 import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
 import { formatKm } from './format'
+import { reportVotesText } from './attributes'
+import { ReportVotes } from './ReportVotes'
 
 // Długie listy (np. bruk na całym Starym Mieście) skracamy - reszta po przybliżeniu mapy
 const PER_GROUP = 25
@@ -25,6 +27,8 @@ interface Props {
   onSelect: (id: string | null) => void
   /** Zwinięta lista: tylko tyle najważniejszych barier, reszta po „Pokaż wszystkie” */
   collapsedLimit?: number
+  /** Głos na zgłoszenie użytkownika zapisany (#62) - np. odśwież bariery */
+  onReportVoted?: (report: Report) => void
 }
 
 /** Tekstowa alternatywa warstwy barier: te same dane co na mapie, pogrupowane wg typu. */
@@ -38,6 +42,7 @@ export function BarrierList({
   selected,
   onSelect,
   collapsedLimit,
+  onReportVoted,
 }: Props) {
   const id = useId()
   const [showAll, setShowAll] = useState(false)
@@ -102,10 +107,15 @@ export function BarrierList({
                       ? ` · sprawdzone ${new Date(b.last_verified).toLocaleDateString('pl-PL')}`
                       : ''}
                   </span>
+                  {b.report && <span className="meta">{reportVotesText(b.report)}</span>}
                   <span className="visually-hidden">
                     {selected === b.id ? ' – pokazane na mapie' : ' – pokaż na mapie'}
                   </span>
                 </button>
+                {/* zaznaczone zgłoszenie: inni potwierdzają albo mówią, że problemu już nie ma */}
+                {selected === b.id && b.report && (
+                  <ReportVotes key={b.id} report={b.report} onVoted={onReportVoted} />
+                )}
               </li>
             ))}
           </ul>

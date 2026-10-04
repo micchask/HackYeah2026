@@ -1,5 +1,6 @@
 // Typy są generowane z OpenAPI backendu: `make gen-api` (nie edytuj schema.d.ts ręcznie)
 import type { FeatureCollection, LineString } from 'geojson'
+import { getDeviceId } from './deviceId'
 import type { components } from './schema'
 
 export type Place = components['schemas']['Place']
@@ -21,6 +22,8 @@ export type RoutePreferences = components['schemas']['RoutePreferences']
 export type Difficulty = components['schemas']['Difficulty']
 export type ReportCreate = components['schemas']['ReportCreate']
 export type Report = components['schemas']['Report']
+export type VoteKind = components['schemas']['VoteKind']
+export type BarrierReport = components['schemas']['BarrierReport']
 export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
 export type Institution = components['schemas']['Institution']
@@ -141,7 +144,13 @@ export const api = {
   report: (body: ReportCreate, city: string) =>
     request<Report>(`/reports?${new URLSearchParams({ city })}`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      // identyfikator urządzenia: autor nie potwierdzi potem własnego zgłoszenia (#62)
+      body: JSON.stringify({ ...body, reporter: getDeviceId() }),
+    }),
+  voteReport: (reportId: string, vote: VoteKind) =>
+    request<Report>(`/reports/${encodeURIComponent(reportId)}/votes`, {
+      method: 'POST',
+      body: JSON.stringify({ vote, voter: getDeviceId() }),
     }),
   reports: (city: string, signal?: AbortSignal) =>
     request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),

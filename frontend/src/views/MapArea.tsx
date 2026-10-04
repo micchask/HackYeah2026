@@ -10,13 +10,14 @@ import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
 import { GROUP_LABEL, placeGroup } from '../components/placeCategories'
 import { PlacePopup } from '../components/PlacePopup'
+import { ReportPopup } from '../components/ReportPopup'
 import { TopBar } from './TopBar'
 
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 
 function usePopup(): MapPopup | null {
-  const [{ mapSelection }, dispatch] = useApp()
-  const { institutions } = useAppData()
+  const [{ mapSelection, selectedBarrier }, dispatch] = useApp()
+  const { institutions, barriers, refreshBarriers } = useAppData()
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
   const details = (place: SelectedPlace) => () =>
     dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
@@ -60,6 +61,22 @@ function usePopup(): MapPopup | null {
       ),
     }
   }
+  // Zgłoszenie użytkownika kliknięte na mapie: głosowanie innych (#62)
+  const reported = mapSelection ? null : barriers.find((b) => b.id === selectedBarrier && b.report)
+  if (reported) {
+    return {
+      key: reported.id,
+      point: reported.location,
+      render: () => (
+        <ReportPopup
+          key={reported.id}
+          barrier={reported}
+          onClose={() => dispatch({ type: 'selectBarrier', id: null })}
+          onVoted={refreshBarriers}
+        />
+      ),
+    }
+  }
   return null
 }
 
@@ -69,7 +86,7 @@ export function MapArea() {
   const { route, active, variants, otherRoutes } = useActiveRoute()
   const onMapClick = useMapClick()
   const popup = usePopup()
-  const { pickTarget, layers, mapSelection } = state
+  const { pickTarget, layers, mapSelection, selectedBarrier } = state
   const pickLetter =
     pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
@@ -105,7 +122,11 @@ export function MapArea() {
         selectedInstitution={mapSelection?.kind === 'institution' ? mapSelection.id : null}
         onInstitutionSelect={(id) => select({ kind: 'institution', id })}
         popup={popup}
-        onPopupClose={() => dispatch({ type: 'selectOnMap', selection: null })}
+        onPopupClose={() => {
+          dispatch({ type: 'selectOnMap', selection: null })
+          // okienko zgłoszenia (#62) zamyka się razem z zaznaczeniem bariery
+          if (selectedBarrier?.startsWith('report:')) dispatch({ type: 'selectBarrier', id: null })
+        }}
         searchPin={mapSelection?.kind === 'search' ? mapSelection.result.point : null}
         resultPins={state.resultSet?.results}
         onResultPinClick={(result) => select(fromSearchResult(result))}

@@ -17,7 +17,15 @@ from app.models.institution import (
 from app.models.place import Place
 from app.models.poi import Poi, PoiKind
 from app.models.profile import LayerId, ModeId, ModePreset
-from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
+from app.models.report import (
+    Report,
+    ReportCreate,
+    ReportStatus,
+    ReportType,
+    ReportUpdate,
+    ReportVote,
+    VoteKind,
+)
 from app.models.route import (
     Difficulty,
     RouteAlternative,
@@ -61,6 +69,7 @@ __all__ = [
     "RouteAlternative",
     "ReportType",
     "ReportUpdate",
+    "ReportVote",
     "RouteBarrier",
     "RouteBaseline",
     "RoutePreferences",
@@ -72,4 +81,5 @@ __all__ = [
     "SegmentFeature",
     "SegmentProperties",
     "SourceType",
+    "VoteKind",
 ]

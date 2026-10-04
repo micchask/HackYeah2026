@@ -1,4 +1,7 @@
 import type { components } from '../api/schema'
+import { plural } from './format'
+
+type BarrierReport = components['schemas']['BarrierReport']
 
 export type AttributeKey = components['schemas']['AttributeKey']
 export type ReportType = components['schemas']['ReportType']
@@ -68,4 +71,25 @@ export const SOURCE_LABEL: Record<string, string> = {
 /** Potwierdzenie po wysłaniu zgłoszenia (formularz i panel zgłoszenia) */
 export function reportConfirmation(report: { type: ReportType }): string {
   return `Dziękujemy! Zgłoszenie „${REPORT_TYPE_LABEL[report.type]}” zapisane – czeka na weryfikację.`
+}
+
+function people(n: number): string {
+  return `${n} ${plural(n, 'osobę', 'osoby', 'osób')}`
+}
+
+/** Stan zgłoszenia słowami, np. „Potwierdzone przez 3 osoby · 1 osoba: problemu już nie ma”. */
+export function reportVotesText(
+  report: Pick<BarrierReport, 'status' | 'confirmations' | 'denials'>,
+) {
+  const head =
+    report.status === 'confirmed'
+      ? `Potwierdzone przez ${people(report.confirmations)}`
+      : report.confirmations > 0
+        ? `Niepotwierdzone – na razie potwierdzone przez ${people(report.confirmations)}`
+        : 'Niepotwierdzone – nikt jeszcze nie potwierdził'
+  const denials =
+    report.denials > 0
+      ? ` · ${report.denials} ${plural(report.denials, 'osoba', 'osoby', 'osób')}: problemu już nie ma`
+      : ''
+  return head + denials
 }

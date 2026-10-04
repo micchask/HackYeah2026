@@ -203,6 +203,7 @@ export function ExplorePanel() {
         selected={state.selectedBarrier}
         onSelect={(id) => dispatch({ type: 'selectBarrier', id })}
         collapsedLimit={BARRIERS_COLLAPSED}
+        onReportVoted={() => data.refreshBarriers()}
       />
       <button type="button" className="chip" onClick={() => openReport(dispatch, null)}>
         Zgłoś barierę

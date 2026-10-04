@@ -312,6 +312,7 @@ function addBarrierLayers(map: maplibregl.Map) {
         // przy kolizji zostają ważniejsze: schody, krawężnik, zgłoszenia…
         'symbol-sort-key': ['get', 'rank'],
       },
+      paint: { 'icon-opacity': ['case', ['==', ['get', 'pending'], true], 0.55, 1] },
     })
     // Wybrana bariera zawsze widoczna (icon-allow-overlap nie przyjmuje wyrażeń z danych)
     map.addLayer({
@@ -333,6 +334,8 @@ function barrierData(barriers: Barrier[], selected: string | null): GeoJSONData 
         type: b.type,
         rank: BARRIER_TYPES.indexOf(b.type),
         selected: b.id === selected,
+        // niepotwierdzone zgłoszenie (#62) - półprzezroczysta ikona
+        pending: b.report?.status === 'pending',
       }
       const icon = {
         type: 'Feature' as const,

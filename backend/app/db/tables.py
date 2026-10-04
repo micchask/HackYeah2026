@@ -3,7 +3,17 @@
 from datetime import date, datetime
 
 from geoalchemy2 import Geometry
-from sqlalchemy import JSON, BigInteger, Date, DateTime, Float, ForeignKey, String, func
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -56,6 +66,21 @@ class ReportRow(Base):
     status: Mapped[str] = mapped_column(String, default="pending", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # skrót losowego identyfikatora urządzenia autora (#62) - żeby nie głosował na własne zgłoszenie
+    reporter: Mapped[str | None] = mapped_column(String)
+
+
+class ReportVoteRow(Base):
+    """Głos innej osoby na zgłoszenie (#62). Bez kont: `voter` = skrót identyfikatora urządzenia."""
+
+    __tablename__ = "report_votes"
+    __table_args__ = (UniqueConstraint("report_id", "voter", name="uq_report_votes_voter"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[str] = mapped_column(ForeignKey("reports.id"), index=True)
+    voter: Mapped[str] = mapped_column(String, index=True)
+    vote: Mapped[str] = mapped_column(String)  # confirm | deny
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class SegmentRow(Base):

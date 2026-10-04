@@ -21,6 +21,15 @@ class ReportStatus(StrEnum):
     RESOLVED = "resolved"  # problem usunięty (np. naprawiona winda)
 
 
+class VoteKind(StrEnum):
+    CONFIRM = "confirm"  # „Potwierdzam”
+    DENY = "deny"  # „Problemu już nie ma”
+
+
+# Losowy identyfikator urządzenia z localStorage - bez kont i danych osobowych (#62)
+DEVICE_ID_PATTERN = r"^[A-Za-z0-9-]{16,100}$"
+
+
 class ReportType(StrEnum):
     BARRIER = "barrier"  # ogólna bariera - cechę wybiera zgłaszający
     ELEVATOR_BROKEN = "elevator_broken"
@@ -52,6 +61,13 @@ class ReportCreate(BaseModel):
     valid_until: date | None = Field(
         default=None, description="Przewidywany koniec utrudnienia (np. remontu), jeśli znany"
     )
+    reporter: str | None = Field(
+        default=None,
+        pattern=DEVICE_ID_PATTERN,
+        exclude=True,  # nigdy nie wraca w odpowiedzi; w bazie tylko jego skrót (hash)
+        description="Losowy identyfikator urządzenia - autor nie może potwierdzić własnego "
+        "zgłoszenia. Bez danych osobowych.",
+    )
 
     @field_validator("comment")
     @classmethod
@@ -82,6 +98,15 @@ class Report(ReportCreate):
     status: ReportStatus = ReportStatus.PENDING
     created_at: datetime
     updated_at: datetime | None = None
+    confirmations: int = Field(default=0, description="Głosy „Potwierdzam” innych osób")
+    denials: int = Field(default=0, description="Głosy „Problemu już nie ma”")
+
+
+class ReportVote(BaseModel):
+    """Głos innej osoby: potwierdza zgłoszenie albo mówi, że problemu już nie ma."""
+
+    vote: VoteKind
+    voter: str = Field(pattern=DEVICE_ID_PATTERN, description="Losowy identyfikator urządzenia")
 
 
 class ReportUpdate(BaseModel):

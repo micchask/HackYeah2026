@@ -70,6 +70,7 @@ export function useMapData(bbox: string | null, placesQuery: string, showGaps = 
   const [barriersTruncated, setBarriersTruncated] = useState(false)
   const [barriersLoading, setBarriersLoading] = useState(false)
   const [barriersError, setBarriersError] = useState<string | null>(null)
+  const [barriersVersion, setBarriersVersion] = useState(0)
 
   useEffect(() => {
     if (!bbox) return
@@ -93,7 +94,7 @@ export function useMapData(bbox: string | null, placesQuery: string, showGaps = 
       clearTimeout(timer)
       controller.abort()
     }
-  }, [bbox])
+  }, [bbox, barriersVersion])
 
   useEffect(() => {
     if (!bbox) return
@@ -138,6 +139,7 @@ export function useMapData(bbox: string | null, placesQuery: string, showGaps = 
     barriersTruncated,
     barriersLoading,
     barriersError,
+    refreshBarriers: () => setBarriersVersion((v) => v + 1),
     ...gaps,
   }
 }

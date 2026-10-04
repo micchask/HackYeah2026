@@ -159,6 +159,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/{report_id}/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vote On Report
+         * @description Inna osoba potwierdza zgłoszenie albo mówi, że problemu już nie ma (#62).
+         *
+         *     Przewaga 2 głosów jednej strony zmienia status (patrz app/report_votes.py). Jeden głos
+         *     na zgłoszenie z urządzenia - kolejny zastępuje poprzedni.
+         */
+        post: operations["vote_on_report_api_reports__report_id__votes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/{report_id}": {
         parameters: {
             query?: never;
@@ -387,6 +410,8 @@ export interface components {
             confidence: number;
             /** Last Verified */
             last_verified?: string | null;
+            /** @description Tylko dla zgłoszeń użytkowników: status i głosy innych osób */
+            report?: components["schemas"]["BarrierReport"] | null;
         };
         /** BarrierList */
         BarrierList: {
@@ -398,6 +423,23 @@ export interface components {
              * @default false
              */
             truncated: boolean;
+        };
+        /**
+         * BarrierReport
+         * @description Stan zgłoszenia użytkownika pokazanego jako bariera - do głosowania (#62).
+         */
+        BarrierReport: {
+            /** Report Id */
+            report_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "confirmed";
+            /** Confirmations */
+            confirmations: number;
+            /** Denials */
+            denials: number;
         };
         /**
          * BarrierType
@@ -811,6 +853,18 @@ export interface components {
             created_at: string;
             /** Updated At */
             updated_at?: string | null;
+            /**
+             * Confirmations
+             * @description Głosy „Potwierdzam” innych osób
+             * @default 0
+             */
+            confirmations: number;
+            /**
+             * Denials
+             * @description Głosy „Problemu już nie ma”
+             * @default 0
+             */
+            denials: number;
         };
         /**
          * ReportCreate
@@ -833,6 +887,11 @@ export interface components {
              * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
              */
             valid_until?: string | null;
+            /**
+             * Reporter
+             * @description Losowy identyfikator urządzenia - autor nie może potwierdzić własnego zgłoszenia. Bez danych osobowych.
+             */
+            reporter?: string | null;
         };
         /**
          * ReportStatus
@@ -850,6 +909,18 @@ export interface components {
          */
         ReportUpdate: {
             status: components["schemas"]["ReportStatus"];
+        };
+        /**
+         * ReportVote
+         * @description Głos innej osoby: potwierdza zgłoszenie albo mówi, że problemu już nie ma.
+         */
+        ReportVote: {
+            vote: components["schemas"]["VoteKind"];
+            /**
+             * Voter
+             * @description Losowy identyfikator urządzenia
+             */
+            voter: string;
         };
         /**
          * RouteAlternative
@@ -1181,6 +1252,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VoteKind
+         * @enum {string}
+         */
+        VoteKind: "confirm" | "deny";
     };
     responses: never;
     parameters: never;
@@ -1439,6 +1515,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vote_on_report_api_reports__report_id__votes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportVote"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
