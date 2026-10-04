@@ -1,0 +1,33 @@
+// Konteksty i hooki stanu aplikacji. Provider: AppState.tsx.
+import { createContext, useContext, type Dispatch } from 'react'
+import type { Barrier, Institution, Place } from '../api/client'
+import type { Action, AppState } from './state'
+
+export const CITY = 'krakow'
+
+export interface AppData {
+  places: Place[]
+  placesError: string | null
+  institutions: Institution[]
+  barriers: Barrier[]
+  barriersTruncated: boolean
+  barriersLoading: boolean
+  barriersError: string | null
+}
+
+export const StateContext = createContext<AppState | null>(null)
+export const DispatchContext = createContext<Dispatch<Action> | null>(null)
+export const DataContext = createContext<AppData | null>(null)
+
+export function useApp(): [AppState, Dispatch<Action>] {
+  const state = useContext(StateContext)
+  const dispatch = useContext(DispatchContext)
+  if (!state || !dispatch) throw new Error('useApp() poza <AppProvider>')
+  return [state, dispatch]
+}
+
+export function useAppData(): AppData {
+  const data = useContext(DataContext)
+  if (!data) throw new Error('useAppData() poza <AppProvider>')
+  return data
+}
