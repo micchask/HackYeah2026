@@ -118,3 +118,8 @@ class RouteResponse(BaseModel):
     baseline: RouteBaseline | None = None
     explanation: str
     alternatives: list[RouteAlternative] = Field(default_factory=list)
+    reports_considered: list[str] = Field(
+        default_factory=list,
+        description="Aktywne zgłoszenia uwzględnione przy liczeniu - nowe poza tą listą "
+        "oznaczają, że trasę warto przeliczyć (#63)",
+    )

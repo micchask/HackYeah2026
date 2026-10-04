@@ -18,6 +18,7 @@ from app.models.place import Place
 from app.models.poi import Poi, PoiKind
 from app.models.profile import LayerId, ModeId, ModePreset
 from app.models.report import (
+    ActiveReport,
     Report,
     ReportCreate,
     ReportStatus,
@@ -44,6 +45,7 @@ from app.models.segment import (
 
 __all__ = [
     "AccessibilityAttribute",
+    "ActiveReport",
     "AttributeKey",
     "AttributeStatus",
     "Barrier",

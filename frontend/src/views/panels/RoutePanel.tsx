@@ -3,11 +3,13 @@ import { CITY, useApp } from '../../app/context'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
 import { openReport, setPointAction } from '../../app/mapActions'
 import { useActiveRoute } from '../../app/useRoute'
+import { useRouteReportWatch } from '../../app/useRouteReportWatch'
 import type { RouteResponse } from '../../api/client'
 import { demoApi } from '../../api/demo'
 import { AlertIcon } from '../../components/icons'
 import { RouteAlternatives } from '../../components/RouteAlternatives'
 import { RouteDescription } from '../../components/RouteDescription'
+import { RouteReportAlert } from '../../components/RouteReportAlert'
 import { RoutePoints } from '../../components/RoutePoints'
 import { RouteSummary } from '../../components/RouteSummary'
 import { selectedVariantLabel } from '../../components/routeVariants'
@@ -30,6 +32,7 @@ export function RoutePanel() {
     segment,
     layers,
   } = state
+  const newReports = useRouteReportWatch(route, active)
   const [restSpots, setRestSpots] = useState<RestSpotsState | null>(null)
   // Opis krok po kroku zwinięty; odcinek wybrany na mapie sam go rozwija
   const [stepsOpen, setStepsOpen] = useState(false)
@@ -107,6 +110,11 @@ export function RoutePanel() {
         {loading && <p className="visually-hidden">Szukam trasy…</p>}
         {route && active && (
           <div className={loading ? 'stale' : undefined}>
+            <RouteReportAlert
+              reports={newReports.reports}
+              onRecalculate={() => dispatch({ type: 'recalculateRoute' })}
+              onDismiss={newReports.dismiss}
+            />
             <RouteAlternatives
               route={route}
               selected={variant}

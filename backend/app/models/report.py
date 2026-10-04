@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -100,6 +100,9 @@ class Report(ReportCreate):
     updated_at: datetime | None = None
     confirmations: int = Field(default=0, description="Głosy „Potwierdzam” innych osób")
     denials: int = Field(default=0, description="Głosy „Problemu już nie ma”")
+    last_confirmed_at: datetime | None = Field(
+        default=None, description="Ostatnie „Potwierdzam” - od niego liczy się ważność (#63)"
+    )
 
 
 class ReportVote(BaseModel):
@@ -107,6 +110,20 @@ class ReportVote(BaseModel):
 
     vote: VoteKind
     voter: str = Field(pattern=DEVICE_ID_PATTERN, description="Losowy identyfikator urządzenia")
+
+
+class ActiveReport(BaseModel):
+    """Potwierdzone zgłoszenie, które teraz wpływa na trasy (#63)."""
+
+    id: str
+    type: ReportType
+    effect: Literal["block", "penalty", "warn"] = Field(
+        description="block - odcinek omijany, penalty - omijany, jeśli jest objazd, "
+        "warn - tylko ostrzeżenie (winda, wejście, parking)"
+    )
+    label: str
+    location: LatLon
+    active_until: datetime
 
 
 class ReportUpdate(BaseModel):

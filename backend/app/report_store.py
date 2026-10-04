@@ -49,7 +49,18 @@ class MemoryReportStore:
 
     def _with_counts(self, report: Report) -> Report:
         confirmations, denials = self.vote_counts(report.id)
-        return report.model_copy(update={"confirmations": confirmations, "denials": denials})
+        confirmed_at = [
+            at
+            for (rid, _), (vote, at) in self._votes.items()
+            if rid == report.id and vote == VoteKind.CONFIRM
+        ]
+        return report.model_copy(
+            update={
+                "confirmations": confirmations,
+                "denials": denials,
+                "last_confirmed_at": max(confirmed_at, default=None),
+            }
+        )
 
     def create(self, report: Report, reporter: str | None = None) -> Report:
         self._reports[report.id] = report
@@ -173,11 +184,13 @@ class DbReportStore:
 
 
 def _counts_query() -> Select:
-    """report_id, liczba potwierdzeń, liczba „problemu już nie ma”."""
+    """report_id, liczba potwierdzeń, liczba „problemu już nie ma”, ostatnie potwierdzenie."""
+    confirm = ReportVoteRow.vote == VoteKind.CONFIRM
     return select(
         ReportVoteRow.report_id,
-        func.sum(case((ReportVoteRow.vote == VoteKind.CONFIRM, 1), else_=0)),
+        func.sum(case((confirm, 1), else_=0)),
         func.sum(case((ReportVoteRow.vote == VoteKind.DENY, 1), else_=0)),
+        func.max(case((confirm, ReportVoteRow.created_at), else_=None)),
     ).group_by(ReportVoteRow.report_id)
 
 
@@ -189,6 +202,7 @@ def _select() -> Select:
         ST_X(ReportRow.geom),
         func.coalesce(counts.c[1], 0),
         func.coalesce(counts.c[2], 0),
+        counts.c[3],
     ).outerjoin(counts, counts.c.report_id == ReportRow.id)
 
 
@@ -208,7 +222,12 @@ def _session(write: bool = False) -> Iterator:
 
 
 def _to_report(
-    row: ReportRow, lat: float, lon: float, confirmations: int = 0, denials: int = 0
+    row: ReportRow,
+    lat: float,
+    lon: float,
+    confirmations: int = 0,
+    denials: int = 0,
+    last_confirmed_at: datetime | None = None,
 ) -> Report:
     return Report(
         id=row.id,
@@ -225,6 +244,7 @@ def _to_report(
         updated_at=row.updated_at,
         confirmations=int(confirmations),
         denials=int(denials),
+        last_confirmed_at=last_confirmed_at,
     )
 
 
