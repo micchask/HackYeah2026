@@ -20,6 +20,8 @@
   --input-border: #7b8794;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 4px 16px rgb(16 24 40 / 8%);
   --radius: 14px;
+  /* podpis rodzaju instytucji: 5,8:1 na białym (WCAG 1.4.3) */
+  --institution-text: #00707a;
 
   --tag-easy-bg: #e6f4ea;
   --tag-easy-text: #135c28;
@@ -39,6 +41,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* #00707a miał na ciemnym tle tylko 2,88:1 - jaśniejszy turkus ma 8:1 */
+    --institution-text: #4fc3cc;
     --text: #eef2f6;
     --muted: #b4bec9;
     --bg: #0d1218;
@@ -716,12 +720,12 @@ button:disabled {
   margin: 0;
 }
 .comparison-table-wrap {
-  overflow-x: auto;
   margin: 0.75rem -0.25rem;
 }
 .comparison-table {
+  /* mieści się w panelu bez przewijania w poziomie (WCAG 1.4.10, 2.1.1 - #32) */
   width: 100%;
-  min-width: 620px;
+  table-layout: fixed;
   border-spacing: 0;
   border-collapse: separate;
   font-size: 0.82rem;
@@ -1364,7 +1368,7 @@ button.step-body:hover {
 }
 .institution-kind {
   margin: 0 0 0.15rem;
-  color: #00707a;
+  color: var(--institution-text);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -2591,4 +2595,22 @@ button.step-body:hover {
 }
 .explore-item .meta {
   margin: 0;
+}
+
+/* ---------- audyt axe (#32) ---------- */
+
+/* Linki w podpisie mapy (MapLibre, OSM) rozpoznawalne nie tylko kolorem (WCAG 1.4.1) */
+/* .map + podwójna klasa: styl MapLibre ładuje się po naszym i przy równej wadze wygrywa */
+.map .maplibregl-ctrl.maplibregl-ctrl-attrib a {
+  text-decoration: underline;
+}
+/* Tabela porównania wariantów bez przewijania: wartości i nazwy wariantów dzielą wyrazy
+   z łącznikiem (polskie reguły, lang="pl"), nazwy cech w pierwszej kolumnie - nie */
+.comparison-table td,
+.comparison-table thead th {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.comparison-table thead th:first-child {
+  width: 27%;
 }

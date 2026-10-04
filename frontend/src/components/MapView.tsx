@@ -16,7 +16,7 @@ import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
-import { shortInstitutionName } from './institutionStyle'
+import { institutionMarkerLabel, shortInstitutionName } from './institutionStyle'
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
@@ -362,7 +362,7 @@ function institutionMarker(inst: Institution): HTMLButtonElement {
   // Klawiatura i czytniki ekranu korzystają z listy instytucji w panelu - bez 32 przystanków Tab na mapie
   el.tabIndex = -1
   el.title = inst.name
-  el.setAttribute('aria-label', `${inst.name} – pokaż szczegóły`)
+  el.setAttribute('aria-label', institutionMarkerLabel(inst.name))
   const dot = document.createElement('span')
   dot.className = 'inst-marker-dot'
   const label = document.createElement('span')

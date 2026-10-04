@@ -26,3 +26,12 @@ export function shortInstitutionName(name: string): string {
   }
   return short.length > MAX_LABEL ? `${short.slice(0, MAX_LABEL - 1).trimEnd()}…` : short
 }
+
+/**
+ * Nazwa przycisku znacznika: najpierw widoczny podpis, potem pełna nazwa (WCAG 2.5.3 „Label in Name”) -
+ * sterowanie głosem („kliknij UMK Magistrat”) trafia w przycisk, a czytnik czyta pełną nazwę.
+ */
+export function institutionMarkerLabel(name: string): string {
+  const visible = shortInstitutionName(name).replace(/…$/, '').trimEnd()
+  return visible === name ? `${name} – pokaż szczegóły` : `${visible}: ${name} – pokaż szczegóły`
+}
