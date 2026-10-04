@@ -14,6 +14,7 @@ from app.api import (
     routes,
     search,
     segments,
+    stats,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -31,5 +32,6 @@ for module in (
     segments,
     data_gaps,
     barriers,
+    stats,
 ):
     api_router.include_router(module.router)
