@@ -2,8 +2,6 @@
 // tryb i preferencje przeniesie #88/#94 (chip + szuflada), „Dla Ciebie” dostanie chipy tras demo (#91).
 import { CITY, useApp } from '../../app/context'
 import { setPointAction } from '../../app/mapActions'
-import { SlidersIcon } from '../../components/icons'
-import { PreferencesForm } from '../../components/PreferencesForm'
 import { ProfilePicker } from '../../components/ProfilePicker'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
 import { RoutePoints } from '../../components/RoutePoints'
@@ -39,15 +37,6 @@ export function RouteForm() {
         value={prefs.profile}
         onChange={(id) => dispatch({ type: 'chooseProfile', profile: id })}
       />
-      <details className="advanced">
-        <summary>
-          <SlidersIcon size={18} /> Dostosuj szczegóły
-        </summary>
-        <PreferencesForm
-          value={prefs}
-          onChange={(value) => dispatch({ type: 'setPrefs', prefs: value })}
-        />
-      </details>
     </form>
   )
 }
