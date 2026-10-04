@@ -1074,14 +1074,10 @@ button.step-body:hover {
   border: none;
   cursor: pointer;
 }
-.inst-marker-dot {
+.inst-marker-icon {
   flex: none;
-  width: 14px;
-  height: 14px;
-  background: #00707a;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  display: block;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 35%));
 }
 .inst-marker-label {
   max-width: 14rem;
@@ -1103,12 +1099,10 @@ button.step-body:hover {
 .inst-marker:hover .inst-marker-label {
   text-decoration: underline;
 }
-.inst-marker[aria-pressed='true'] .inst-marker-dot {
-  width: 18px;
-  height: 18px;
-  margin-left: -2px;
-  background: #0b3d42;
-  box-shadow: 0 0 0 3px var(--focus);
+.inst-marker[aria-pressed='true'] .inst-marker-icon {
+  border-radius: 8px;
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
 }
 .map[data-labels='off'] .inst-marker-label {
   display: none;
@@ -2925,7 +2919,7 @@ main:focus {
 }
 
 .legend-popover {
-  width: 260px;
+  width: 280px;
 }
 .legend-group + .legend-group {
   margin-top: 12px;
@@ -2944,6 +2938,13 @@ main:focus {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.legend-group ul.legend-columns {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+}
+.legend-group ul.legend-columns li {
+  gap: 8px;
 }
 
 /* przycisk zgłoszenia */
