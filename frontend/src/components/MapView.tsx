@@ -956,9 +956,12 @@ export function MapView({
         const box = instance.getElement().getBoundingClientRect()
         const area = currentMap.getContainer().getBoundingClientRect()
         const margin = 12
+        // u góry mapy jest pasek z wyszukiwarką i filtrami - okienko ma być pod nim, nie pod spodem
+        const bar = currentMap.getContainer().closest('.map-wrap')?.querySelector('.top-bar')
+        const top = Math.max(area.top, bar?.getBoundingClientRect().bottom ?? area.top) + margin
         let dx = 0
         let dy = 0
-        if (box.top < area.top + margin) dy = box.top - area.top - margin
+        if (box.top < top) dy = box.top - top
         else if (box.bottom > area.bottom - margin) dy = box.bottom - area.bottom + margin
         if (box.left < area.left + margin) dx = box.left - area.left - margin
         else if (box.right > area.right - margin) dx = box.right - area.right + margin
@@ -972,10 +975,13 @@ export function MapView({
       zoom: Math.max(currentMap.getZoom(), 16),
       duration: 600,
     })
+    // po wycentrowaniu: dociągnij okienko, jeśli wchodzi pod pasek filtrów albo poza mapę
+    currentMap.once('moveend', fit)
     return () => {
       // usuwamy bez zdarzenia 'close' - to zmiana wyboru, nie zamknięcie przez użytkownika
       instance.off('close', onClose)
       el.removeEventListener(POPUP_RESIZE_EVENT, fit)
+      currentMap.off('moveend', fit)
       instance.remove()
     }
   }, [popupKey, popupLat, popupLon, mapReady])
