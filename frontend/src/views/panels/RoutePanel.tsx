@@ -1,22 +1,92 @@
-// Panel trasy (plan §5.4) - docelowo #92. Na razie: dotychczasowe wyniki trasy pod formularzem.
-import { useApp } from '../../app/context'
-import { openReport } from '../../app/mapActions'
+import { useEffect, useState } from 'react'
+import { CITY, useApp } from '../../app/context'
+import { DEMO_ROUTES } from '../../app/demoRoutes'
+import { openReport, setPointAction } from '../../app/mapActions'
 import { useActiveRoute } from '../../app/useRoute'
+import type { RouteResponse } from '../../api/client'
+import { demoApi } from '../../api/demo'
 import { AlertIcon } from '../../components/icons'
 import { RouteAlternatives } from '../../components/RouteAlternatives'
 import { RouteDescription } from '../../components/RouteDescription'
+import { RoutePoints } from '../../components/RoutePoints'
 import { RouteSummary } from '../../components/RouteSummary'
 import { selectedVariantLabel } from '../../components/routeVariants'
-import { RouteForm } from './RouteForm'
+import { countRestSpotsNearRoute, routeBbox } from './routeRestSpots'
+
+type RestSpotsState =
+  | { route: RouteResponse; status: 'ready'; count: number }
+  | { route: RouteResponse; status: 'error'; count: 0 }
 
 export function RoutePanel() {
   const [state, dispatch] = useApp()
   const { route, active, segmentPoint } = useActiveRoute()
-  const { routeLoading: loading, routeError: error, variant, segment } = state
+  const {
+    origin,
+    destination,
+    pickTarget,
+    routeLoading: loading,
+    routeError: error,
+    variant,
+    segment,
+    layers,
+  } = state
+  const [restSpots, setRestSpots] = useState<RestSpotsState | null>(null)
   const selectSegment = (index: number | null) => dispatch({ type: 'setSegment', segment: index })
+  const visibleRestSpots =
+    active && restSpots?.route === active
+      ? restSpots
+      : active && routeBbox(active)
+        ? ({ status: 'loading', count: 0 } as const)
+        : ({ status: 'ready', count: 0 } as const)
+
+  useEffect(() => {
+    if (!layers.rest || !active) return
+
+    const bbox = routeBbox(active)
+    if (!bbox) return
+
+    const controller = new AbortController()
+    demoApi
+      .restSpots(bbox, controller.signal, CITY)
+      .then((spots) => {
+        setRestSpots({
+          route: active,
+          status: 'ready',
+          count: countRestSpotsNearRoute(spots, active),
+        })
+      })
+      .catch((cause: Error) => {
+        if (cause.name !== 'AbortError') setRestSpots({ route: active, status: 'error', count: 0 })
+      })
+    return () => controller.abort()
+  }, [active, layers.rest])
+
   return (
     <>
-      <RouteForm />
+      <form
+        className="card"
+        onSubmit={(event) => event.preventDefault()}
+        aria-describedby={error ? 'error' : undefined}
+      >
+        <RoutePoints
+          city={CITY}
+          origin={origin}
+          destination={destination}
+          presets={DEMO_ROUTES}
+          pickTarget={pickTarget}
+          onChange={(target, value) => {
+            dispatch(setPointAction(target, value))
+            dispatch({ type: 'setPickTarget', target: null })
+          }}
+          onPick={(target) => dispatch({ type: 'setPickTarget', target })}
+          onPreset={(preset) => {
+            dispatch({ type: 'setOrigin', point: preset.origin })
+            dispatch({ type: 'setDestination', point: preset.destination })
+            dispatch({ type: 'setPickTarget', target: null })
+          }}
+          onSwap={() => dispatch({ type: 'swapPoints' })}
+        />
+      </form>
       <div className="results" aria-live="polite" aria-busy={loading}>
         {error && (
           <p id="error" role="alert" className="callout callout-error">
@@ -47,9 +117,19 @@ export function RoutePanel() {
               onSelectSegment={selectSegment}
             />
             <RouteDescription route={active} selected={segment} onSelect={selectSegment} />
+            {layers.rest && (
+              <output className="card route-rest-spots" aria-live="polite">
+                <strong>Miejsca odpoczynku na trasie:</strong>{' '}
+                {visibleRestSpots.status === 'loading'
+                  ? 'sprawdzam…'
+                  : visibleRestSpots.status === 'error'
+                    ? 'nie udało się sprawdzić'
+                    : visibleRestSpots.count}
+              </output>
+            )}
             <button
               type="button"
-              className="chip"
+              className="chip route-report-button"
               onClick={() => openReport(dispatch, segmentPoint)}
             >
               Zgłoś barierę na tej trasie

@@ -26,7 +26,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [profile, prefs, customized, layers])
 
   useRouteFetch(state, dispatch)
-  const data = useMapData(state.mapBbox, state.placesQuery)
+  const data = useMapData(state.mapBbox, state.placesQuery, state.layers.gaps)
 
   return (
     <StateContext.Provider value={state}>

@@ -26,6 +26,7 @@ class LayerId(StrEnum):
     REST = "rest"  # ławki, odpoczynek
     PARKING = "parking"  # parking dla OzN
     EVENTS = "events"
+    GAPS = "gaps"  # braki danych o dostępności (#31) - dla miasta, domyślnie wyłączone
 
 
 class ModePreset(BaseModel):

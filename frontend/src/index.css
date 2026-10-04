@@ -624,6 +624,21 @@ button:disabled {
   justify-content: space-between;
   gap: 0.75rem;
 }
+.route-choice-head-end {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.route-choice-selected {
+  padding: 0.1rem 0.45rem;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .route-choice-label,
 .route-choice-distance {
   font-weight: 700;
@@ -644,6 +659,16 @@ button:disabled {
 }
 .route-choice-description {
   margin-top: 0.15rem;
+}
+
+.route-rest-spots {
+  display: block;
+  margin: 0;
+  border-left: 4px solid var(--success);
+}
+
+.route-report-button {
+  align-self: flex-start;
 }
 
 .summary-head {
@@ -1171,6 +1196,16 @@ button.step-body:hover {
 }
 .legend-swatch-dashed {
   background: repeating-linear-gradient(90deg, #3d4652 0 5px, transparent 5px 9px);
+}
+/* Braki danych (#31): wzór jak na mapie (GAP_DASH), kolor z GAP_COLOR przez currentColor */
+.legend-swatch-gap-none {
+  background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px);
+}
+.legend-swatch-gap-surface {
+  background: repeating-linear-gradient(90deg, currentColor 0 12px, transparent 12px 18px);
+}
+.legend-swatch-gap-incline {
+  background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 9px);
 }
 .legend-swatch-route-0 {
   background: repeating-linear-gradient(90deg, #59636f 0 4px, transparent 4px 8px);
@@ -2079,6 +2114,19 @@ button.step-body:hover {
   list-style: none;
 }
 
+/* ---------- braki danych (#31) ---------- */
+
+.data-gaps-subtitle {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
+}
+.data-gaps-areas {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  padding-left: 1.4rem;
+}
+
 /* ---------- górny pasek: wyszukiwarka + chipy (#90) ---------- */
 
 .top-bar {
@@ -2293,4 +2341,53 @@ button.step-body:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 1rem;
+}
+
+/* ---------- panel „Dla Ciebie” (#91) ---------- */
+
+.explore-section h2 {
+  margin-bottom: 0.5rem;
+}
+.explore-section .primary-button {
+  margin: 0 0 0.75rem;
+}
+.explore-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.explore-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+.explore-item:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.explore-item .place-access-icon {
+  margin-top: 0.15rem;
+}
+.explore-item-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.explore-item-title {
+  font-weight: 600;
+}
+.explore-item .meta {
+  margin: 0;
 }

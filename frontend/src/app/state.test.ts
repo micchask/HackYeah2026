@@ -191,4 +191,16 @@ describe('zapamiętywanie w przeglądarce', () => {
       ),
     ).not.toThrow()
   })
+
+  it('braki danych: warstwa domyślnie wyłączona, focusMap przesuwa mapę także drugi raz', () => {
+    const start = initialState()
+    expect(start.layers.gaps).toBe(false)
+    expect(run(start, { type: 'toggleLayer', layer: 'gaps' }).layers.gaps).toBe(true)
+
+    const point = { lat: 50.057, lon: 19.936 }
+    const once = run(start, { type: 'focusMap', point })
+    const twice = run(once, { type: 'focusMap', point })
+    expect(once.mapFocus).toEqual({ point, seq: 1 })
+    expect(twice.mapFocus?.seq).toBe(2)
+  })
 })

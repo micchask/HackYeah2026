@@ -20,6 +20,7 @@ export type LayerId =
   | 'rest'
   | 'parking'
   | 'events' // dane przykładowe (§5.8)
+  | 'gaps' // braki danych o dostępności (#31)
 
 export type Layers = Record<LayerId, boolean>
 
@@ -54,6 +55,8 @@ export interface AppState {
   placesQuery: string
   /** „Pokaż wszystkie na mapie” dla zapytania o rodzaj/cechę („hotel”, „przewijak”) */
   resultSet: { query: string; results: SearchResult[] } | null
+  /** Punkt, na który mapa ma się przesunąć (np. obszar z listy braków danych); seq = ponowny klik */
+  mapFocus: { point: LatLon; seq: number } | null
 }
 
 const NO_LAYERS: Layers = {
@@ -65,6 +68,7 @@ const NO_LAYERS: Layers = {
   rest: false,
   parking: false,
   events: false,
+  gaps: false,
 }
 
 function layers(...on: LayerId[]): Layers {
@@ -134,6 +138,7 @@ export type Action =
   | { type: 'setPlacesQuery'; query: string }
   | { type: 'showResults'; query: string; results: SearchResult[] }
   | { type: 'clearResults' }
+  | { type: 'focusMap'; point: LatLon }
   /** Adres z geokodera zamiast współrzędnych - tylko jeśli punkt to nadal ten kliknięty */
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
 
@@ -164,6 +169,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     mapCenter: null,
     placesQuery: '',
     resultSet: null,
+    mapFocus: null,
   }
 }
 
@@ -249,6 +255,8 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, mapBbox: action.bbox, mapCenter: action.center }
     case 'setPlacesQuery':
       return { ...state, placesQuery: action.query }
+    case 'focusMap':
+      return { ...state, mapFocus: { point: action.point, seq: (state.mapFocus?.seq ?? 0) + 1 } }
     case 'showResults':
       // nowy zestaw wyników zastępuje poprzedni i zamyka okienko poprzedniego miejsca
       return {
