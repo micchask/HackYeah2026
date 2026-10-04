@@ -222,6 +222,10 @@ describe('powłoka: podkład mapy i panel', () => {
     const state = run(initialState(), { type: 'setBaseMap', baseMap: 'satellite' })
     expect(state.baseMap).toBe('satellite')
     expect(initialState(loadSaved({ getItem: () => '{"baseMap":"3d"}' })).baseMap).toBe('standard')
+    // usunięty podkład „Uproszczona” zapisany wcześniej w przeglądarce -> zwykła mapa
+    expect(initialState(loadSaved({ getItem: () => '{"baseMap":"light"}' })).baseMap).toBe(
+      'standard',
+    )
   })
 
   it('zwinięty panel otwiera się przy przejściu do innego widoku', () => {

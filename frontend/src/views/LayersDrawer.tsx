@@ -1,4 +1,4 @@
-// „Warstwy”: styl mapy (Mapa / Satelita / Uproszczona) i wszystkie warstwy w jednym okienku.
+// „Warstwy”: styl mapy (Mapa / Satelita) i wszystkie warstwy w jednym okienku.
 import { useApp } from '../app/context'
 import type { BaseMap, LayerId } from '../app/state'
 import { LayersIcon } from '../components/icons'
@@ -8,7 +8,6 @@ import { usePopover } from '../components/usePopover'
 const BASE_MAP_OPTIONS: { id: BaseMap; label: string }[] = [
   { id: 'standard', label: 'Mapa' },
   { id: 'satellite', label: 'Satelita' },
-  { id: 'light', label: 'Uproszczona' },
 ]
 
 const LAYERS: { id: LayerId; label: string }[] = [
