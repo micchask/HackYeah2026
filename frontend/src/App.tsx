@@ -29,7 +29,7 @@ export default function App() {
           <header className="page-header">
             <a href="#/" className="page-brand">
               <LogoMark size={30} />
-              <h1>Kraków bez Barier</h1>
+              <h1>BezPrzeszkód</h1>
             </a>
             <nav className="page-nav" aria-label="Widoki">
               <a href="#/">Mapa</a>
@@ -44,7 +44,7 @@ export default function App() {
         </div>
       ) : (
         <main id="main" tabIndex={-1}>
-          <h1 className="visually-hidden">Kraków bez Barier – dostępne trasy i miejsca</h1>
+          <h1 className="visually-hidden">BezPrzeszkód – dostępne trasy i miejsca w Krakowie</h1>
           <HomePage />
         </main>
       )}

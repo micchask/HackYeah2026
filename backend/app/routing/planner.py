@@ -399,8 +399,9 @@ def _candidate(
         segments=segments,
         distance_m=distance,
         duration_s=round(distance / profile.speed_m_s),
-        stairs_count=_stairs_count(edges),
-        rough_surface_m=round(_rough_m(edges)),
+        stairs_count=_stairs_count(edges) if profile.marks(BarrierType.STAIRS) else 0,
+        # bruk nieoznaczany w trybie (np. turysta) nie trafia do podsumowania ani porównań
+        rough_surface_m=(round(_rough_m(edges)) if profile.marks(BarrierType.ROUGH_SURFACE) else 0),
         geometry=_route_geometry(edges, city_graph),
     )
 
@@ -447,23 +448,40 @@ def _street(edge: dict[str, Any], city_graph: CityGraph, geometry: list[LatLon])
     return city_graph.nearby_name(mid.lat, mid.lon) or HIGHWAY_PL.get(highway, "przejście")
 
 
-def edge_difficulty(edge: dict[str, Any]) -> Difficulty:
+Marked = frozenset[BarrierType] | None
+
+
+def _marks(marked: Marked, barrier: BarrierType) -> bool:
+    """None = oznaczamy wszystkie bariery (mapa barier, wózek, senior...)."""
+    return marked is None or barrier in marked
+
+
+def edge_difficulty(edge: dict[str, Any], marked: Marked = None) -> Difficulty:
+    """Trudność krawędzi; bariery spoza `marked` (np. bruk dla turysty) jej nie podnoszą."""
     surface = tag(edge, "surface")
     incline = incline_percent(edge)
     kerb = kerb_cm(edge)
+    stairs = _marks(marked, BarrierType.STAIRS)
+    rough = _marks(marked, BarrierType.ROUGH_SURFACE)
+    steep = _marks(marked, BarrierType.STEEP)
+    kerbs = _marks(marked, BarrierType.KERB)
     if (
-        is_steps(edge)
-        or surface in HARD_SURFACES
-        or (incline is not None and abs(incline) > STEEP_PERCENT)
-        or (kerb is not None and kerb >= HIGH_KERB_CM)
+        (stairs and is_steps(edge))
+        or (rough and surface in HARD_SURFACES)
+        or (steep and incline is not None and abs(incline) > STEEP_PERCENT)
+        or (kerbs and kerb is not None and kerb >= HIGH_KERB_CM)
     ):
         return Difficulty.HARD
-    if surface not in EASY_SURFACES or has_unknown_incline(edge) or has_unknown_kerb(edge):
+    if (
+        (rough and surface not in EASY_SURFACES)
+        or (steep and has_unknown_incline(edge))
+        or (kerbs and has_unknown_kerb(edge))
+    ):
         return Difficulty.MODERATE
     return Difficulty.EASY
 
 
-def edge_barriers(edge: dict[str, Any]) -> list[RouteBarrier]:
+def edge_barriers(edge: dict[str, Any], marked: Marked = None) -> list[RouteBarrier]:
     """Bariery krawędzi, od najważniejszej (kolejność jak w BarrierType).
 
     Te same progi co w `edge_difficulty`, więc bariera zawsze oznacza trudny odcinek.
@@ -490,14 +508,14 @@ def edge_barriers(edge: dict[str, Any]) -> list[RouteBarrier]:
         barriers.append(
             RouteBarrier(type=BarrierType.ROUGH_SURFACE, description=name[:1].upper() + name[1:])
         )
-    return barriers
+    return [b for b in barriers if _marks(marked, b.type)]
 
 
-def segment_barriers(edges: list[dict[str, Any]]) -> list[RouteBarrier]:
+def segment_barriers(edges: list[dict[str, Any]], marked: Marked = None) -> list[RouteBarrier]:
     """Bariery odcinka trasy bez powtórzeń (np. bruk na kilku krawędziach tej samej ulicy)."""
     unique: dict[tuple[BarrierType, str], RouteBarrier] = {}
     for edge in edges:
-        for barrier in edge_barriers(edge):
+        for barrier in edge_barriers(edge, marked):
             unique.setdefault((barrier.type, barrier.description), barrier)
     order = list(BarrierType)
     return sorted(unique.values(), key=lambda b: order.index(b.type))
@@ -555,12 +573,12 @@ def _extend(seg: _Segment, other: _Segment) -> None:
     seg.geometry.extend(other.geometry[1:])
 
 
-def _segment_difficulty(edges: list[dict[str, Any]]) -> Difficulty:
+def _segment_difficulty(edges: list[dict[str, Any]], marked: Marked = None) -> Difficulty:
     total = sum(float(e["length"]) for e in edges) or 1.0
     by_level = {level: 0.0 for level in Difficulty}
     for e in edges:
-        by_level[edge_difficulty(e)] += float(e["length"])
-    if any(is_steps(e) for e in edges):
+        by_level[edge_difficulty(e, marked)] += float(e["length"])
+    if _marks(marked, BarrierType.STAIRS) and any(is_steps(e) for e in edges):
         return Difficulty.HARD
     hard = by_level[Difficulty.HARD]
     if hard >= 25 or hard / total >= 0.3:
@@ -603,7 +621,7 @@ def _to_segment(
 ) -> RouteSegment:
     length = seg.length
     street, steps = seg.key
-    difficulty = _segment_difficulty(seg.edges)
+    difficulty = _segment_difficulty(seg.edges, profile.marked_barriers)
 
     stop_no = next((stop for e in seg.edges if (stop := e.get("_break")) is not None), None)
 
@@ -636,7 +654,7 @@ def _to_segment(
         data_status=AttributeStatus.UNVERIFIED,
         confidence=data_confidence(seg.edges),
         sources=segment_sources(seg.edges),
-        barriers=segment_barriers(seg.edges),
+        barriers=segment_barriers(seg.edges, profile.marked_barriers),
         fetched_at=fetched_at,
         last_verified=last_verified(seg.edges),
     )
@@ -667,6 +685,8 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
 
     rough_by_surface: dict[str, float] = {}
     for e in seg.edges:
+        if not profile.marks(BarrierType.ROUGH_SURFACE):
+            break
         if (surface := tag(e, "surface")) in HARD_SURFACES:
             rough_by_surface[surface] = rough_by_surface.get(surface, 0.0) + float(e["length"])
     rough = sum(rough_by_surface.values())
@@ -675,9 +695,14 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
         warnings.append(
             f"Nierówna nawierzchnia ({SURFACE_PL.get(worst, worst)}), ok. {round(rough)} m."
         )
-    if any(has_unknown_incline(e) and incline_percent(e) is None for e in seg.edges):
+    marks_steep = profile.marks(BarrierType.STEEP)
+    if marks_steep and any(
+        has_unknown_incline(e) and incline_percent(e) is None for e in seg.edges
+    ):
         warnings.append("Odcinek pochyły - brak dokładnych danych o nachyleniu.")
-    steep = [i for e in seg.edges if (i := incline_percent(e)) is not None and abs(i) > 4]
+    steep = [
+        i for e in seg.edges if marks_steep and (i := incline_percent(e)) is not None and abs(i) > 4
+    ]
     worst = max((abs(i) for i in steep), default=0.0)
     if worst > profile.max_incline_percent:
         # trasa idzie tędy, bo nie ma innej drogi w limicie (patrz profiles.OVER_LIMIT_PENALTY)
@@ -687,13 +712,16 @@ def _warnings(seg: _Segment, profile: RoutingProfile, steps: bool) -> list[str]:
         )
     elif steep:
         warnings.append(f"Nachylenie do {worst:g}%.")
-    kerbs = [k for e in seg.edges if (k := kerb_cm(e)) is not None and k >= WARN_KERB_CM]
+    marks_kerb = profile.marks(BarrierType.KERB)
+    kerbs = [
+        k for e in seg.edges if marks_kerb and (k := kerb_cm(e)) is not None and k >= WARN_KERB_CM
+    ]
     if kerbs:
         warnings.append(f"Krawężnik ok. {max(kerbs):g} cm.")
-    if any(has_unknown_kerb(e) for e in seg.edges):
+    if marks_kerb and any(has_unknown_kerb(e) for e in seg.edges):
         warnings.append("Krawężnik o nieznanej wysokości - sprawdź na miejscu.")
     unknown = sum(float(e["length"]) for e in seg.edges if not tag(e, "surface"))
-    if unknown >= 30:
+    if profile.marks(BarrierType.ROUGH_SURFACE) and unknown >= 30:
         warnings.append(f"Brak danych o nawierzchni na {round(unknown)} m.")
     return warnings
 

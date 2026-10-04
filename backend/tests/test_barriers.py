@@ -6,7 +6,7 @@ from app import report_store
 from app.barriers import report_barrier, segment_barrier
 from app.cities import get_city
 from app.db.segments import edge_to_rows
-from app.models import Difficulty
+from app.models import BarrierType, Difficulty
 from app.providers import get_provider_class
 from app.routing.planner import edge_barriers, edge_difficulty, segment_barriers
 
@@ -156,3 +156,38 @@ def test_barriers_endpoint_validation(client):
 def test_step_count_declension(count, text):
     [barrier] = edge_barriers({"highway": "steps", "step_count": count})
     assert barrier.description == text
+
+
+TOURIST = frozenset({BarrierType.STAIRS})
+GUEST = frozenset(b for b in BarrierType if b != BarrierType.ROUGH_SURFACE)
+
+
+def test_tourist_marks_only_stairs():
+    cobbles_uphill = {
+        "highway": "footway",
+        "surface": "sett",
+        "incline": "12%",
+        "kerb_height_cm": 10,
+    }
+    assert edge_difficulty(cobbles_uphill, TOURIST) == Difficulty.EASY
+    assert edge_barriers(cobbles_uphill, TOURIST) == []
+    steps = {"highway": "steps", "surface": "sett"}
+    assert edge_difficulty(steps, TOURIST) == Difficulty.HARD
+    assert [b.type for b in edge_barriers(steps, TOURIST)] == [BarrierType.STAIRS]
+
+
+def test_guest_ignores_cobbles_but_keeps_other_barriers():
+    cobbles = {"highway": "footway", "surface": "sett"}
+    assert edge_difficulty(cobbles, GUEST) == Difficulty.EASY
+    assert edge_barriers(cobbles, GUEST) == []
+    steep = {"highway": "footway", "surface": "asphalt", "incline": "12%"}
+    assert edge_difficulty(steep, GUEST) == Difficulty.HARD
+    assert [b.type for b in edge_barriers(steep, GUEST)] == [BarrierType.STEEP]
+    # brak danych o krawężniku nadal oznacza utrudnienie
+    assert edge_difficulty({**cobbles, "kerb_unknown": "yes"}, GUEST) == Difficulty.MODERATE
+
+
+def test_marked_none_keeps_all_barriers():
+    cobbles = {"highway": "footway", "surface": "sett"}
+    assert edge_difficulty(cobbles) == Difficulty.HARD
+    assert [b.type for b in edge_barriers(cobbles)] == [BarrierType.ROUGH_SURFACE]

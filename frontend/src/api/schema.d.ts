@@ -1180,6 +1180,11 @@ export interface components {
              * @description Profil routingu: 'wheelchair', 'stroller', 'senior' albo 'walk'; brak lub nieznany = 'walk'. Presety trybów: GET /api/profiles
              */
             profile?: string | null;
+            /**
+             * Marked Barriers
+             * @description Które bariery oznaczać na trasie (trudność odcinka, bariery, ostrzeżenia, podsumowanie); null = wszystkie. Np. turysta: tylko 'stairs'. Nie zmienia wyboru trasy.
+             */
+            marked_barriers?: components["schemas"]["BarrierType"][] | null;
         };
         /** RouteRequest */
         RouteRequest: {

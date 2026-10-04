@@ -67,7 +67,7 @@ describe('StartScreen', () => {
     const dialog = screen.getByRole('dialog', { name: 'Jak się poruszasz?' })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(screen.getByRole('heading', { name: 'Jak się poruszasz?' })).toHaveFocus()
-    expect(screen.getByText('Kraków bez Barier')).toBeInTheDocument()
+    expect(screen.getByText('BezPrzeszkód')).toBeInTheDocument()
     for (const name of [
       'Osoba na wózku',
       'Senior',

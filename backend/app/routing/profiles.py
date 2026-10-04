@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Any
 
-from app.models import RoutePreferences
+from app.models import BarrierType, RoutePreferences
 
 ROUGH_SURFACES = {"sett", "cobblestone", "unhewn_cobblestone", "gravel", "pebblestone", "dirt"}
 # Nawierzchnie nieutwardzone - dla wózka gorsze niż bruk
@@ -44,6 +44,11 @@ class RoutingProfile:
     # krawędź z tagiem wheelchair=no jest nieprzejezdna
     wheelchair_no_impassable: bool = True
     speed_m_s: float = 0.9
+    # Które bariery oznaczać w opisie trasy; None = wszystkie (koszt krawędzi nie zależy od tego)
+    marked_barriers: frozenset[BarrierType] | None = None
+
+    def marks(self, barrier: BarrierType) -> bool:
+        return self.marked_barriers is None or barrier in self.marked_barriers
 
 
 PROFILES: dict[str, RoutingProfile] = {
@@ -118,6 +123,9 @@ def profile_from_preferences(prefs: RoutePreferences) -> RoutingProfile:
         max_incline_percent=prefs.max_incline_percent,
         max_kerb_height_cm=prefs.max_kerb_height_cm,
         surface_penalty=penalty,
+        marked_barriers=(
+            frozenset(prefs.marked_barriers) if prefs.marked_barriers is not None else None
+        ),
     )
 
 

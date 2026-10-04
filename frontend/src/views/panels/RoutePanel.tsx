@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CITY, useApp } from '../../app/context'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
 import { openReport, setPointAction } from '../../app/mapActions'
-import { MAX_WAYPOINTS } from '../../app/state'
+import { MAX_WAYPOINTS, marksBarrier } from '../../app/state'
 import { unlockSpeech } from '../../app/speech'
 import { useActiveRoute } from '../../app/useRoute'
 import { useRouteReportWatch } from '../../app/useRouteReportWatch'
@@ -23,6 +23,8 @@ type RestSpotsState =
 
 export function RoutePanel() {
   const [state, dispatch] = useApp()
+  // Turysta i gość nie traktują bruku jako trudności - panel nie pokazuje statystyk o bruku
+  const showRough = marksBarrier(state.prefs, 'rough_surface')
   const { route, active, segmentPoint } = useActiveRoute()
   const {
     origin,
@@ -159,6 +161,7 @@ export function RoutePanel() {
               route={route}
               selected={variant}
               onChange={(index) => dispatch({ type: 'setVariant', variant: index })}
+              showRough={showRough}
             />
             <RouteSummary
               route={active}
@@ -166,6 +169,7 @@ export function RoutePanel() {
               comparisonRoute={route}
               selectedVariant={variant}
               onSelectSegment={selectSegment}
+              showRough={showRough}
             />
             <details
               className="disclosure"

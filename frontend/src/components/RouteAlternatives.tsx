@@ -8,10 +8,15 @@ interface Props {
   route: RouteResponse
   selected: number
   onChange: (index: number) => void
+  /** false = tryb nie oznacza bruku (turysta, gość) - bez znaczników o bruku */
+  showRough?: boolean
 }
 
 /** 1–2 najważniejsze cechy wariantu zamiast zdań. */
-function features(route: RouteResponse): { label: string; tone: 'good' | 'warn' }[] {
+function features(
+  route: RouteResponse,
+  showRough: boolean,
+): { label: string; tone: 'good' | 'warn' }[] {
   const out: { label: string; tone: 'good' | 'warn' }[] = []
   const stairs = route.stairs_count ?? 0
   out.push(
@@ -20,14 +25,17 @@ function features(route: RouteResponse): { label: string; tone: 'good' | 'warn' 
       : { label: `schody: ${stairs}`, tone: 'warn' },
   )
   const rough = Math.round(route.rough_surface_m ?? 0)
-  if (rough < 100) out.push({ label: 'mało bruku', tone: 'good' })
+  // tryb bez oznaczania bruku (turysta, gość): 0 m nie znaczy „mało bruku”
+  if (!showRough) {
+    if (route.confidence >= 0.7) out.push({ label: 'dane potwierdzone', tone: 'good' })
+  } else if (rough < 100) out.push({ label: 'mało bruku', tone: 'good' })
   else if (route.confidence >= 0.7) out.push({ label: 'dane potwierdzone', tone: 'good' })
   else out.push({ label: `bruk ${rough} m`, tone: 'warn' })
   return out
 }
 
 /** Wybór między trasą główną a różniącymi się od niej wariantami z API. */
-export function RouteAlternatives({ route, selected, onChange }: Props) {
+export function RouteAlternatives({ route, selected, onChange, showRough = true }: Props) {
   const choices = buildRouteVariants(route)
   if (choices.length < 2) return null
 
@@ -60,7 +68,7 @@ export function RouteAlternatives({ route, selected, onChange }: Props) {
                 </span>
                 <span className="route-choice-meta">
                   <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
-                  {features(choice).map((f) => (
+                  {features(choice, showRough).map((f) => (
                     <span key={f.label} className={`route-feature route-feature-${f.tone}`}>
                       {f.label}
                     </span>

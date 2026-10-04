@@ -95,6 +95,14 @@ const NO_LAYERS: Layers = {
   gaps: false,
 }
 
+/** Czy tryb oznacza dany rodzaj bariery na trasie; brak listy = wszystkie (wózek, senior...). */
+export function marksBarrier(
+  prefs: RoutePreferences,
+  type: NonNullable<RoutePreferences['marked_barriers']>[number],
+): boolean {
+  return !prefs.marked_barriers || prefs.marked_barriers.includes(type)
+}
+
 function layers(...on: LayerId[]): Layers {
   return { ...NO_LAYERS, ...Object.fromEntries(on.map((id) => [id, true])) }
 }
@@ -125,14 +133,22 @@ export const PROFILE_DEFAULTS: Record<ProfileId, { prefs: RoutePreferences; laye
       avoid_rough_surface: true,
       prefer_lit_paths: false,
     },
-    layers: layers('health', 'rest', 'institutions', 'places', 'reports'),
+    layers: layers('barriers', 'health', 'rest', 'institutions', 'places', 'reports'),
   },
-  tourist: { prefs: WALK, layers: layers('institutions', 'places', 'events') },
+  // Turysta: na trasie oznaczamy tylko schody (bez bruku i podejść)
+  tourist: {
+    prefs: { ...WALK, marked_barriers: ['stairs'] },
+    layers: layers('institutions', 'places', 'events'),
+  },
   stroller: {
     prefs: PROFILE_PRESETS.stroller.preferences,
     layers: layers('barriers', 'health', 'rest', 'places', 'reports'),
   },
-  guest: { prefs: WALK, layers: layers('institutions', 'places') },
+  // Gość: wszystko poza brukiem
+  guest: {
+    prefs: { ...WALK, marked_barriers: ['stairs', 'kerb', 'steep', 'reported'] },
+    layers: layers('institutions', 'places'),
+  },
 }
 
 export type Action =

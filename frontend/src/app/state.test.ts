@@ -303,3 +303,19 @@ describe('powłoka: podkład mapy i panel', () => {
     expect(run(rerouted, { type: 'stopNavigation' }).navigation).toBeNull()
   })
 })
+
+describe('oznaczanie barier wg trybu', () => {
+  it('turysta oznacza tylko schody, gość wszystko poza brukiem, wózek wszystko', async () => {
+    const { marksBarrier, PROFILE_DEFAULTS } = await import('./state')
+    const tourist = PROFILE_DEFAULTS.tourist.prefs
+    const guest = PROFILE_DEFAULTS.guest.prefs
+    const wheelchair = PROFILE_DEFAULTS.wheelchair.prefs
+    expect(marksBarrier(tourist, 'stairs')).toBe(true)
+    expect(marksBarrier(tourist, 'rough_surface')).toBe(false)
+    expect(marksBarrier(tourist, 'steep')).toBe(false)
+    expect(marksBarrier(guest, 'rough_surface')).toBe(false)
+    expect(marksBarrier(guest, 'steep')).toBe(true)
+    expect(marksBarrier(guest, 'kerb')).toBe(true)
+    expect(marksBarrier(wheelchair, 'rough_surface')).toBe(true)
+  })
+})

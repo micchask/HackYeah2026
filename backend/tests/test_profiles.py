@@ -89,4 +89,10 @@ def test_profiles_endpoint(client):
     assert by_id["tourist"]["profile"] == by_id["guest"]["profile"] == "walk"
     assert by_id["tourist"]["layers"] != by_id["guest"]["layers"]
     assert by_id["wheelchair"]["layers"]["barriers"] is True
+    assert by_id["senior"]["layers"]["barriers"] is True
     assert by_id["guest"]["preferences"]["avoid_stairs"] is False
+    # turysta: tylko schody; gość: wszystko poza brukiem; reszta trybów: wszystkie bariery
+    assert by_id["tourist"]["preferences"]["marked_barriers"] == ["stairs"]
+    assert "rough_surface" not in by_id["guest"]["preferences"]["marked_barriers"]
+    assert {"stairs", "kerb", "steep"} <= set(by_id["guest"]["preferences"]["marked_barriers"])
+    assert by_id["wheelchair"]["preferences"]["marked_barriers"] is None
