@@ -1,75 +1,77 @@
-// Panel „Dla Ciebie” (plan §5.3, #91): szybki start trasy, dostępne w pobliżu, wydarzenia, bariery.
-import { useEffect, useState } from 'react'
-import { demoApi, isDemoData, type DemoEvent } from '../../api/demo'
+// Panel „Dla Ciebie” (plan §5.3): duże „Zaplanuj trasę”, szybkie akcje i po kilka pozycji
+// w sekcjach. Pełne listy (tekstowa alternatywa mapy) - przez „Pokaż więcej” (ListPanel).
+import type { ComponentType, SVGProps } from 'react'
+import type { Barrier } from '../../api/client'
+import { isDemoData } from '../../api/demo'
 import { useApp, useAppData } from '../../app/context'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
-import { visiblePlaces } from '../../app/layerData'
-import { openReport } from '../../app/mapActions'
-import { nearbyForMode } from '../../app/nearby'
+import { MODE_META } from '../../app/modeMeta'
+import { distanceM, nearbyForMode } from '../../app/nearby'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../../app/selectedPlace'
-import { PLACES_LIMIT } from '../../app/useMapData'
-import { BarrierList } from '../../components/BarrierList'
-import { DataGapsSection } from '../../components/DataGapsSection'
+import type { LayerId, ListKind } from '../../app/state'
+import { eventWhen, useEvents } from '../../app/useEvents'
+import { BarrierIcon } from '../../components/BarrierIcon'
+import { BARRIER_LABEL } from '../../components/barrierStyle'
+import { EmptyState, LoadingSkeleton, SoonTag } from '../../components/EmptyState'
 import { formatKm } from '../../components/format'
-import { InstitutionList } from '../../components/InstitutionList'
+import {
+  ArrowRightIcon,
+  BuildingIcon,
+  CalendarIcon,
+  ChevronRightIcon,
+  RouteIcon,
+  StairsIcon,
+  ToiletIcon,
+} from '../../components/icons'
 import { PlaceAccessIcon } from '../../components/PlaceAccessIcon'
 import { ACCESS_LABEL, GROUP_LABEL, placeGroup } from '../../components/placeCategories'
-import { PlaceList } from '../../components/PlaceList'
 import { SearchResultsList } from '../../components/SearchResultsList'
+import { SidebarSection } from '../SidebarSection'
 
-const NEARBY_LIMIT = 5
-const EVENTS_LIMIT = 3
-const BARRIERS_COLLAPSED = 5
+const NEARBY_LIMIT = 4
+const OBSTACLES_LIMIT = 3
+const EVENTS_LIMIT = 2
 
-const STEP_FREE_HINT: Record<string, string> = {
-  wheelchair: 'Miejsca z widoku mapy oznaczone jako dostępne lub częściowo dostępne dla wózka.',
-  senior: 'Miejsca z widoku mapy oznaczone jako dostępne lub częściowo dostępne bez schodów.',
-  stroller: 'Miejsca z widoku mapy oznaczone jako dostępne lub częściowo dostępne dla wózka.',
-}
+type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>
 
-function eventWhen(event: DemoEvent, now = new Date()): string {
-  const start = new Date(event.start)
-  const day = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000)
-  const time = start.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
-  const date =
-    diff === 0
-      ? 'dziś'
-      : diff === 1
-        ? 'jutro'
-        : start.toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' })
-  return `${date}, ${time}`
-}
+const QUICK_ACTIONS: { list: ListKind; layer?: LayerId; label: string; Icon: IconComponent }[] = [
+  { list: 'health', layer: 'health', label: 'Toalety', Icon: ToiletIcon },
+  { list: 'barriers', layer: 'barriers', label: 'Bariery', Icon: StairsIcon },
+  { list: 'institutions', layer: 'institutions', label: 'Urzędy', Icon: BuildingIcon },
+  { list: 'events', label: 'Wydarzenia', Icon: CalendarIcon },
+]
 
-function useEvents(): DemoEvent[] {
-  const [events, setEvents] = useState<DemoEvent[]>([])
-  useEffect(() => {
-    let active = true
-    void demoApi.events().then((all) => {
-      if (active) setEvents(all.slice(0, EVENTS_LIMIT))
-    })
-    return () => {
-      active = false
-    }
-  }, [])
-  return events
+/** Utrudnienia najbliżej środka mapy; zgłoszenia mieszkańców mają pierwszeństwo. */
+function nearestObstacles(barriers: Barrier[], center: { lat: number; lon: number } | null) {
+  return barriers
+    .map((barrier) => ({
+      barrier,
+      distance: center ? distanceM(center, barrier.location) : null,
+    }))
+    .sort(
+      (a, b) =>
+        Number(b.barrier.type === 'reported') - Number(a.barrier.type === 'reported') ||
+        (a.distance ?? 0) - (b.distance ?? 0),
+    )
+    .slice(0, OBSTACLES_LIMIT)
 }
 
 export function ExplorePanel() {
   const [state, dispatch] = useApp()
   const data = useAppData()
-  const events = useEvents()
+  const { events, loading: eventsLoading } = useEvents()
+  const meta = state.profile ? MODE_META[state.profile] : null
 
-  // Zaznaczenie na mapie (okienko) + karta miejsca w panelu
   const select = (selection: SelectedPlace) => {
     dispatch({ type: 'selectOnMap', selection })
     dispatch({ type: 'openPanel', panel: { kind: 'place', place: selection } })
   }
+  const openList = (list: ListKind, layer?: LayerId) => {
+    if (layer) dispatch({ type: 'toggleLayer', layer, on: true })
+    dispatch({ type: 'openPanel', panel: { kind: 'list', list } })
+  }
   const nearby = nearbyForMode(data.places, state.profile, state.mapCenter, NEARBY_LIMIT)
-  const shownPlaces = visiblePlaces(data.places, state.layers)
-  const selectedInstitution =
-    state.mapSelection?.kind === 'institution' ? state.mapSelection.id : null
+  const obstacles = nearestObstacles(data.barriers, state.mapCenter)
   const selectedResult =
     state.mapSelection?.kind === 'institution'
       ? `institution:${state.mapSelection.id}`
@@ -78,7 +80,7 @@ export function ExplorePanel() {
         : null
 
   return (
-    <>
+    <div className="explore">
       {state.resultSet && (
         <SearchResultsList
           query={state.resultSet.query}
@@ -89,22 +91,29 @@ export function ExplorePanel() {
         />
       )}
 
-      <section className="card explore-section" aria-labelledby="explore-route-heading">
-        <h2 id="explore-route-heading">Zaplanuj trasę</h2>
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => dispatch({ type: 'openPanel', panel: { kind: 'route' } })}
-        >
-          Wyznacz trasę
-        </button>
-        <fieldset className="presets">
-          <legend className="presets-label">Trasy demo – jedno kliknięcie</legend>
+      <button
+        type="button"
+        className="plan-route"
+        onClick={() => dispatch({ type: 'openPanel', panel: { kind: 'route' } })}
+      >
+        <span className="plan-route-icon">
+          <RouteIcon size={22} />
+        </span>
+        <span className="plan-route-text">
+          <span className="plan-route-title">Zaplanuj trasę</span>
+          {meta && <span className="plan-route-sub">Dopasowaną do profilu: {meta.short}</span>}
+        </span>
+        <ArrowRightIcon size={20} />
+      </button>
+
+      <fieldset className="demo-routes">
+        <legend>Szybki start</legend>
+        <div className="demo-routes-chips">
           {DEMO_ROUTES.map((preset) => (
             <button
               key={preset.label}
               type="button"
-              className="chip"
+              className="chip chip-small"
               onClick={() => {
                 // oba punkty = panel trasy otwiera się sam (withPoints w state.ts)
                 dispatch({ type: 'setOrigin', point: preset.origin })
@@ -114,122 +123,147 @@ export function ExplorePanel() {
               {preset.label}
             </button>
           ))}
-        </fieldset>
-      </section>
+        </div>
+      </fieldset>
 
-      <section className="card explore-section" aria-labelledby="explore-nearby-heading">
-        <h2 id="explore-nearby-heading">Dostępne w pobliżu</h2>
-        {state.profile && STEP_FREE_HINT[state.profile] && (
-          <p className="meta">
-            {STEP_FREE_HINT[state.profile]} Brak danych nie liczy się jako „dostępne”.
-          </p>
-        )}
+      <ul className="quick-actions" aria-label="Szybkie akcje">
+        {QUICK_ACTIONS.map(({ list, layer, label, Icon }) => (
+          <li key={list}>
+            <button type="button" className="quick-action" onClick={() => openList(list, layer)}>
+              <span className="quick-action-icon">
+                <Icon size={22} />
+              </span>
+              {label}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <SidebarSection title="Polecane w pobliżu" onMore={() => openList('places', 'places')}>
         {nearby.length ? (
-          <ul className="explore-list">
+          <ul className="item-list">
             {nearby.map(({ place, access, distance }) => (
               <li key={place.id}>
                 <button
                   type="button"
-                  className="explore-item"
+                  className="item"
                   onClick={() => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
                 >
-                  <PlaceAccessIcon access={access} size={22} />
-                  <span className="explore-item-text">
-                    <span className="explore-item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
-                    <span className="meta">
+                  <PlaceAccessIcon access={access} size={28} />
+                  <span className="item-text">
+                    <span className="item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
+                    <span className="item-meta">
                       {GROUP_LABEL[placeGroup(place)]} · {ACCESS_LABEL[access]}
-                      {distance !== null ? ` · ${formatKm(distance)}` : ''}
                     </span>
                   </span>
+                  {distance !== null && <span className="item-end">{formatKm(distance)}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : data.placesError ? (
+          <EmptyState tone="error" title="Nie udało się wczytać miejsc" />
+        ) : (
+          <EmptyState title="Brak potwierdzonych miejsc w widoku">
+            Przesuń albo oddal mapę.
+          </EmptyState>
+        )}
+      </SidebarSection>
+
+      <SidebarSection
+        title="Aktualne utrudnienia"
+        onMore={
+          data.barriers.length > OBSTACLES_LIMIT
+            ? () => openList('barriers', 'barriers')
+            : undefined
+        }
+      >
+        {data.barriersLoading && !data.barriers.length ? (
+          <LoadingSkeleton rows={2} />
+        ) : obstacles.length ? (
+          <ul className="item-list">
+            {obstacles.map(({ barrier, distance }) => (
+              <li key={barrier.id}>
+                <button
+                  type="button"
+                  className="item"
+                  aria-pressed={state.selectedBarrier === barrier.id}
+                  onClick={() => {
+                    const layer = barrier.type === 'reported' ? 'reports' : 'barriers'
+                    dispatch({ type: 'toggleLayer', layer, on: true })
+                    dispatch({ type: 'selectBarrier', id: barrier.id })
+                    dispatch({ type: 'focusMap', point: barrier.location })
+                  }}
+                >
+                  <BarrierIcon type={barrier.type} size={28} />
+                  <span className="item-text">
+                    <span className="item-title">{BARRIER_LABEL[barrier.type]}</span>
+                    <span className="item-meta">{barrier.street ?? 'ulica bez nazwy'}</span>
+                  </span>
+                  {distance !== null && <span className="item-end">{formatKm(distance)}</span>}
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="meta">
-            W tym widoku nie ma miejsc z potwierdzoną dostępnością. Przesuń albo oddal mapę.
-          </p>
+          <EmptyState title="Brak znanych utrudnień w widoku" />
         )}
-      </section>
+      </SidebarSection>
 
-      {events.length > 0 && (
-        <section className="card explore-section" aria-labelledby="explore-events-heading">
-          <h2 id="explore-events-heading">Wydarzenia</h2>
-          {events.some(isDemoData) && (
-            <p className="meta">
-              <span className="badge badge-demo-data">dane przykładowe</span> Kalendarz z
-              prawdziwymi danymi to kolejny etap.
-            </p>
-          )}
-          <ul className="explore-list">
-            {events.map((event) => (
+      <SidebarSection
+        title="Wydarzenia"
+        tag={events.some(isDemoData) ? <SoonTag>demo</SoonTag> : undefined}
+        onMore={events.length > EVENTS_LIMIT ? () => openList('events') : undefined}
+      >
+        {eventsLoading ? (
+          <LoadingSkeleton rows={2} />
+        ) : events.length ? (
+          <ul className="item-list">
+            {events.slice(0, EVENTS_LIMIT).map((event) => (
               <li key={event.id}>
                 <button
                   type="button"
-                  className="explore-item"
+                  className="item"
                   onClick={() =>
                     event.venueId && select({ kind: 'institution', id: event.venueId })
                   }
                 >
-                  <span className="explore-item-text">
-                    <span className="explore-item-title">{event.title}</span>
-                    <span className="meta">
-                      {eventWhen(event)} · {event.venueName}
-                    </span>
-                    {event.features.length > 0 && (
-                      <span className="tags">
-                        {event.features.map((f) => (
-                          <span key={f} className="tag">
-                            {f}
-                          </span>
-                        ))}
-                      </span>
-                    )}
+                  <span className="item-icon">
+                    <CalendarIcon size={18} />
                   </span>
+                  <span className="item-text">
+                    <span className="item-title">{event.title}</span>
+                    <span className="item-meta">{eventWhen(event)}</span>
+                  </span>
+                  {event.features[0] && <span className="tag">{event.features[0]}</span>}
                 </button>
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        ) : (
+          <EmptyState title="Brak wydarzeń w najbliższych dniach" />
+        )}
+      </SidebarSection>
 
-      <BarrierList
-        barriers={data.barriers}
-        truncated={data.barriersTruncated}
-        loading={data.barriersLoading}
-        error={data.barriersError}
-        visible={state.layers.barriers}
-        onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'barriers', on })}
-        selected={state.selectedBarrier}
-        onSelect={(id) => dispatch({ type: 'selectBarrier', id })}
-        collapsedLimit={BARRIERS_COLLAPSED}
-      />
-      <button type="button" className="chip" onClick={() => openReport(dispatch, null)}>
-        Zgłoś barierę
-      </button>
-
-      <DataGapsSection
-        summary={data.dataGapsSummary}
-        error={data.dataGapsError}
-        visible={state.layers.gaps}
-        onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'gaps', on })}
-        onShow={(point) => dispatch({ type: 'focusMap', point })}
-      />
-
-      {/* Pełne listy - tekstowa alternatywa mapy (WCAG) */}
-      <InstitutionList
-        institutions={data.institutions}
-        selected={selectedInstitution}
-        onSelect={(id) => select({ kind: 'institution', id })}
-      />
-      <PlaceList
-        places={shownPlaces}
-        hiddenByLayers={data.places.length - shownPlaces.length}
-        onShow={(place) => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
-        query={state.placesQuery}
-        onQueryChange={(query) => dispatch({ type: 'setPlacesQuery', query })}
-        limit={PLACES_LIMIT}
-      />
-    </>
+      <nav className="browse-links" aria-label="Pełne listy">
+        <h3 className="browse-title">Przeglądaj listy</h3>
+        <ul>
+          {(
+            [
+              ['places', 'Wszystkie miejsca'],
+              ['institutions', 'Instytucje publiczne'],
+              ['gaps', 'Braki danych o dostępności'],
+            ] as const
+          ).map(([list, label]) => (
+            <li key={list}>
+              <button type="button" className="browse-link" onClick={() => openList(list)}>
+                {label}
+                <ChevronRightIcon size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   )
 }

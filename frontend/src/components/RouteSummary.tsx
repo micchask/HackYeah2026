@@ -179,11 +179,14 @@ export function RouteSummary({
 
       <RouteBarriers route={route} onSelectSegment={onSelectSegment} />
 
-      <Comparison
-        route={route}
-        comparisonRoute={comparisonRoute}
-        selectedVariant={selectedVariant}
-      />
+      <details className="disclosure">
+        <summary>Porównanie i szczegóły</summary>
+        <Comparison
+          route={route}
+          comparisonRoute={comparisonRoute}
+          selectedVariant={selectedVariant}
+        />
+      </details>
 
       {route.warnings?.map((w) => (
         <p key={w} role="note" className="callout callout-warning">

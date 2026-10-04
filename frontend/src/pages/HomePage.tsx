@@ -1,16 +1,19 @@
-// Sam układ ekranu (plan §2). Stan: src/app/, widoki: src/views/.
-// Po #86 ten plik edytuje tylko autor zmian układu - funkcje trafiają do plików w views/.
+// Układ ekranu: pełnoekranowa mapa, nad nią pasek wyszukiwania, panel boczny i kontrolki.
+// Stan: src/app/, widoki: src/views/.
 import { AppProvider } from '../app/AppState'
 import { MapArea } from '../views/MapArea'
-import { Panel } from '../views/Panel'
 import { SettingsDrawer } from '../views/SettingsDrawer'
+import { Sidebar } from '../views/Sidebar'
 import { StartScreen } from '../views/StartScreen'
+import { TopSearchBar } from '../views/TopSearchBar'
 
 export function HomePage() {
   return (
     <AppProvider>
-      <div className="layout">
-        <Panel />
+      <div className="shell">
+        {/* kolejność w DOM = kolejność Tab: wyszukiwarka, panel, mapa */}
+        <TopSearchBar />
+        <Sidebar />
         <MapArea />
       </div>
       <SettingsDrawer />

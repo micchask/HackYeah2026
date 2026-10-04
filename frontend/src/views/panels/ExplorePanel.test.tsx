@@ -26,10 +26,10 @@ const cafe = {
 
 const barriers = Array.from({ length: 8 }, (_, i) => ({
   id: `segment:${i}`,
-  type: 'stairs',
+  type: i === 7 ? 'reported' : 'stairs',
   description: `Schody ${i}`,
   street: `Ulica ${i}`,
-  location: P,
+  location: { lat: P.lat + i * 0.001, lon: P.lon },
   geometry: [P],
   source: 'osm',
   confidence: 0.6,
@@ -61,14 +61,19 @@ function renderPanel() {
 }
 
 describe('ExplorePanel', () => {
-  it('sekcje z nagłówkami h2', async () => {
-    renderPanel()
-    for (const name of ['Zaplanuj trasę', 'Dostępne w pobliżu', 'Bariery w widoku mapy']) {
-      expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument()
+  it('duże „Zaplanuj trasę”, szybkie akcje i krótkie sekcje', async () => {
+    const dispatch = renderPanel()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: /Zaplanuj trasę/ }))
+    expect(dispatch).toHaveBeenCalledWith({ type: 'openPanel', panel: { kind: 'route' } })
+
+    const actions = screen.getByRole('list', { name: 'Szybkie akcje' })
+    expect(within(actions).getAllByRole('button')).toHaveLength(4)
+    for (const name of ['Polecane w pobliżu', 'Aktualne utrudnienia']) {
+      expect(screen.getByRole('heading', { level: 3, name })).toBeInTheDocument()
     }
     // wydarzenia (przykładowe) wczytują się asynchronicznie
-    expect(await screen.findByRole('heading', { level: 2, name: 'Wydarzenia' })).toBeInTheDocument()
-    expect(screen.getAllByText('dane przykładowe').length).toBeGreaterThan(0)
+    expect(await screen.findByRole('heading', { level: 3, name: 'Wydarzenia' })).toBeInTheDocument()
   })
 
   it('trasa demo jednym kliknięciem ustawia oba punkty', async () => {
@@ -84,10 +89,10 @@ describe('ExplorePanel', () => {
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'setDestination' }))
   })
 
-  it('„Dostępne w pobliżu” otwiera kartę miejsca', async () => {
+  it('„Polecane w pobliżu” otwiera kartę miejsca', async () => {
     const user = userEvent.setup()
     const dispatch = renderPanel()
-    const nearby = screen.getByRole('region', { name: 'Dostępne w pobliżu' })
+    const nearby = screen.getByRole('region', { name: 'Polecane w pobliżu' })
     await user.click(within(nearby).getByRole('button', { name: /Kawiarnia Bez Progu/ }))
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -97,12 +102,17 @@ describe('ExplorePanel', () => {
     )
   })
 
-  it('bariery zwinięte do 5 z „Pokaż wszystkie”', async () => {
+  it('utrudnienia: najwyżej 3, zgłoszenia najpierw, „Pokaż więcej” otwiera pełną listę', async () => {
     const user = userEvent.setup()
-    renderPanel()
-    const section = screen.getByRole('region', { name: 'Bariery w widoku mapy' })
-    expect(within(section).getAllByRole('button', { name: /Ulica/ })).toHaveLength(5)
-    await user.click(within(section).getByRole('button', { name: 'Pokaż wszystkie bariery (8)' }))
-    expect(within(section).getAllByRole('button', { name: /Ulica/ })).toHaveLength(8)
+    const dispatch = renderPanel()
+    const section = screen.getByRole('region', { name: 'Aktualne utrudnienia' })
+    const items = within(section).getAllByRole('button', { name: /Ulica/ })
+    expect(items).toHaveLength(3)
+    expect(items[0]).toHaveTextContent('Ulica 7')
+    await user.click(within(section).getByRole('button', { name: /Pokaż więcej/ }))
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'openPanel',
+      panel: { kind: 'list', list: 'barriers' },
+    })
   })
 })

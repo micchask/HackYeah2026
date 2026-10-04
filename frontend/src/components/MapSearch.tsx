@@ -182,7 +182,7 @@ export function MapSearch({ city, near, onSelect, onShowAll }: Props) {
         aria-activedescendant={expanded && active >= 0 ? `${listId}-${active}` : undefined}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={status === 'error' || undefined}
-        placeholder="Szukaj miejsca, np. apteka, Wawel, Grodzka 20"
+        placeholder="Szukaj miejsc, np. apteka, Wawel, Grodzka 20"
         value={query}
         onChange={(e) => {
           const text = e.target.value

@@ -18,25 +18,70 @@ import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
 import { shortInstitutionName } from './institutionStyle'
 
-const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
+export type BaseMap = 'standard' | 'satellite' | 'light'
+
+// Trzy podkłady w jednym stylu - przełączanie widoczności nie przeładowuje warstw aplikacji
+const BASE_LAYERS: Record<BaseMap, string> = {
+  standard: 'osm',
+  satellite: 'satellite',
+  light: 'light',
+}
+
+function mapStyle(baseMap: BaseMap): maplibregl.StyleSpecification {
+  const visibility = (id: BaseMap) => (id === baseMap ? 'visible' : 'none')
+  return {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: '© OpenStreetMap contributors',
+      },
+      satellite: {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        ],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: 'Zdjęcia © Esri, Maxar, Earthstar Geographics',
+      },
+      light: {
+        type: 'raster',
+        tiles: ['a', 'b', 'c'].map(
+          (sub) => `https://${sub}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png`,
+        ),
+        tileSize: 256,
+        maxzoom: 20,
+        attribution: '© OpenStreetMap contributors © CARTO',
+      },
     },
-  },
-  layers: [
-    {
-      id: 'osm',
-      type: 'raster',
-      source: 'osm',
-      // przygaszony podkład, żeby kolory trasy były czytelne
-      paint: { 'raster-saturation': -0.6, 'raster-contrast': -0.1 },
-    },
-  ],
+    layers: [
+      {
+        id: 'osm',
+        type: 'raster',
+        source: 'osm',
+        layout: { visibility: visibility('standard') },
+        // przygaszony podkład, żeby kolory trasy były czytelne
+        paint: { 'raster-saturation': -0.6, 'raster-contrast': -0.1 },
+      },
+      {
+        id: 'satellite',
+        type: 'raster',
+        source: 'satellite',
+        layout: { visibility: visibility('satellite') },
+        paint: { 'raster-saturation': -0.15 },
+      },
+      {
+        id: 'light',
+        type: 'raster',
+        source: 'light',
+        layout: { visibility: visibility('light') },
+      },
+    ],
+  }
 }
 
 type GeoJSONData = Parameters<maplibregl.GeoJSONSource['setData']>[0]
@@ -99,6 +144,8 @@ interface Props {
   dataGaps?: SegmentCollection | null
   /** Przesuń mapę na ten punkt (zmiana seq = ponowne przesunięcie) */
   focus?: { point: LatLon; seq: number } | null
+  /** Podkład mapy */
+  baseMap?: BaseMap
 }
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
@@ -407,6 +454,7 @@ export function MapView({
   onBarrierSelect,
   dataGaps = null,
   focus = null,
+  baseMap = 'standard',
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -427,6 +475,19 @@ export function MapView({
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
   const barriersRef = useRef(barriers)
+  const baseMapRef = useRef(baseMap)
+
+  // Zmiana podkładu: tylko widoczność warstw rastrowych - trasa, bariery i miejsca zostają
+  useEffect(() => {
+    baseMapRef.current = baseMap
+    const instance = map.current
+    if (!instance || !mapReady) return
+    for (const [id, layer] of Object.entries(BASE_LAYERS)) {
+      if (instance.getLayer(layer)) {
+        instance.setLayoutProperty(layer, 'visibility', id === baseMap ? 'visible' : 'none')
+      }
+    }
+  }, [baseMap, mapReady])
 
   useEffect(() => {
     routeRef.current = route
@@ -467,13 +528,20 @@ export function MapView({
 
     const instance = new maplibregl.Map({
       container: container.current,
-      style: MAP_STYLE,
+      style: mapStyle(baseMapRef.current),
       center: [center[1], center[0]],
       zoom,
+      attributionControl: false,
     })
     map.current = instance
 
-    instance.addControl(new maplibregl.NavigationControl(), 'top-right')
+    // Kontrolki jak w aplikacjach mapowych: prawy dół, nad nimi przyciski Warstwy / Legenda
+    instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+    instance.addControl(
+      new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true } }),
+      'bottom-right',
+    )
+    instance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
     const reportBounds = () => {
       const b = instance.getBounds()
       onBounds.current?.(

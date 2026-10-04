@@ -7,7 +7,7 @@ import { useActiveRoute } from '../../app/useRoute'
 import { reportConfirmation } from '../../components/attributes'
 import { ReportForm } from '../../components/ReportForm'
 import { ReportSent } from '../../components/ReportSent'
-import { PANEL_TITLE } from '../panelTitles'
+import { panelTitle } from '../panelTitles'
 
 export function ReportPanel() {
   const [state, dispatch] = useApp()
@@ -15,7 +15,7 @@ export function ReportPanel() {
   const [sent, setSent] = useState<Report | null>(null)
   const picking = state.pickTarget === 'report'
   const previous = state.history.at(-1)
-  const backLabel = PANEL_TITLE[previous?.kind ?? 'explore']
+  const backLabel = panelTitle(previous)
 
   if (sent) {
     return (

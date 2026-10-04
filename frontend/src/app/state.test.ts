@@ -173,6 +173,7 @@ describe('zapamiętywanie w przeglądarce', () => {
       'prefs',
       'customized',
       'layers',
+      'baseMap',
     ])
     expect(initialState(loadSaved(storage)).profile).toBe('senior')
   })
@@ -213,5 +214,21 @@ describe('zapamiętywanie w przeglądarce', () => {
     const twice = run(once, { type: 'focusMap', point })
     expect(once.mapFocus).toEqual({ point, seq: 1 })
     expect(twice.mapFocus?.seq).toBe(2)
+  })
+})
+
+describe('powłoka: podkład mapy i panel', () => {
+  it('przełącza podkład i zapamiętuje go; zły zapis jest pomijany', () => {
+    const state = run(initialState(), { type: 'setBaseMap', baseMap: 'satellite' })
+    expect(state.baseMap).toBe('satellite')
+    expect(initialState(loadSaved({ getItem: () => '{"baseMap":"3d"}' })).baseMap).toBe('standard')
+  })
+
+  it('zwinięty panel otwiera się przy przejściu do innego widoku', () => {
+    const collapsed = run(initialState(), { type: 'toggleSidebar' })
+    expect(collapsed.sidebarOpen).toBe(false)
+    const opened = run(collapsed, { type: 'openPanel', panel: { kind: 'list', list: 'places' } })
+    expect(opened.sidebarOpen).toBe(true)
+    expect(opened.history).toEqual([{ kind: 'explore' }])
   })
 })

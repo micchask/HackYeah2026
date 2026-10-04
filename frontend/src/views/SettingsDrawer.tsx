@@ -1,26 +1,27 @@
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react'
 import type { RoutePreferences } from '../api/client'
 import { useApp } from '../app/context'
-import type { LayerId, Layers } from '../app/state'
+import { MODE_META, MODE_ORDER } from '../app/modeMeta'
+import type { LayerId, Layers, ProfileId } from '../app/state'
+import { SoonTag } from '../components/EmptyState'
+import { CloseIcon } from '../components/icons'
 import { findMode, useModes } from '../app/useModes'
 
 interface LayerOption {
   id: LayerId
   label: string
-  description: string
+  description?: string
+  /** Warstwa jest w stanie, ale jej danych nie ma jeszcze na mapie (#96) */
+  soon?: boolean
 }
 
 const MAP_LAYERS: LayerOption[] = [
-  { id: 'barriers', label: 'Bariery', description: 'Schody, wysokie krawężniki i utrudnienia.' },
-  { id: 'health', label: 'Toalety i zdrowie', description: 'Toalety, apteki i placówki zdrowia.' },
-  { id: 'institutions', label: 'Instytucje', description: 'Urzędy i obiekty publiczne.' },
-  { id: 'places', label: 'Jedzenie i kultura', description: 'Lokale, zabytki i miejsca kultury.' },
-  {
-    id: 'parking',
-    label: 'Parkingi',
-    description: 'Miejsca parkingowe dla osób z niepełnosprawnościami.',
-  },
-  { id: 'events', label: 'Wydarzenia', description: 'Nadchodzące wydarzenia w mieście.' },
+  { id: 'health', label: 'Toalety i zdrowie' },
+  { id: 'places', label: 'Jedzenie i kultura' },
+  { id: 'institutions', label: 'Urzędy i instytucje' },
+  { id: 'barriers', label: 'Bariery na mapie' },
+  { id: 'parking', label: 'Parkingi dla OzN', soon: true },
+  { id: 'events', label: 'Wydarzenia', soon: true },
 ]
 
 interface PreferencesFormProps {
@@ -36,13 +37,11 @@ export function PreferencesForm({ value, onChange }: PreferencesFormProps) {
     <>
       <SwitchRow
         label="Omijaj schody"
-        description="Trasa nie będzie prowadzić po schodach."
         checked={value.avoid_stairs}
         onChange={(checked) => set({ avoid_stairs: checked })}
       />
       <SwitchRow
         label="Omijaj bruk i nierówną nawierzchnię"
-        description="Preferuj gładkie chodniki zamiast kostki, bruku i żwiru."
         checked={value.avoid_rough_surface}
         onChange={(checked) => set({ avoid_rough_surface: checked })}
       />
@@ -75,7 +74,7 @@ export function PreferencesForm({ value, onChange }: PreferencesFormProps) {
           onChange={(event) => set({ max_kerb_height_cm: Number(event.target.value) })}
         />
         <p id="settings-max-kerb-hint" className="settings-hint">
-          Obniżony krawężnik ma około 2 cm, zwykły około 10 cm.
+          Obniżony ok. 2 cm, zwykły ok. 10 cm.
         </p>
       </div>
     </>
@@ -87,22 +86,26 @@ interface SwitchRowProps {
   description?: string
   checked: boolean
   onChange: (checked: boolean) => void
+  soon?: boolean
 }
 
-function SwitchRow({ label, description, checked, onChange }: SwitchRowProps) {
+function SwitchRow({ label, description, checked, onChange, soon }: SwitchRowProps) {
   return (
-    <label className="settings-option">
+    <label className={soon ? 'settings-option settings-option-soon' : 'settings-option'}>
       <span className="settings-option-copy">
-        <span className="settings-option-label">{label}</span>
+        <span className="settings-option-label">
+          {label} {soon && <SoonTag />}
+        </span>
         {description && <span className="settings-option-description">{description}</span>}
       </span>
       <span className="settings-switch">
         <input
           type="checkbox"
           role="switch"
-          checked={checked}
-          aria-checked={checked}
+          checked={soon ? false : checked}
+          aria-checked={soon ? false : checked}
           aria-label={label}
+          disabled={soon}
           onChange={(event) => onChange(event.target.checked)}
         />
         <span className="settings-switch-track" aria-hidden="true" />
@@ -112,6 +115,9 @@ function SwitchRow({ label, description, checked, onChange }: SwitchRowProps) {
 }
 
 export interface SettingsDrawerViewProps {
+  /** Aktywny profil - zmiana wczytuje jego preset */
+  profile?: ProfileId | null
+  onProfileChange?: (profile: ProfileId) => void
   prefs: RoutePreferences
   layers: Layers
   onPrefsChange: (prefs: RoutePreferences) => void
@@ -122,6 +128,8 @@ export interface SettingsDrawerViewProps {
 
 /** Widok na propsach, niezależny od implementacji stanu aplikacji. */
 export function SettingsDrawerView({
+  profile = null,
+  onProfileChange,
   prefs,
   layers,
   onPrefsChange,
@@ -180,54 +188,80 @@ export function SettingsDrawerView({
       >
         <header className="settings-header">
           <div>
-            <p className="settings-eyebrow">Dostosuj tryb</p>
+            <p className="settings-eyebrow">Własna personalizacja</p>
             <h2 id={headingId} ref={heading} tabIndex={-1}>
               Twoje ustawienia
             </h2>
           </div>
           <button type="button" className="settings-close" aria-label="Zamknij" onClick={close}>
-            ×
+            <CloseIcon size={20} />
           </button>
         </header>
 
         <div className="settings-content">
+          {onProfileChange && (
+            <fieldset className="settings-section settings-profiles">
+              <legend>Profil</legend>
+              <div className="settings-profile-chips">
+                {MODE_ORDER.map((id) => {
+                  const meta = MODE_META[id]
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className="quick-chip"
+                      aria-pressed={profile === id}
+                      onClick={() => onProfileChange(id)}
+                    >
+                      <meta.Icon size={16} />
+                      {meta.short}
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )}
           <fieldset className="settings-section">
             <legend>Ruch i trasy</legend>
             <PreferencesForm value={prefs} onChange={onPrefsChange} />
             <SwitchRow
               label="Pokazuj miejsca odpoczynku na trasie"
-              description="Ławki i inne miejsca, w których można zrobić przerwę."
               checked={layers.rest}
               onChange={(on) => onLayerChange('rest', on)}
             />
           </fieldset>
 
           <fieldset className="settings-section">
-            <legend>Na mapie</legend>
+            <legend>Miejsca i usługi</legend>
             {MAP_LAYERS.map((layer) => (
               <SwitchRow
                 key={layer.id}
                 label={layer.label}
                 description={layer.description}
                 checked={layers[layer.id]}
+                soon={layer.soon}
                 onChange={(on) => onLayerChange(layer.id, on)}
               />
             ))}
           </fieldset>
 
           <fieldset className="settings-section">
-            <legend>Dane</legend>
+            <legend>Dane i widoczność</legend>
             <SwitchRow
               label="Pokazuj miejsca bez danych o dostępności"
-              description="Pomaga znaleźć obszary, które wymagają uzupełnienia informacji."
               checked={layers.gaps}
               onChange={(on) => onLayerChange('gaps', on)}
             />
             <SwitchRow
               label="Pokazuj zgłoszenia użytkowników"
-              description="Aktualne utrudnienia zgłoszone przez społeczność."
               checked={layers.reports}
               onChange={(on) => onLayerChange('reports', on)}
+            />
+            <SwitchRow
+              label="Prowadź do dostępnego wejścia"
+              checked={false}
+              soon
+              onChange={() => {}}
             />
           </fieldset>
         </div>
@@ -253,6 +287,10 @@ export function SettingsDrawer() {
 
   return (
     <SettingsDrawerView
+      profile={profile}
+      onProfileChange={(id) =>
+        dispatch({ type: 'chooseProfile', profile: id, prefs: findMode(modes, id)?.prefs })
+      }
       prefs={prefs}
       layers={layers}
       onPrefsChange={(value) => dispatch({ type: 'setPrefs', prefs: value })}

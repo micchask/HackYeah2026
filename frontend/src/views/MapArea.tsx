@@ -1,4 +1,4 @@
-// Prawa część ekranu: mapa + nakładki (pasek, baner wskazywania, legenda). Warstwy porządkuje #90.
+// Pełnoekranowa mapa + nakładki: kontrolki (Warstwy, Legenda), zgłoszenie, baner wskazywania punktu.
 import { useApp, useAppData } from '../app/context'
 import { openReport, useMapClick } from '../app/mapActions'
 import { visibleLayerData } from '../app/layerData'
@@ -10,7 +10,7 @@ import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
 import { GROUP_LABEL, placeGroup } from '../components/placeCategories'
 import { PlacePopup } from '../components/PlacePopup'
-import { TopBar } from './TopBar'
+import { LayersDrawer } from './LayersDrawer'
 
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 
@@ -118,8 +118,20 @@ export function MapArea() {
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
         dataGaps={data.dataGaps}
         focus={state.mapFocus}
+        baseMap={state.baseMap}
       />
-      <TopBar />
+      <div className="map-controls">
+        <LayersDrawer />
+        <Legend
+          showRoute={!!route}
+          showBaseline={!!route?.baseline && !route.is_mock}
+          showInstitutions={visible.institutions.length > 0}
+          otherRoutes={otherRoutes}
+          barrierTypes={[...new Set(visible.barriers.map((b) => b.type))]}
+          showPlaces={visible.places.length > 0}
+          showDataGaps={layers.gaps}
+        />
+      </div>
       <button
         type="button"
         className="map-report-button"
@@ -134,7 +146,7 @@ export function MapArea() {
           dispatch({ type: 'setPickTarget', target: 'report' })
         }}
       >
-        <AlertIcon size={18} />
+        <AlertIcon size={20} />
         <span>Zgłoś problem</span>
       </button>
       {pickLetter && (
@@ -162,21 +174,6 @@ export function MapArea() {
         <div className="map-loading" aria-hidden="true">
           <span className="spinner" /> Szukam trasy…
         </div>
-      )}
-      {(route ||
-        visible.institutions.length > 0 ||
-        visible.barriers.length > 0 ||
-        visible.places.length > 0 ||
-        layers.gaps) && (
-        <Legend
-          showRoute={!!route}
-          showBaseline={!!route?.baseline && !route.is_mock}
-          showInstitutions={visible.institutions.length > 0}
-          otherRoutes={otherRoutes}
-          barrierTypes={[...new Set(visible.barriers.map((b) => b.type))]}
-          showPlaces={visible.places.length > 0}
-          showDataGaps={layers.gaps}
-        />
       )}
     </div>
   )
