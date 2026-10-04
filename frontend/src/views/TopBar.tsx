@@ -5,7 +5,7 @@ import { MapSearch } from '../components/MapSearch'
 import { ProfileChip } from './ProfileChip'
 
 export function TopBar() {
-  const [{ mapCenter }, dispatch] = useApp()
+  const [{ mapCenter, resultSet }, dispatch] = useApp()
   return (
     <>
       <MapSearch
@@ -14,8 +14,24 @@ export function TopBar() {
         onSelect={(result) =>
           dispatch({ type: 'selectOnMap', selection: fromSearchResult(result) })
         }
+        onShowAll={(results, query) => dispatch({ type: 'showResults', query, results })}
       />
       <ProfileChip />
+      {resultSet && (
+        <div className="result-set-chip">
+          <span>
+            „{resultSet.query}”: {resultSet.results.length} na mapie
+          </span>
+          <button
+            type="button"
+            className="banner-button"
+            onClick={() => dispatch({ type: 'clearResults' })}
+            aria-label={`Wyczyść wyniki „${resultSet.query}” z mapy`}
+          >
+            Wyczyść
+          </button>
+        </div>
+      )}
     </>
   )
 }

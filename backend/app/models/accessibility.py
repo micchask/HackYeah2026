@@ -43,6 +43,7 @@ class AttributeKey(StrEnum):
     TACTILE_PAVING = "tactile_paving"  # bool
     BLOCKED = "blocked"  # bool - przejście zablokowane (remont, rusztowanie)
     ACCESSIBLE_PARKING = "accessible_parking"  # bool - miejsce parkingowe dla OzN dostępne
+    CHANGING_TABLE = "changing_table"  # bool - przewijak (OSM changing_table=*)
 
 
 class Provenance(BaseModel):

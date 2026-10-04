@@ -137,17 +137,45 @@ def refresh_snapshot(city: CityConfig, data_dir: Path | None = None) -> list[Pat
     return written
 
 
+# Snapshot w repo tylko z danych publicznych - lokalne zgłoszenia (user_reports) nie do gita
+PUBLIC_PROVIDERS = ("osm",)
+
+
+def refresh_places_snapshot(city: CityConfig, data_dir: Path | None = None) -> list[Path]:
+    """Tylko miejsca z providerów (bez grafu - ten pobiera się do 10 min) -> nowy snapshot."""
+    result = fetch_city_places(city, data_dir)
+    written = []
+    for provider, source in result.sources.items():
+        if provider not in PUBLIC_PROVIDERS:
+            continue
+        if source != "live":
+            logger.warning("Provider %s: %s - zostawiam poprzedni snapshot", provider, source)
+            continue
+        dst = seed_dir(city.id, data_dir) / f"{provider}.json.gz"
+        _gzip_copy(cache_path(city.id, provider, data_dir), dst)
+        written.append(dst)
+    return written
+
+
 def main(argv: list[str] | None = None) -> int:
     import app.providers  # noqa: F401  rejestruje providery
 
     parser = argparse.ArgumentParser(prog="python -m app.seed", description=__doc__.split("\n")[0])
     parser.add_argument("--city", default=get_settings().default_city)
     parser.add_argument("--refresh", action="store_true", help="pobierz nowy snapshot z Overpass")
+    parser.add_argument(
+        "--refresh-places",
+        action="store_true",
+        help="odśwież tylko miejsca z providerów (bez grafu), potem jak zwykły seed",
+    )
     parser.add_argument("--no-db", action="store_true", help="nie zapisuj miejsc do bazy")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     city = get_city(args.city)
+    if args.refresh_places:
+        for path in refresh_places_snapshot(city):
+            logger.info("Snapshot: %s (%.1f MB)", path, path.stat().st_size / 1e6)
     if args.refresh:
         for path in refresh_snapshot(city):
             logger.info("Snapshot: %s (%.1f MB)", path, path.stat().st_size / 1e6)

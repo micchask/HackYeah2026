@@ -4,6 +4,7 @@ import {
   type LatLon,
   type RoutePreferences,
   type RouteResponse,
+  type SearchResult,
 } from '../api/client'
 import type { NamedPoint, PickTarget } from '../components/RoutePoints'
 import type { SelectedPlace } from './selectedPlace'
@@ -51,6 +52,8 @@ export interface AppState {
   mapBbox: string | null
   mapCenter: LatLon | null
   placesQuery: string
+  /** „Pokaż wszystkie na mapie” dla zapytania o rodzaj/cechę („hotel”, „przewijak”) */
+  resultSet: { query: string; results: SearchResult[] } | null
 }
 
 const NO_LAYERS: Layers = {
@@ -129,6 +132,8 @@ export type Action =
   | { type: 'selectBarrier'; id: string | null }
   | { type: 'setMapView'; bbox: string; center: LatLon }
   | { type: 'setPlacesQuery'; query: string }
+  | { type: 'showResults'; query: string; results: SearchResult[] }
+  | { type: 'clearResults' }
   /** Adres z geokodera zamiast współrzędnych - tylko jeśli punkt to nadal ten kliknięty */
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
 
@@ -158,6 +163,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     mapBbox: null,
     mapCenter: null,
     placesQuery: '',
+    resultSet: null,
   }
 }
 
@@ -241,6 +247,15 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, mapBbox: action.bbox, mapCenter: action.center }
     case 'setPlacesQuery':
       return { ...state, placesQuery: action.query }
+    case 'showResults':
+      // nowy zestaw wyników zastępuje poprzedni i zamyka okienko poprzedniego miejsca
+      return {
+        ...state,
+        resultSet: { query: action.query, results: action.results },
+        mapSelection: null,
+      }
+    case 'clearResults':
+      return { ...state, resultSet: null }
     case 'refinePoint': {
       const key = action.target === 'report' ? 'reportPoint' : action.target
       return state[key] === action.expected ? { ...state, [key]: action.point } : state

@@ -6,6 +6,7 @@ import { PlacePopup } from './PlacePopup'
 const address: SearchResult = {
   id: 'address:50.06,19.94',
   source: 'address',
+  match: 'name',
   label: 'Grodzka 20',
   description: 'Stare Miasto',
   point: { lat: 50.06, lon: 19.94 },

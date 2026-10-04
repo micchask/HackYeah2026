@@ -19,6 +19,7 @@ export const ATTRIBUTE_LABEL: Record<AttributeKey, string> = {
   tactile_paving: 'ścieżka dotykowa',
   blocked: 'przejście zablokowane',
   accessible_parking: 'miejsce parkingowe dla OzN dostępne',
+  changing_table: 'przewijak',
 }
 
 export const VALUE_LABEL: Record<string, string> = {

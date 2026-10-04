@@ -1,6 +1,7 @@
 // Prawa część ekranu: mapa + nakładki (pasek, baner wskazywania, legenda). Warstwy porządkuje #90.
 import { useApp, useAppData } from '../app/context'
 import { useMapClick, useSetPoint } from '../app/mapActions'
+import { fromSearchResult } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
 import { PinIcon } from '../components/icons'
 import { InstitutionPopup } from '../components/InstitutionPopup'
@@ -93,6 +94,10 @@ export function MapArea() {
         popup={popup}
         onPopupClose={() => dispatch({ type: 'selectOnMap', selection: null })}
         searchPin={mapSelection?.kind === 'search' ? mapSelection.result.point : null}
+        resultPins={state.resultSet?.results}
+        onResultPinClick={(result) =>
+          dispatch({ type: 'selectOnMap', selection: fromSearchResult(result) })
+        }
         onViewChange={(center) =>
           state.mapBbox && dispatch({ type: 'setMapView', bbox: state.mapBbox, center })
         }

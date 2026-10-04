@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { RouteResponse } from '../api/client'
+import type { RouteResponse, SearchResult } from '../api/client'
 import {
   appReducer,
   initialState,
@@ -106,6 +106,33 @@ describe('appReducer', () => {
     expect(
       run(state, { type: 'refinePoint', target: 'origin', expected: A, point: better }).origin,
     ).toBe(B)
+  })
+})
+
+describe('wszystkie wyniki zapytania o rodzaj („hotel”, „przewijak”)', () => {
+  const hotel = (i: number): SearchResult => ({
+    id: `place:h${i}`,
+    source: 'place',
+    match: 'category',
+    label: `Hotel ${i}`,
+    kind: 'hotel',
+    point: { lat: 50.06, lon: 19.94 },
+  })
+
+  it('„Pokaż wszystkie” zapisuje wyniki i zamyka okienko poprzedniego miejsca, „Wyczyść” je usuwa', () => {
+    const selected = run(initialState(), {
+      type: 'selectOnMap',
+      selection: { kind: 'search', result: hotel(9) },
+    })
+    const shown = run(selected, {
+      type: 'showResults',
+      query: 'hotel',
+      results: [hotel(1), hotel(2)],
+    })
+    expect(shown.resultSet?.results).toHaveLength(2)
+    expect(shown.resultSet?.query).toBe('hotel')
+    expect(shown.mapSelection).toBeNull()
+    expect(run(shown, { type: 'clearResults' }).resultSet).toBeNull()
   })
 })
 

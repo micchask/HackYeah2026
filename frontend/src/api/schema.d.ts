@@ -326,7 +326,7 @@ export interface components {
          * @description Słownik cech dostępności. Dodajemy nowe klucze tutaj, nie ad hoc w kodzie.
          * @enum {string}
          */
-        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving" | "blocked" | "accessible_parking";
+        AttributeKey: "wheelchair" | "step_free_entrance" | "stairs" | "step_count" | "ramp" | "elevator" | "accessible_toilet" | "surface" | "incline_percent" | "kerb_height_cm" | "width_cm" | "tactile_paving" | "blocked" | "accessible_parking" | "changing_table";
         /**
          * AttributeStatus
          * @enum {string}
@@ -997,6 +997,13 @@ export interface components {
             institution_id?: string | null;
             /** @description Dla source=place: miejsce z atrybutami */
             place?: components["schemas"]["Place"] | null;
+            /**
+             * Match
+             * @description 'category' = zapytanie o rodzaj/cechę (np. 'hotel', 'przewijak') - zwracamy WSZYSTKIE takie miejsca w obszarze, a nie kilka najlepszych dopasowań
+             * @default name
+             * @enum {string}
+             */
+            match: "name" | "category";
             /**
              * Distance M
              * @description Odległość od punktu `lat`/`lon` z zapytania (np. środka mapy)
