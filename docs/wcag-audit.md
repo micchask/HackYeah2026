@@ -22,7 +22,7 @@
 | Data | Narzędzie | Wynik | Uwagi |
 |---|---|---|---|
 | 4.10.2026 | Lighthouse 13.5 (Accessibility, desktop) | **100/100** | po poprawkach z #32; jedna uwaga informacyjna (waga 0) – fałszywy alarm, patrz niżej |
-| 4.10.2026 | axe-core 4.13 (WCAG 2.0/2.1/2.2 A i AA) | **0 problemów** w 7 stanach × tryb jasny i ciemny | przed poprawkami: 3 rodzaje problemów (niżej) |
+| 4.10.2026 | axe-core 4.13 (WCAG 2.0/2.1/2.2 A i AA) | **0 problemów** w 8 stanach × tryb jasny i ciemny | przed poprawkami: 3 rodzaje problemów (niżej) |
 | | VoiceOver | | #33 |
 
 ### Co sprawdzał axe (#32)
@@ -34,7 +34,8 @@ Stany aplikacji, każdy w trybie jasnym i ciemnym (`prefers-color-scheme`), okno
 4. trasa z otwartym panelem szczegółów odcinka,
 5. panel „Zgłoś barierę”,
 6. wyszukiwarka z rozwiniętymi podpowiedziami,
-7. karta miejsca.
+7. karta miejsca,
+8. Dashboard miasta (#115, nawigacja w nagłówku).
 
 ### Znalezione i naprawione (#32)
 
@@ -51,5 +52,5 @@ Stany aplikacji, każdy w trybie jasnym i ciemnym (`prefers-color-scheme`), okno
 - **Kafelki mapy (podkład OSM) i znaczniki** nie są w kolejności Tab – tekstową alternatywą są panele i listy (opis trasy, lista miejsc, lista barier, lista instytucji).
 
 ### Jak powtórzyć
-- **axe:** rozszerzenie axe DevTools w Chrome, przejść stany 1–7 z listy wyżej, w trybie jasnym i ciemnym (DevTools → Rendering → `prefers-color-scheme`). W #32 robione automatycznie skryptem Playwright + `@axe-core/playwright` z tagami `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa` (poza repo, żeby nie dokładać zależności do frontendu).
+- **axe:** rozszerzenie axe DevTools w Chrome, przejść stany 1–8 z listy wyżej, w trybie jasnym i ciemnym (DevTools → Rendering → `prefers-color-scheme`). W #32 robione automatycznie skryptem Playwright + `@axe-core/playwright` z tagami `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa` (poza repo, żeby nie dokładać zależności do frontendu).
 - **Lighthouse:** `npx lighthouse http://localhost:5173 --only-categories=accessibility --preset=desktop` albo Chrome DevTools → Lighthouse.
