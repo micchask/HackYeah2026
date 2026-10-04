@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["places"])
 
 
-def _parse_bbox(value: str) -> BBox:
+def parse_bbox(value: str) -> BBox:
+    """'south,west,north,east' -> krotka; zły format = 422 (wspólne dla /places i /pois)."""
     try:
         s, w, n, e = (float(v) for v in value.split(","))
     except ValueError as exc:
@@ -63,7 +64,7 @@ def list_places(
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> list[Place]:
     try:
-        area = _parse_bbox(bbox) if bbox else get_city(city).area_bbox
+        area = parse_bbox(bbox) if bbox else get_city(city).area_bbox
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

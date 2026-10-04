@@ -65,6 +65,15 @@ providers:
     enabled: true
     options: {}
 
+# Ławki i przewijaki z OSM dla warstw mapy (GET /api/pois) - osobno od miejsc,
+# bo ~1400 ławek zalałoby listę miejsc. Mirrory po kolei, aż któryś odpowie
+# (3.10.2026: mail.ru bywa przeciążony, overpass-api.de odrzuca połączenia).
+pois:
+  overpass_urls:
+    - https://overpass.kumi.systems/api/interpreter
+    - https://maps.mail.ru/osm/tools/overpass/api/interpreter
+  timeout_s: 60
+
 routing:
   # Graf pieszy z OSM (osmnx), cache'owany w data/cache/<city>/graph.graphml
   network_type: walk
