@@ -2367,6 +2367,12 @@ main:focus {
 .sheet-handle {
   display: none;
 }
+.sidebar-map-filter {
+  padding: 0 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
 .sidebar-body {
   display: flex;
   flex: 1;
