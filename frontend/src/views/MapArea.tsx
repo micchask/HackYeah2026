@@ -19,8 +19,6 @@ function usePopup(): MapPopup | null {
   const [{ mapSelection, selectedBarrier }, dispatch] = useApp()
   const { institutions, barriers, refreshBarriers } = useAppData()
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
-  const details = (place: SelectedPlace) => () =>
-    dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
   // „Zgłoś problem tutaj” w okienku: panel zgłoszenia z tym miejscem (#95)
   const report = (label: string, point: { lat: number; lon: number }) => () => {
     close()
@@ -38,7 +36,6 @@ function usePopup(): MapPopup | null {
         <InstitutionPopup
           key={institution.id}
           institution={institution}
-          onDetails={details(mapSelection)}
           onClose={close}
           onReport={report(institution.name, point)}
         />
@@ -54,7 +51,6 @@ function usePopup(): MapPopup | null {
         <PlacePopup
           key={result.id}
           result={result}
-          onDetails={details(mapSelection)}
           onClose={close}
           onReport={report(result.label, result.point)}
         />

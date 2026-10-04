@@ -1246,39 +1246,6 @@ button.step-body:hover {
   border-left-color: var(--surface);
 }
 
-/* "Więcej informacji" - wyraźny przycisk na całą szerokość okienka */
-.more-button {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 0.6rem;
-  padding: 0.5rem 0.75rem;
-  color: var(--accent-text);
-  font-weight: 700;
-  text-align: left;
-  background: var(--accent);
-  border: none;
-  border-radius: 10px;
-}
-.more-button:hover {
-  background: var(--accent-strong);
-}
-.more-button span {
-  flex: 1;
-}
-.more-chevron {
-  transition: transform 0.2s;
-}
-.more-button[aria-expanded='true'] {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-}
-.more-button[aria-expanded='true'] .more-chevron {
-  transform: rotate(180deg);
-}
-
 /* ---------- zgłoś barierę ---------- */
 
 .point-marker-report {
