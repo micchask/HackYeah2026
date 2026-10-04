@@ -50,7 +50,10 @@ Zabezpieczenia w kodzie (`backend/app/models/report.py`, `backend/app/api/report
 
 Uwaga: serwer HTTP (uvicorn) domyślnie loguje IP w logach dostępu na konsoli. Nie trafiają one do bazy; na produkcji logi dostępu trzeba wyłączyć albo anonimizować.
 
-## TODO
+## Do zrobienia przed produkcją
+
+HTTPS jest obowiązkowy (na hostingu Render zapewnia go dostawca – `docs/deploy-render.md`).
+
 
 - [ ] Rate limiting na `POST /api/reports`
 - [ ] Uprawnienia moderatora dla `PATCH /api/reports/{id}` (teraz bez logowania – plan w #37)

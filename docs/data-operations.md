@@ -22,12 +22,12 @@ Założenia:
 |---|---|---|
 | Providery | `ProviderService` pobiera dane i zapisuje ostatni poprawny wynik w `data/cache/<city>/`; przy błędzie używa cache | cykliczne zadania, metryki i alerty dla każdego źródła |
 | Aktualność | provenance zawiera daty; normalizacja oznacza jako `outdated` dane nieweryfikowane od ponad 2 lat i obniża confidence o połowę | progi świeżości zależne od źródła oraz czytelna data aktualizacji w API/UI |
-| Zgłoszenia | `POST /api/reports` tworzy wpis `pending`, ale dane są tylko w pamięci procesu | trwały zapis w PostgreSQL/PostGIS, kolejka moderacji i historia decyzji |
-| Provider zgłoszeń | `user_reports` jest włączony, ale jeszcze nie zwraca danych | publikuje wyłącznie aktywne zgłoszenia `confirmed` jako atrybuty o znanym provenance |
-| Ochrona przed nadużyciami | walidacja modelu i limit komentarza 500 znaków | bbox miasta, rate limiting, deduplikacja oraz filtrowanie treści niedozwolonych |
+| Zgłoszenia | zapis w PostgreSQL/PostGIS (`reports`, #72); potwierdzanie przez użytkowników (`POST /api/reports/{id}/votes`, #116); moderacja przez `PATCH /api/reports/{id}` bez logowania | panel moderatora z logowaniem i historią decyzji |
+| Provider zgłoszeń | `user_reports` publikuje aktywne zgłoszenia `confirmed`; routing blokuje lub obciąża odcinki przy potwierdzonej barierze (#121); zgłoszenia wygasają | progi wygasania konfigurowane per miasto |
+| Ochrona przed nadużyciami | walidacja modelu, limit komentarza 500 znaków, zgłoszenie w bbox miasta, limit 50 głosów na urządzenie na dobę | rate limiting na poziomie sieci, deduplikacja, filtrowanie treści niedozwolonych |
 
-Wszystkie elementy stanu docelowego w tym dokumencie są planem wdrożenia, a nie opisem
-już działających funkcji.
+Kolumna „stan obecny” opisuje działający prototyp (4.10.2026); „stan docelowy” i dalsze sekcje
+tego dokumentu to plan wdrożenia.
 
 ## Odświeżanie danych
 

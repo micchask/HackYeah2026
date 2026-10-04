@@ -54,9 +54,9 @@ bez dostępu do zewnętrznych API (`make seed`). Szczegóły: [`docs/data-source
 - Brak danych nigdy nie jest „dostępne”; odcinek bez informacji o nawierzchni dostaje niższą
   pewność i ostrzeżenie.
 - Awaria źródła (np. Overpass) nie wyłącza aplikacji – działa na ostatnim snapshocie.
-- Dostępność samej aplikacji (WCAG 2.2 AA): **axe 0 problemów** w 12 widokach, tryb jasny i ciemny;
+- Dostępność samej aplikacji (WCAG 2.2 AA): **axe 0 problemów** w 14 widokach, tryb jasny i ciemny;
   **Lighthouse 100/100**.
-- **179 testów backendu i 122 frontendu**, CI na każdym PR.
+- **182 testy backendu i 156 frontendu**, CI na każdym PR.
 
 ## Uruchomienie
 
@@ -64,6 +64,8 @@ bez dostępu do zewnętrznych API (`make seed`). Szczegóły: [`docs/data-source
     make seed
 
 Aplikacja: http://localhost:5173 · API: http://localhost:8000/docs
+
+Wersja online: […] (hosting: [`docs/deploy-render.md`](docs/deploy-render.md)).
 
 Bez `make`: [`docs/development.md`](docs/development.md). Scenariusz demo (3 min):
 [`docs/demo-scenario.md`](docs/demo-scenario.md).
