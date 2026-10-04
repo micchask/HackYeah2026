@@ -157,6 +157,15 @@ def refresh_places_snapshot(city: CityConfig, data_dir: Path | None = None) -> l
     return written
 
 
+def _db_has_places(city_id: str) -> bool:
+    from app.db.places import has_places
+    from app.db.session import SessionLocal, init_db
+
+    init_db()
+    with SessionLocal() as session:
+        return has_places(session, city_id)
+
+
 def main(argv: list[str] | None = None) -> int:
     import app.providers  # noqa: F401  rejestruje providery
 
@@ -169,6 +178,11 @@ def main(argv: list[str] | None = None) -> int:
         help="odśwież tylko miejsca z providerów (bez grafu), potem jak zwykły seed",
     )
     parser.add_argument("--no-db", action="store_true", help="nie zapisuj miejsc do bazy")
+    parser.add_argument(
+        "--if-empty",
+        action="store_true",
+        help="bazę wypełnij tylko, gdy nie ma w niej miejsc miasta (start na hostingu)",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -190,6 +204,9 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("Cache: %s", path)
 
     if args.no_db or not get_settings().db_enabled:
+        return 0
+    if args.if_empty and _db_has_places(city.id):
+        logger.info("Baza: miejsca %s już są - pomijam zapis (--if-empty)", city.id)
         return 0
     # Te same miejsca z kilku źródeł (to samo id) -> jedno miejsce z wykrytymi konfliktami
     count = save_places_to_db(merge_places(load_cached_places(city)))
