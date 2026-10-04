@@ -1833,3 +1833,171 @@ button.step-body:hover {
   margin: 0;
   font-size: 1.2rem;
 }
+
+/* ---------- ekran wyboru trybu (#88) ---------- */
+
+.start-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgb(13 18 24 / 55%);
+}
+.start-dialog {
+  position: static;
+  width: min(44rem, 100%);
+  max-height: 100%;
+  margin: auto;
+  padding: 1.75rem;
+  overflow-y: auto;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 35%);
+}
+.start-brand {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.start-dialog h2 {
+  margin: 0.25rem 0;
+  font-size: 1.6rem;
+}
+.start-dialog h2:focus {
+  outline: none;
+}
+.start-dialog h2:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+.start-lead {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+}
+.mode-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: none;
+}
+.mode-tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon label'
+    'icon desc';
+  column-gap: 0.75rem;
+  row-gap: 0.15rem;
+  align-items: center;
+  min-height: 88px;
+  padding: 0.9rem 1rem;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+}
+.mode-tile:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.mode-tile-icon {
+  grid-area: icon;
+  font-size: 2rem;
+  line-height: 1;
+}
+.mode-tile-label {
+  grid-area: label;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.mode-tile-desc {
+  grid-area: desc;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.start-skip {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.start-note {
+  margin: 0.5rem 0 0;
+}
+
+/* ---------- chip trybu w górnym pasku ---------- */
+
+.profile-chip {
+  position: absolute;
+  top: calc(0.75rem + 52px);
+  left: 0.75rem;
+  z-index: 2;
+}
+.profile-chip-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 36px;
+  padding: 0.3rem 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.profile-chip-button[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+.profile-chip-custom {
+  color: var(--muted);
+  font-weight: 400;
+}
+.profile-chip-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  min-width: 12rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.profile-chip-menu button {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+}
+.profile-chip-menu button:hover {
+  background: var(--accent-soft);
+}
+/* baner "Kliknij na mapie…" pod chipem trybu */
+.map-wrap .map-banner {
+  top: calc(0.75rem + 100px);
+}
+
+@media (max-width: 768px) {
+  .mode-tiles {
+    grid-template-columns: 1fr;
+  }
+  .start-dialog {
+    padding: 1.25rem;
+  }
+}
