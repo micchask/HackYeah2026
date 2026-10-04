@@ -2305,6 +2305,44 @@ button.step-body:hover {
   }
 }
 
+/* ---------- zgłoszenie bariery jako stan panelu (#95) ---------- */
+
+.map-report-button {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 2.25rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  color: var(--error);
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+.map-report-button:hover {
+  border-color: var(--error);
+}
+.map-report-button[aria-pressed='true'] {
+  color: #ffffff;
+  background: var(--error);
+  border-color: var(--error);
+}
+.popup-report {
+  margin-top: 0.35rem;
+  color: var(--error);
+}
+.report-sent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
 /* ---------- panel „Dla Ciebie” (#91) ---------- */
 
 .explore-section h2 {

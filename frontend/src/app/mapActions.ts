@@ -36,12 +36,14 @@ export function useSetPoint() {
  * Adres z geokodera podmienia współrzędne, jeśli w międzyczasie nikt nie zmienił punktu.
  */
 export function useMapClick() {
-  const [{ pickTarget, destination }, dispatch] = useApp()
+  const [{ pickTarget, destination, panel }, dispatch] = useApp()
   return useCallback(
     (point: LatLon) => {
       if (!pickTarget) return
       const picked = mapPoint(point)
-      dispatch(setPointAction(pickTarget, picked))
+      // miejsce bariery wskazane, a panel zgłoszenia zamknięty - otwórz go z tym punktem
+      if (pickTarget === 'report' && panel.kind !== 'report') openReport(dispatch, picked)
+      else dispatch(setPointAction(pickTarget, picked))
       dispatch({
         type: 'setPickTarget',
         target: pickTarget === 'origin' && !destination ? 'destination' : null,
@@ -57,7 +59,7 @@ export function useMapClick() {
           // brak geokodera: zostają współrzędne
         })
     },
-    [pickTarget, destination, dispatch],
+    [pickTarget, destination, panel.kind, dispatch],
   )
 }
 

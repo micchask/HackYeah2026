@@ -6,6 +6,7 @@ import {
   REPORT_STATUS_LABEL,
   REPORT_TYPE_ICON,
   REPORT_TYPE_LABEL,
+  reportConfirmation,
   type AttributeKey,
   type ReportType,
 } from './attributes'
@@ -72,6 +73,10 @@ interface Props {
   segmentPoint: NamedPoint | null
   /** Rozwinięty od razu (w osobnym panelu zgłoszenia) */
   defaultOpen?: boolean
+  /** W panelu zgłoszenia formularz jest zawsze rozwinięty - bez przycisku „Zwiń” */
+  collapsible?: boolean
+  /** Zgłoszenie zapisane - rodzic pokazuje potwierdzenie (i np. wraca do poprzedniego widoku) */
+  onSent?: (report: Report) => void
 }
 
 /** Anonimowe zgłoszenie bariery: miejsce, rodzaj, wartość, komentarz. Bez danych osobowych. */
@@ -83,6 +88,8 @@ export function ReportForm({
   onPick,
   segmentPoint,
   defaultOpen = false,
+  collapsible = true,
+  onSent,
 }: Props) {
   const id = useId()
   const formId = `${id}-form`
@@ -131,9 +138,8 @@ export function ReportForm({
     try {
       const saved = await api.report(body, city)
       setRecent((current) => [saved, ...current].slice(0, RECENT_LIMIT))
-      setConfirmation(
-        `Dziękujemy! Zgłoszenie „${REPORT_TYPE_LABEL[saved.type]}” zapisane – czeka na weryfikację.`,
-      )
+      if (onSent) onSent(saved)
+      else setConfirmation(reportConfirmation(saved))
       setComment('')
       setValidUntil('')
       onPointChange(null)
@@ -151,15 +157,17 @@ export function ReportForm({
           <h2 id={`${id}-heading`}>Zgłoś barierę</h2>
           <p className="meta">Anonimowo – bez konta i bez danych osobowych.</p>
         </div>
-        <button
-          type="button"
-          className="chip"
-          aria-expanded={open}
-          aria-controls={formId}
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? 'Zwiń' : 'Zgłoś'}
-        </button>
+        {collapsible && (
+          <button
+            type="button"
+            className="chip"
+            aria-expanded={open}
+            aria-controls={formId}
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? 'Zwiń' : 'Zgłoś'}
+          </button>
+        )}
       </div>
 
       {confirmation && (

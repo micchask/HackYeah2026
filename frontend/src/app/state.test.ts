@@ -136,6 +136,29 @@ describe('wszystkie wyniki zapytania o rodzaj („hotel”, „przewijak”)', (
   })
 })
 
+describe('zgłoszenie bariery jako stan panelu (#95)', () => {
+  it('„Wstecz” ze zgłoszenia wraca do poprzedniego widoku i wyłącza wskazywanie bariery', () => {
+    const opened = run(
+      initialState(),
+      { type: 'openPanel', panel: { kind: 'route' } },
+      { type: 'openPanel', panel: { kind: 'report', point: null } },
+      { type: 'setPickTarget', target: 'report' },
+    )
+    const back = run(opened, { type: 'back' })
+    expect(back.panel.kind).toBe('route')
+    expect(back.pickTarget).toBeNull()
+  })
+
+  it('„Wstecz” nie rusza wskazywania punktu A/B', () => {
+    const state = run(
+      initialState(),
+      { type: 'openPanel', panel: { kind: 'route' } },
+      { type: 'setPickTarget', target: 'origin' },
+    )
+    expect(run(state, { type: 'back' }).pickTarget).toBe('origin')
+  })
+})
+
 describe('zapamiętywanie w przeglądarce', () => {
   it('zapisuje i odczytuje tryb oraz personalizację', () => {
     const store = new Map<string, string>()
