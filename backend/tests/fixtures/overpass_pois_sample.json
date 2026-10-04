@@ -1,0 +1,15 @@
+{
+  "elements": [
+    { "type": "node", "id": 101, "lat": 50.0603, "lon": 19.9381,
+      "tags": { "amenity": "bench", "backrest": "yes", "armrest": "no", "seats": "3", "material": "wood", "check_date": "2025-06-14" } },
+    { "type": "node", "id": 102, "lat": 50.0570, "lon": 19.9355,
+      "tags": { "amenity": "bench", "backrest": "no" } },
+    { "type": "node", "id": 103, "lat": 50.0520, "lon": 19.9440,
+      "tags": { "leisure": "picnic_table" } },
+    { "type": "node", "id": 475613690, "lat": 50.0614058, "lon": 19.938773,
+      "tags": { "amenity": "restaurant", "name": "Hard Rock Cafe", "changing_table": "yes", "changing_table:location": "wheelchair_toilet;female_toilet", "wheelchair": "limited", "opening_hours": "Mo-Su 10:00-00:00" } },
+    { "type": "way", "id": 201, "center": { "lat": 50.0590, "lon": 19.9400 },
+      "tags": { "amenity": "toilets", "changing_table": "yes", "fee": "yes", "wheelchair": "yes" } },
+    { "type": "node", "id": 104, "tags": { "amenity": "bench" } }
+  ]
+}

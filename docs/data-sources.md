@@ -6,6 +6,7 @@ Zasady cyklicznego odświeżania, obsługi awarii i moderacji opisuje
 | Źródło | Provider | Typ | Licencja | Status | Co daje |
 |---|---|---|---|---|---|
 | OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy, krawężniki (węzły `barrier=kerb` / `kerb=*` / `kerb:height`) |
+| OpenStreetMap – ławki i przewijaki (Overpass) | `app/providers/osm_pois.py` → `GET /api/pois` (snapshot `data/seed/krakow/osm_pois.json.gz`) | API | ODbL | działa | warstwy mapy „Odpoczynek” i przewijaki: `amenity=bench` i `leisure=picnic_table` (szczegóły `backrest`, `armrest`, `seats`, `material`), `changing_table=yes` (`changing_table:location`, `fee`, `wheelchair`, `opening_hours`). W `demo_bbox` (4.10.2026): 1393 ławki (1179 z oparciem), 9 przewijaków, 0 stołów piknikowych. Osobno od miejsc (`Place`), żeby nie zalać listy miejsc. Mirrory Overpass z `pois.overpass_urls` w YAML |
 | Kraków – otwarte dane | `krakow_open_data` | pliki/API | TODO | stub | TODO: wybrać zbiory |
 | MSIP Kraków | `msip` | WMS/WFS | TODO | stub | TODO: chodniki, przejścia, schody |
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |
