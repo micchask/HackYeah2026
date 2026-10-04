@@ -16,7 +16,15 @@ import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { visibleLabels } from './declutter'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
-import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
+import {
+  ACCESS_LEVELS,
+  PLACE_KINDS,
+  accessibilityOf,
+  institutionAccess,
+  institutionKind,
+  placeIconSvg,
+  placeKind,
+} from './placeCategories'
 import { institutionMarkerLabel, shortInstitutionName } from './institutionStyle'
 
 export type BaseMap = 'standard' | 'satellite'
@@ -96,6 +104,7 @@ interface Props {
   selectedRoute?: number
   origin: LatLon | null
   destination: LatLon | null
+  waypoints: LatLon[]
   /** Miejsce zgłaszanej bariery (formularz „Zgłoś barierę”) */
   reportPoint?: LatLon | null
   selectedSegment: number | null
@@ -131,7 +140,16 @@ interface Props {
   focus?: { point: LatLon; seq: number } | null
   /** Podkład mapy */
   baseMap?: BaseMap
+  /** Nawigacja w trakcie trasy: pozycja i kierunek użytkownika */
+  navigation?: { point: LatLon; heading: number } | null
+  /** Kamera podąża za pozycją (wyłącza ją przesunięcie mapy ręką) */
+  follow?: boolean
+  onFollowChange?: (follow: boolean) => void
 }
+
+/** Kamera w nawigacji: blisko, pochylona, pozycja w dolnej części ekranu - jak w mapach Google */
+const NAV_ZOOM = 18
+const NAV_PITCH = 55
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
 const HIT_PX = 6
@@ -148,21 +166,27 @@ const PLACE_POINTS = 'places-points'
 // Powyżej tego zoomu miejsca są już pojedynczo (w Starym Mieście to ok. 2 budynki na ekran)
 const PLACE_CLUSTER_MAX_ZOOM = 16
 
-/** Ikony miejsc wg dostępności - te same SVG co w legendzie i na liście. */
+// Rozmiar znacznika w px CSS; duży kwadrat zajmuje lewą górną część, kwadracik - prawy dolny róg
+const PLACE_ICON_SIZE = 32
+
+/** Ikony miejsc: rodzaj (kawiarnia, muzeum...) + kwadracik dostępności - po jednej na parę. */
 function loadPlaceIcons(map: maplibregl.Map): Promise<void> {
+  const size = PLACE_ICON_SIZE
   return Promise.all(
-    ACCESS_LEVELS.map(
-      (access) =>
-        new Promise<void>((resolve) => {
-          const img = new Image(48, 48)
-          img.onload = () => {
-            if (!map.hasImage(`place-${access}`))
-              map.addImage(`place-${access}`, img, { pixelRatio: 2 })
-            resolve()
-          }
-          img.onerror = () => resolve()
-          img.src = `data:image/svg+xml;utf8,${encodeURIComponent(accessIconSvg(access, 48))}`
-        }),
+    PLACE_KINDS.flatMap((kind) =>
+      ACCESS_LEVELS.map(
+        (access) =>
+          new Promise<void>((resolve) => {
+            const id = `place-${kind}-${access}`
+            const img = new Image(size * 2, size * 2)
+            img.onload = () => {
+              if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 })
+              resolve()
+            }
+            img.onerror = () => resolve()
+            img.src = `data:image/svg+xml;utf8,${encodeURIComponent(placeIconSvg(kind, access, size * 2))}`
+          }),
+      ),
     ),
   ).then(() => undefined)
 }
@@ -225,8 +249,10 @@ function addPlaceLayers(map: maplibregl.Map) {
         source: 'places',
         filter: ['!', ['has', 'point_count']],
         layout: {
-          'icon-image': ['concat', 'place-', ['get', 'access']],
+          'icon-image': ['concat', 'place-', ['get', 'kind'], '-', ['get', 'access']],
           'icon-allow-overlap': true,
+          // punkt wskazuje środek kwadratu rodzaju, nie środek całego obrazka
+          'icon-offset': [(3.5 * PLACE_ICON_SIZE) / 34, (3.5 * PLACE_ICON_SIZE) / 34],
         },
       },
       // pod trasą i barierami
@@ -240,7 +266,7 @@ function placeData(places: Place[]): GeoJSONData {
     type: 'FeatureCollection',
     features: places.map((place) => ({
       type: 'Feature' as const,
-      properties: { id: place.id, access: accessibilityOf(place) },
+      properties: { id: place.id, kind: placeKind(place), access: accessibilityOf(place) },
       geometry: {
         type: 'Point' as const,
         coordinates: [place.location.lon, place.location.lat],
@@ -409,6 +435,12 @@ function barrierData(barriers: Barrier[], selected: string | null): GeoJSONData 
   }
 }
 
+// Środek kwadratu rodzaju leży 13.5/34 szerokości od lewego górnego rogu ikony
+const INST_ICON_OFFSET: [number, number] = [
+  -(13.5 * PLACE_ICON_SIZE) / 34,
+  PLACE_ICON_SIZE / 2 - (13.5 * PLACE_ICON_SIZE) / 34,
+]
+
 function institutionMarker(inst: Institution): HTMLButtonElement {
   const el = document.createElement('button')
   el.type = 'button'
@@ -417,8 +449,14 @@ function institutionMarker(inst: Institution): HTMLButtonElement {
   el.tabIndex = -1
   el.title = inst.name
   el.setAttribute('aria-label', institutionMarkerLabel(inst.name))
-  const dot = document.createElement('span')
-  dot.className = 'inst-marker-dot'
+  // Ta sama ikona co przy miejscach: rodzaj (urząd, muzeum...) + kwadracik dostępności
+  const dot = document.createElement('img')
+  dot.className = 'inst-marker-icon'
+  dot.alt = ''
+  dot.width = dot.height = PLACE_ICON_SIZE
+  dot.src = `data:image/svg+xml;utf8,${encodeURIComponent(
+    placeIconSvg(institutionKind(inst), institutionAccess(inst), PLACE_ICON_SIZE),
+  )}`
   const label = document.createElement('span')
   label.className = 'inst-marker-label'
   label.textContent = shortInstitutionName(inst.name)
@@ -440,6 +478,7 @@ export function MapView({
   selectedRoute = 0,
   origin,
   destination,
+  waypoints = [],
   reportPoint = null,
   selectedSegment,
   pickLabel,
@@ -462,6 +501,9 @@ export function MapView({
   dataGaps = null,
   focus = null,
   baseMap = 'standard',
+  navigation = null,
+  follow = true,
+  onFollowChange,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -483,6 +525,9 @@ export function MapView({
   const routeRef = useRef(route)
   const barriersRef = useRef(barriers)
   const baseMapRef = useRef(baseMap)
+  const navigating = useRef(navigation !== null)
+  const onFollow = useRef(onFollowChange)
+  const navMarker = useRef<maplibregl.Marker | null>(null)
 
   // Zmiana podkładu: tylko widoczność warstw rastrowych - trasa, bariery i miejsca zostają
   useEffect(() => {
@@ -500,6 +545,11 @@ export function MapView({
     routeRef.current = route
   }, [route])
 
+  // przed efektem rysowania trasy - w nawigacji nie dopasowujemy widoku do całej trasy
+  useEffect(() => {
+    navigating.current = navigation !== null
+  }, [navigation])
+
   useEffect(() => {
     barriersRef.current = barriers
   }, [barriers])
@@ -514,7 +564,9 @@ export function MapView({
     onView.current = onViewChange
     onBarrier.current = onBarrierSelect
     onPlace.current = onPlaceClick
+    onFollow.current = onFollowChange
   }, [
+    onFollowChange,
     onMapClick,
     onSegmentClick,
     onBoundsChange,
@@ -556,6 +608,10 @@ export function MapView({
       )
     }
     instance.on('moveend', reportBounds)
+    // Przesunięcie mapy ręką w nawigacji: kamera przestaje podążać („Wyśrodkuj” ją przywraca)
+    instance.on('dragstart', (event) => {
+      if (navigating.current && event.originalEvent) onFollow.current?.(false)
+    })
     const updateLabels = () => {
       const el = container.current
       if (!el) return
@@ -738,6 +794,7 @@ export function MapView({
 
     const points: [string, string, LatLon | null][] = [
       ['A', 'a', origin],
+      ...waypoints.map((wp, i): [string, string, LatLon | null] => [String(i + 1), 'wp', wp]),
       ['B', 'b', destination],
       ['!', 'report', reportPoint],
     ]
@@ -752,7 +809,7 @@ export function MapView({
           .setLngLat([point.lon, point.lat])
           .addTo(currentMap)
       })
-  }, [origin, destination, reportPoint])
+  }, [origin, destination, waypoints, reportPoint])
 
   useEffect(() => {
     const currentMap = map.current
@@ -811,7 +868,8 @@ export function MapView({
         ...displayedRoutes.flatMap((variant) => variant.segments.flatMap((s) => s.geometry)),
         ...(route?.baseline?.geometry ?? []),
       ]
-      if (coords.length > 1) {
+      // w nawigacji widok ustawia kamera podążająca za pozycją, nie cała trasa
+      if (coords.length > 1 && !navigating.current) {
         const bounds = new maplibregl.LngLatBounds()
         coords.forEach((p) => bounds.extend([p.lon, p.lat]))
         currentMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 700 })
@@ -891,6 +949,65 @@ export function MapView({
     source?.setData(gapData(dataGaps))
   }, [dataGaps, mapReady])
 
+  // Nawigacja: kropka z kierunkiem i kamera podążająca za pozycją
+  const navLat = navigation?.point.lat
+  const navLon = navigation?.point.lon
+  const navHeading = navigation?.heading
+  const navActive = navigation !== null
+  const wasNavigating = useRef(false)
+
+  useEffect(() => {
+    navigating.current = navActive
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    if (navActive) {
+      wasNavigating.current = true
+      return
+    }
+    if (!wasNavigating.current) return
+    // Koniec nawigacji: płaska mapa, północ u góry, cała trasa w widoku
+    wasNavigating.current = false
+    navMarker.current?.remove()
+    navMarker.current = null
+    const flat = { pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } }
+    const coords = routeRef.current?.segments.flatMap((s) => s.geometry) ?? []
+    if (coords.length > 1) {
+      const bounds = new maplibregl.LngLatBounds()
+      coords.forEach((p) => bounds.extend([p.lon, p.lat]))
+      currentMap.fitBounds(bounds, { ...flat, padding: 80, maxZoom: 17, duration: 700 })
+    } else {
+      currentMap.easeTo({ ...flat, duration: 600 })
+    }
+  }, [navActive, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady || navLat === undefined || navLon === undefined) return
+    if (!navMarker.current) {
+      const el = document.createElement('div')
+      el.className = 'nav-puck'
+      el.setAttribute('aria-hidden', 'true')
+      navMarker.current = new maplibregl.Marker({
+        element: el,
+        rotationAlignment: 'map',
+        pitchAlignment: 'map',
+      })
+        .setLngLat([navLon, navLat])
+        .addTo(currentMap)
+    }
+    navMarker.current.setLngLat([navLon, navLat]).setRotation(navHeading ?? 0)
+    if (!follow) return
+    currentMap.easeTo({
+      center: [navLon, navLat],
+      bearing: navHeading ?? currentMap.getBearing(),
+      pitch: NAV_PITCH,
+      zoom: NAV_ZOOM,
+      // pozycja niżej na ekranie - przed nami widać więcej drogi, u góry jest karta manewru
+      padding: { top: currentMap.getContainer().clientHeight * 0.35, bottom: 0, left: 0, right: 0 },
+      duration: 900,
+    })
+  }, [navLat, navLon, navHeading, follow, mapReady])
+
   useEffect(() => {
     const currentMap = map.current
     if (!currentMap || !mapReady || !focus) return
@@ -913,8 +1030,8 @@ export function MapView({
       el.addEventListener('click', () => onSelect.current(inst.id))
       created.set(
         inst.id,
-        // kotwica z lewej: środek kropki (14 px) dokładnie w punkcie, podpis obok
-        new maplibregl.Marker({ element: el, anchor: 'left', offset: [-7, 0] })
+        // kotwica z lewej: środek kwadratu rodzaju dokładnie w punkcie, podpis obok
+        new maplibregl.Marker({ element: el, anchor: 'left', offset: INST_ICON_OFFSET })
           .setLngLat([inst.location.point.lon, inst.location.point.lat])
           .addTo(currentMap),
       )

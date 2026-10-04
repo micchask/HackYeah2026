@@ -23,8 +23,8 @@ import {
   StairsIcon,
   ToiletIcon,
 } from '../../components/icons'
-import { PlaceAccessIcon } from '../../components/PlaceAccessIcon'
-import { ACCESS_LABEL, GROUP_LABEL, placeGroup } from '../../components/placeCategories'
+import { PlaceIcon } from '../../components/PlaceAccessIcon'
+import { ACCESS_LABEL, placeKind, placeKindLabel } from '../../components/placeCategories'
 import { SearchResultsList } from '../../components/SearchResultsList'
 import { SidebarSection } from '../SidebarSection'
 
@@ -147,13 +147,13 @@ export function ExplorePanel() {
                 <button
                   type="button"
                   className="item"
-                  onClick={() => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
+                  onClick={() => select(fromPlace(place, placeKindLabel(place)))}
                 >
-                  <PlaceAccessIcon access={access} size={28} />
+                  <PlaceIcon kind={placeKind(place)} access={access} size={32} />
                   <span className="item-text">
                     <span className="item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
                     <span className="item-meta">
-                      {GROUP_LABEL[placeGroup(place)]} · {ACCESS_LABEL[access]}
+                      {placeKindLabel(place)} · {ACCESS_LABEL[access]}
                     </span>
                   </span>
                   {distance !== null && <span className="item-end">{formatKm(distance)}</span>}

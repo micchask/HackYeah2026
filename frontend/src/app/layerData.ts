@@ -1,7 +1,8 @@
 // Co pokazuje mapa przy danych chipach warstw (#90) i ile obiektów każdej warstwy jest w widoku.
 // Czyste funkcje - te same reguły dla mapy, legendy, chipów i listy miejsc.
-import type { Barrier, Institution, Place } from '../api/client'
+import type { Barrier, Institution, LatLon, Place } from '../api/client'
 import { placeLayer } from '../components/placeCategories'
+import { distanceToLine } from './routeReports'
 import type { LayerId, Layers } from './state'
 
 export interface LayerInput {
@@ -42,6 +43,27 @@ export function mapLayerData(
   showingResults: boolean,
 ): LayerInput {
   return showingResults ? NO_LAYER_DATA : visibleLayerData(data, layers)
+}
+
+/** Przy wyznaczonej trasie mapa pokazuje tylko obiekty nie dalej niż tyle od trasy */
+export const ROUTE_OBJECTS_M = 100
+
+/**
+ * Obiekty w pasie `maxM` metrów wokół trasy; reszta znika z mapy, żeby trasa była czytelna.
+ * Bariera liczy się, gdy blisko jest jej punkt albo którykolwiek punkt jej odcinka.
+ */
+export function nearRoute(
+  data: LayerInput,
+  line: LatLon[],
+  maxM: number = ROUTE_OBJECTS_M,
+): LayerInput {
+  if (!line.length) return data
+  const near = (point: LatLon) => distanceToLine(point, line) <= maxM
+  return {
+    places: data.places.filter((p) => near(p.location)),
+    institutions: data.institutions.filter((i) => i.location && near(i.location.point)),
+    barriers: data.barriers.filter((b) => near(b.location) || b.geometry.some(near)),
+  }
 }
 
 function inBbox(bbox: string | null, lat: number, lon: number): boolean {

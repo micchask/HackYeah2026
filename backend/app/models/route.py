@@ -23,10 +23,18 @@ class RoutePreferences(BaseModel):
     )
 
 
+MAX_WAYPOINTS = 5
+
+
 class RouteRequest(BaseModel):
     city: str = "krakow"
     origin: LatLon
     destination: LatLon
+    waypoints: list[LatLon] = Field(
+        default_factory=list,
+        max_length=MAX_WAYPOINTS,
+        description="Przystanki po drodze, w kolejności odwiedzania (np. sklep między A i B)",
+    )
     preferences: RoutePreferences = Field(default_factory=RoutePreferences)
 
 

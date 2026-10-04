@@ -6,10 +6,10 @@ import { ATTRIBUTE_LABEL, SOURCE_LABEL, VALUE_LABEL } from '../components/attrib
 import { STATUS_LABEL } from '../components/dataStatus'
 import { formatKm } from '../components/format'
 import {
-  accessibilityOf,
-  GROUP_LABEL,
-  placeGroup,
   type Access,
+  accessibilityOf,
+  institutionAccess,
+  placeKindLabel,
 } from '../components/placeCategories'
 
 export type SelectedPlace =
@@ -133,7 +133,7 @@ function placeCardOf(place: Place, extra: Partial<PlaceCard> = {}): PlaceCard {
   return {
     id: place.id,
     title: place.name ?? 'Miejsce bez nazwy',
-    kind: GROUP_LABEL[placeGroup(place)],
+    kind: placeKindLabel(place),
     subtitle: null,
     point: place.location,
     access: accessibilityOf(place),
@@ -152,7 +152,7 @@ function institutionCard(inst: Institution): PlaceCard {
     subtitle: inst.address,
     point: inst.location?.point ?? null,
     // Opisy z deklaracji to wolny tekst - nie zgadujemy z nich „dostępne/niedostępne”
-    access: 'unknown',
+    access: institutionAccess(inst),
     accessNote: 'Ocena dla wózka nie jest jednoznaczna – szczegóły z deklaracji dostępności niżej.',
     attributes: (inst.attributes ?? []).map((a) => ({
       key: a.category,

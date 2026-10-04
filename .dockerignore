@@ -1,0 +1,12 @@
+# Tylko dla budowania z katalogu głównego (backend/Dockerfile.render na Renderze).
+# Lokalny docker compose buduje z ./backend i ./frontend - ten plik go nie dotyczy.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+frontend/dist
+data/cache
+data/raw
+.env

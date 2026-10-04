@@ -8,9 +8,8 @@ import { GAP_CLASSES, GAP_COLOR, GAP_LABEL } from './dataGapsStyle'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
 import { EmptyState } from './EmptyState'
 import { ListIcon } from './icons'
-import { INSTITUTION_COLOR } from './institutionStyle'
-import { PlaceAccessIcon } from './PlaceAccessIcon'
-import { ACCESS_LABEL, ACCESS_LEVELS } from './placeCategories'
+import { AccessBadgeIcon, PlaceKindIcon } from './PlaceAccessIcon'
+import { ACCESS_LABEL, ACCESS_LEVELS, KIND_LABEL, LEGEND_KINDS } from './placeCategories'
 import { usePopover } from './usePopover'
 
 interface Props {
@@ -25,11 +24,19 @@ interface Props {
   showDataGaps?: boolean
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+function Group({
+  title,
+  children,
+  columns = false,
+}: {
+  title: string
+  children: ReactNode
+  columns?: boolean
+}) {
   return (
     <div className="legend-group">
       <h3 className="popover-title">{title}</h3>
-      <ul>{children}</ul>
+      <ul className={columns ? 'legend-columns' : undefined}>{children}</ul>
     </div>
   )
 }
@@ -94,31 +101,37 @@ export function LegendContent({
         </Group>
       )}
       {showPlaces && (
-        <Group title="Miejsca">
-          {ACCESS_LEVELS.map((access) => (
-            <li key={access}>
-              <PlaceAccessIcon access={access} size={18} />
-              {ACCESS_LABEL[access]}
+        <>
+          <Group title="Rodzaj miejsca" columns>
+            {LEGEND_KINDS.map((kind) => (
+              <li key={kind}>
+                <PlaceKindIcon kind={kind} size={18} />
+                {KIND_LABEL[kind]}
+              </li>
+            ))}
+          </Group>
+          <Group title="Dostępność dla wózka (kwadracik w rogu)">
+            {ACCESS_LEVELS.map((access) => (
+              <li key={access}>
+                <AccessBadgeIcon access={access} size={14} />
+                {ACCESS_LABEL[access]}
+              </li>
+            ))}
+            <li>
+              <span className="legend-cluster" aria-hidden="true">
+                12
+              </span>
+              grupa miejsc
             </li>
-          ))}
-          <li>
-            <span className="legend-cluster" aria-hidden="true">
-              12
-            </span>
-            grupa miejsc
-          </li>
-        </Group>
+          </Group>
+        </>
       )}
       {hasLayers && (
         <Group title="Warstwy">
           {showInstitutions && (
             <li>
-              <span
-                className="legend-dot"
-                style={{ background: INSTITUTION_COLOR }}
-                aria-hidden="true"
-              />
-              instytucja publiczna
+              <PlaceKindIcon kind="office" size={18} />
+              instytucja publiczna (z nazwą obok)
             </li>
           )}
           {showDataGaps &&
@@ -154,6 +167,10 @@ export function Legend(props: Props) {
       </button>
       {open && (
         <section id={popoverId} className="popover legend-popover" aria-label="Legenda mapy">
+          {/* Fokusowalny element w środku: przewijaną legendę da się obsłużyć klawiaturą (WCAG 2.1.1) */}
+          <button type="button" className="link-button popover-close" onClick={toggle}>
+            Zamknij legendę
+          </button>
           <LegendContent {...props} />
         </section>
       )}

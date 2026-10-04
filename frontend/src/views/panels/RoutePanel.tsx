@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { CITY, useApp } from '../../app/context'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
 import { openReport, setPointAction } from '../../app/mapActions'
+import { MAX_WAYPOINTS } from '../../app/state'
+import { unlockSpeech } from '../../app/speech'
 import { useActiveRoute } from '../../app/useRoute'
 import { useRouteReportWatch } from '../../app/useRouteReportWatch'
 import type { RouteResponse } from '../../api/client'
 import { demoApi } from '../../api/demo'
-import { AlertIcon } from '../../components/icons'
+import { AlertIcon, NavigationIcon } from '../../components/icons'
 import { RouteAlternatives } from '../../components/RouteAlternatives'
 import { RouteDescription } from '../../components/RouteDescription'
 import { RouteReportAlert } from '../../components/RouteReportAlert'
@@ -25,6 +27,7 @@ export function RoutePanel() {
   const {
     origin,
     destination,
+    waypoints,
     pickTarget,
     routeLoading: loading,
     routeError: error,
@@ -33,6 +36,7 @@ export function RoutePanel() {
     layers,
   } = state
   const newReports = useRouteReportWatch(route, active)
+  const hasEmptyWaypoint = waypoints.some((waypoint) => waypoint === null)
   const [restSpots, setRestSpots] = useState<RestSpotsState | null>(null)
   // Opis krok po kroku zwinięty; odcinek wybrany na mapie sam go rozwija
   const [stepsOpen, setStepsOpen] = useState(false)
@@ -78,14 +82,19 @@ export function RoutePanel() {
           city={CITY}
           origin={origin}
           destination={destination}
+          waypoints={waypoints}
+          maxWaypoints={MAX_WAYPOINTS}
           presets={DEMO_ROUTES}
           pickTarget={pickTarget}
+          onAddWaypoint={() => dispatch({ type: 'addWaypoint' })}
+          onRemoveWaypoint={(index) => dispatch({ type: 'removeWaypoint', index })}
           onChange={(target, value) => {
             dispatch(setPointAction(target, value))
             dispatch({ type: 'setPickTarget', target: null })
           }}
           onPick={(target) => dispatch({ type: 'setPickTarget', target })}
           onPreset={(preset) => {
+            dispatch({ type: 'clearWaypoints' })
             dispatch({ type: 'setOrigin', point: preset.origin })
             dispatch({ type: 'setDestination', point: preset.destination })
             dispatch({ type: 'setPickTarget', target: null })
@@ -94,6 +103,12 @@ export function RoutePanel() {
         />
       </form>
       <div className="results" aria-live="polite" aria-busy={loading}>
+        {hasEmptyWaypoint && (
+          <p className="callout">
+            Wyszukaj miejsce albo wskaż przystanek na mapie. Trasa zostanie przeliczona po
+            uzupełnieniu wszystkich przystanków.
+          </p>
+        )}
         {error && (
           <p id="error" role="alert" className="callout callout-error">
             <AlertIcon size={18} />
@@ -115,6 +130,31 @@ export function RoutePanel() {
               onRecalculate={() => dispatch({ type: 'recalculateRoute' })}
               onDismiss={newReports.dismiss}
             />
+            {/* Start nawigacji: GPS albo symulacja przejścia (test i pokaz bez wychodzenia z domu) */}
+            <div className="route-start">
+              <button
+                type="button"
+                className="primary-button route-start-button"
+                disabled={loading}
+                onClick={() => {
+                  unlockSpeech()
+                  dispatch({ type: 'startNavigation', mode: 'gps' })
+                }}
+              >
+                <NavigationIcon size={18} /> Rozpocznij
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={loading}
+                onClick={() => {
+                  unlockSpeech()
+                  dispatch({ type: 'startNavigation', mode: 'sim' })
+                }}
+              >
+                Symuluj przejście
+              </button>
+            </div>
             <RouteAlternatives
               route={route}
               selected={variant}

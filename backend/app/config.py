@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -23,6 +24,15 @@ class Settings(BaseSettings):
     routing_warmup: bool = True
     # Geokoder Photon (komoot) - bez klucza, ale wymaga własnego User-Agent
     geocoder_url: str = "https://photon.komoot.io"
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg_driver(cls, url: str) -> str:
+        """Hosting (np. Render) podaje `postgres://` albo `postgresql://` - wymuszamy psycopg 3."""
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
 
 @lru_cache
