@@ -1,8 +1,11 @@
 // Pełnoekranowa mapa + nakładki: kontrolki (Warstwy, Legenda), zgłoszenie, baner wskazywania punktu.
+// W nawigacji zamiast nakładek - widok w trakcie trasy (NavigationView).
+import { useState } from 'react'
 import { useApp, useAppData } from '../app/context'
 import { openReport, useMapClick } from '../app/mapActions'
-import { mapLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
+import { useMapObjects } from '../app/useMapObjects'
+import { useNavigation } from '../app/useNavigation'
 import { useActiveRoute } from '../app/useRoute'
 import { AlertIcon, PinIcon } from '../components/icons'
 import { InstitutionPopup } from '../components/InstitutionPopup'
@@ -12,6 +15,7 @@ import { placeKindLabel } from '../components/placeCategories'
 import { PlacePopup } from '../components/PlacePopup'
 import { ReportPopup } from '../components/ReportPopup'
 import { LayersDrawer } from './LayersDrawer'
+import { NavigationView } from './NavigationView'
 
 const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 
@@ -79,9 +83,13 @@ function usePopup(): MapPopup | null {
 export function MapArea() {
   const [state, dispatch] = useApp()
   const data = useAppData()
-  const { route, active, variants, otherRoutes } = useActiveRoute()
+  const { active, variants } = useActiveRoute()
   const onMapClick = useMapClick()
   const popup = usePopup()
+  const nav = useNavigation()
+  // Przesunięcie mapy ręką w nawigacji wyłącza podążanie kamery - „Wyśrodkuj” je przywraca
+  const [follow, setFollow] = useState(true)
+  const navigating = nav.mode !== null
   const { pickTarget, layers, mapSelection, selectedBarrier } = state
   const pickLetter =
     pickTarget === 'origin'
@@ -96,7 +104,8 @@ export function MapArea() {
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
   // Wyniki „Pokaż wszystkie” (np. „hotele”): na mapie tylko one - reszta warstw wraca po „Wyczyść”
   const showingResults = !!state.resultSet
-  const visible = mapLayerData(data, layers, showingResults)
+  // Przy wyznaczonej trasie - tylko obiekty do 100 m od niej (przełącznik w panelu bocznym)
+  const { visible } = useMapObjects()
   const showBarriers = !showingResults && (layers.barriers || layers.reports)
   // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
   const select = (selection: SelectedPlace) => {
@@ -112,7 +121,7 @@ export function MapArea() {
         places={visible.places}
         onPlaceClick={(place) => select(fromPlace(place, placeKindLabel(place)))}
         route={active}
-        routeVariants={variants}
+        routeVariants={navigating ? [] : variants}
         selectedRoute={state.variant}
         origin={state.origin?.point ?? null}
         destination={state.destination?.point ?? null}
@@ -130,7 +139,7 @@ export function MapArea() {
         institutions={visible.institutions}
         selectedInstitution={mapSelection?.kind === 'institution' ? mapSelection.id : null}
         onInstitutionSelect={(id) => select({ kind: 'institution', id })}
-        popup={popup}
+        popup={navigating ? null : popup}
         onPopupClose={() => {
           dispatch({ type: 'selectOnMap', selection: null })
           // okienko zgłoszenia (#62) zamyka się razem z zaznaczeniem bariery
@@ -149,7 +158,41 @@ export function MapArea() {
         dataGaps={showingResults ? null : data.dataGaps}
         focus={state.mapFocus}
         baseMap={state.baseMap}
+        navigation={
+          navigating && nav.fix
+            ? { point: nav.fix.point, heading: nav.fix.heading ?? nav.progress?.heading ?? 0 }
+            : null
+        }
+        follow={follow}
+        onFollowChange={setFollow}
       />
+      {navigating ? (
+        <NavigationView
+          nav={nav}
+          follow={follow}
+          onRecenter={() => setFollow(true)}
+          onExit={() => {
+            setFollow(true)
+            dispatch({ type: 'stopNavigation' })
+          }}
+        />
+      ) : (
+        <MapOverlays />
+      )}
+    </div>
+  )
+}
+
+/** Nakładki podglądu mapy - chowane w nawigacji */
+function MapOverlays() {
+  const [state, dispatch] = useApp()
+  const { route, otherRoutes } = useActiveRoute()
+  const { pickTarget, layers } = state
+  const pickLetter =
+    pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
+  const { visible } = useMapObjects()
+  return (
+    <>
       <div className="map-controls">
         <LayersDrawer />
         <Legend
@@ -207,7 +250,7 @@ export function MapArea() {
           <span className="spinner" /> Szukam trasy…
         </div>
       )}
-    </div>
+    </>
   )
 }
 

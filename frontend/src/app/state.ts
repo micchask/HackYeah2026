@@ -42,6 +42,8 @@ export type PanelState =
   | { kind: 'report'; point: NamedPoint | null } // zgłoszenie
   | { kind: 'list'; list: ListKind } // pełna lista
 
+export type NavigationMode = 'gps' | 'sim'
+
 export interface AppState {
   profile: ProfileId | null // null = pokaż StartScreen
   prefs: RoutePreferences
@@ -75,6 +77,10 @@ export interface AppState {
   resultSet: { query: string; results: SearchResult[] } | null
   /** Punkt, na który mapa ma się przesunąć (np. obszar z listy braków danych); seq = ponowny klik */
   mapFocus: { point: LatLon; seq: number } | null
+  /** Trwająca nawigacja: prawdziwy GPS albo symulacja przejścia trasy; null = podgląd trasy */
+  navigation: NavigationMode | null
+  /** false = przy wyznaczonej trasie mapa pokazuje tylko obiekty blisko trasy */
+  showAllObjects: boolean
 }
 
 const NO_LAYERS: Layers = {
@@ -161,9 +167,14 @@ export type Action =
   | { type: 'showResults'; query: string; results: SearchResult[] }
   | { type: 'clearResults' }
   | { type: 'recalculateRoute' }
+  | { type: 'startNavigation'; mode: NavigationMode }
+  | { type: 'stopNavigation' }
+  /** Zejście z trasy w nawigacji: nowa trasa z bieżącej pozycji */
+  | { type: 'rerouteFrom'; point: LatLon }
   | { type: 'setBaseMap'; baseMap: BaseMap }
   | { type: 'toggleSidebar'; open?: boolean }
   | { type: 'focusMap'; point: LatLon }
+  | { type: 'setShowAllObjects'; on: boolean }
   /** Adres z geokodera zamiast współrzędnych - tylko jeśli punkt to nadal ten kliknięty */
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
 
@@ -200,6 +211,8 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     resultSet: null,
     mapFocus: null,
     routeNonce: 0,
+    navigation: null,
+    showAllObjects: false,
   }
 }
 
@@ -337,8 +350,22 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, resultSet: null }
     case 'recalculateRoute':
       return { ...state, routeNonce: state.routeNonce + 1 }
+    case 'startNavigation':
+      return {
+        ...state,
+        navigation: action.mode,
+        segment: null,
+        mapSelection: null,
+        pickTarget: null,
+      }
+    case 'stopNavigation':
+      return { ...state, navigation: null }
+    case 'rerouteFrom':
+      return { ...state, origin: { label: 'Twoja pozycja', point: action.point } }
     case 'setBaseMap':
       return { ...state, baseMap: action.baseMap }
+    case 'setShowAllObjects':
+      return { ...state, showAllObjects: action.on }
     case 'toggleSidebar':
       return { ...state, sidebarOpen: action.open ?? !state.sidebarOpen }
     case 'refinePoint': {

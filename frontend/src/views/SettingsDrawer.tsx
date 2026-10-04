@@ -89,7 +89,7 @@ interface SwitchRowProps {
   soon?: boolean
 }
 
-function SwitchRow({ label, description, checked, onChange, soon }: SwitchRowProps) {
+export function SwitchRow({ label, description, checked, onChange, soon }: SwitchRowProps) {
   return (
     <label className={soon ? 'settings-option settings-option-soon' : 'settings-option'}>
       <span className="settings-option-copy">

@@ -13,7 +13,7 @@ describe('Legend', () => {
 
     await user.click(button)
     const legend = screen.getByRole('region', { name: 'Legenda mapy' })
-    expect(legend).toHaveTextContent('Miejsca')
+    expect(legend).toHaveTextContent('Rodzaj miejsca')
     expect(legend).toHaveTextContent('instytucja publiczna')
     await user.keyboard('{Escape}')
     expect(button).toHaveFocus()

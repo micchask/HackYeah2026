@@ -5,8 +5,8 @@ import type { LatLon, Place } from '../api/client'
 import { distanceM } from '../app/nearby'
 import { EmptyState } from './EmptyState'
 import { formatKm } from './format'
-import { PlaceAccessIcon } from './PlaceAccessIcon'
-import { ACCESS_LABEL, accessibilityOf, placeKindLabel } from './placeCategories'
+import { PlaceIcon } from './PlaceAccessIcon'
+import { ACCESS_LABEL, accessibilityOf, placeKind, placeKindLabel } from './placeCategories'
 
 const PAGE = 20
 
@@ -72,7 +72,7 @@ export function PlaceList({
             return (
               <li key={place.id}>
                 <button type="button" className="item" onClick={() => onShow?.(place)}>
-                  <PlaceAccessIcon access={access} size={28} />
+                  <PlaceIcon kind={placeKind(place)} access={access} size={32} />
                   <span className="item-text">
                     <span className="item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
                     <span className="item-meta">

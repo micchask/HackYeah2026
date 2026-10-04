@@ -23,8 +23,8 @@ import {
   StairsIcon,
   ToiletIcon,
 } from '../../components/icons'
-import { PlaceAccessIcon } from '../../components/PlaceAccessIcon'
-import { ACCESS_LABEL, placeKindLabel } from '../../components/placeCategories'
+import { PlaceIcon } from '../../components/PlaceAccessIcon'
+import { ACCESS_LABEL, placeKind, placeKindLabel } from '../../components/placeCategories'
 import { SearchResultsList } from '../../components/SearchResultsList'
 import { SidebarSection } from '../SidebarSection'
 
@@ -149,7 +149,7 @@ export function ExplorePanel() {
                   className="item"
                   onClick={() => select(fromPlace(place, placeKindLabel(place)))}
                 >
-                  <PlaceAccessIcon access={access} size={28} />
+                  <PlaceIcon kind={placeKind(place)} access={access} size={32} />
                   <span className="item-text">
                     <span className="item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
                     <span className="item-meta">

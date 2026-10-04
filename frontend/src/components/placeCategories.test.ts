@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest'
 import type { Place } from '../api/client'
 import { visibleBarriers, visiblePlaces, layerCounts } from '../app/layerData'
 import { PROFILE_DEFAULTS } from '../app/state'
-import { accessibilityOf, placeGroup, placeLayer } from './placeCategories'
+import {
+  PLACE_KINDS,
+  accessibilityOf,
+  institutionAccess,
+  institutionKind,
+  placeGroup,
+  placeIconSvg,
+  placeKind,
+  placeLayer,
+} from './placeCategories'
 
 const P = { lat: 50.06, lon: 19.94 }
 
@@ -88,5 +97,48 @@ describe('grupy i warstwy', () => {
       '50.05,19.93,50.07,19.95',
     )
     expect(counts).toEqual({ places: 2, health: 1, institutions: 1, barriers: 2, reports: 1 })
+  })
+})
+
+describe('rodzaj ikony', () => {
+  it.each([
+    ['cafe', 'cafe'],
+    ['restaurant', 'restaurant'],
+    ['museum', 'museum'],
+    ['attraction', 'monument'],
+    ['place_of_worship', 'church'],
+    ['townhall', 'office'],
+    ['pharmacy', 'pharmacy'],
+    ['toilets', 'toilets'],
+  ])('%s → %s', (category, kind) => {
+    expect(placeKind(place(category))).toBe(kind)
+  })
+  it('nieznany tag dostaje ikonę grupy, brak kategorii - „inne”', () => {
+    expect(placeKind(place('optician_nowy'))).toBe('other')
+    expect(placeKind(place('greengrocer'))).toBe('other')
+    expect(placeKind(place('hairdresser'))).toBe('shop')
+    expect(placeKind(place(null))).toBe('other')
+  })
+  it('każdy rodzaj ma ikonę z kwadracikiem dostępności w kolorze statusu', () => {
+    for (const kind of PLACE_KINDS) {
+      const svg = placeIconSvg(kind, 'no')
+      expect(svg).toContain('<path')
+      expect(svg).toContain('#c4122f')
+    }
+  })
+})
+
+describe('ikona instytucji', () => {
+  it.each([
+    ['urząd', 'office'],
+    ['muzeum', 'museum'],
+    ['teatr', 'theatre'],
+    ['Biblioteka Kraków', 'library'],
+    ['instytucja', 'office'],
+  ])('%s → %s', (kind, expected) => {
+    expect(institutionKind({ kind })).toBe(expected)
+  })
+  it('dostępność z deklaracji to zawsze „brak danych”, nigdy „dostępne”', () => {
+    expect(institutionAccess({ attributes: [] })).toBe('unknown')
   })
 })

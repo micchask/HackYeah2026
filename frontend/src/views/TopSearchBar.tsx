@@ -8,7 +8,8 @@ import { QuickCategoryChips } from './QuickCategoryChips'
 import { SIDEBAR_BODY_ID } from './Sidebar'
 
 export function TopSearchBar() {
-  const [{ mapCenter, resultSet, sidebarOpen }, dispatch] = useApp()
+  const [{ mapCenter, resultSet, sidebarOpen, navigation }, dispatch] = useApp()
+  if (navigation) return null
   return (
     <div className="top-search">
       <div className="search-pill">
