@@ -3303,6 +3303,11 @@ main:focus {
     min-height: 44px;
     padding: 0 16px 0 12px;
   }
+  /* rozwinięty dolny panel: przycisk nie zasłania jego opcji; wraca po zwinięciu panelu
+     (zgłoszenie jest też w karcie miejsca, panelu trasy i dymku na mapie) */
+  .map-report-button[data-sheet-open='true'] {
+    display: none;
+  }
   .map-banner,
   .map-loading {
     left: 50%;

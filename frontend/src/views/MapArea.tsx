@@ -152,6 +152,8 @@ export function MapArea() {
       <button
         type="button"
         className="map-report-button"
+        // na telefonie rozwinięty dolny panel zakrywa mapę - przycisk chowa się, żeby nie zasłaniać panelu
+        data-sheet-open={state.sidebarOpen}
         aria-pressed={pickTarget === 'report'}
         onClick={() => {
           if (pickTarget === 'report') {
