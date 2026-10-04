@@ -2824,7 +2824,7 @@ main:focus {
 
 .basemap-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 .basemap-option {
@@ -2868,11 +2868,6 @@ main:focus {
     radial-gradient(circle at 75% 70%, #3e5a3b 0 22%, transparent 45%),
     linear-gradient(118deg, transparent 46%, #9a9283 46% 50%, transparent 50%),
     linear-gradient(135deg, #2c3a2a, #6d7258);
-}
-.basemap-thumb-light {
-  background:
-    linear-gradient(118deg, transparent 44%, #ffffff 44% 50%, transparent 50%),
-    linear-gradient(32deg, transparent 60%, #e2e5ea 60% 64%, transparent 64%), #f3f4f6;
 }
 
 .toggle-row {

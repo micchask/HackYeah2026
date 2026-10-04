@@ -19,13 +19,12 @@ import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
 import { shortInstitutionName } from './institutionStyle'
 
-export type BaseMap = 'standard' | 'satellite' | 'light'
+export type BaseMap = 'standard' | 'satellite'
 
-// Trzy podkłady w jednym stylu - przełączanie widoczności nie przeładowuje warstw aplikacji
+// Dwa podkłady w jednym stylu - przełączanie widoczności nie przeładowuje warstw aplikacji
 const BASE_LAYERS: Record<BaseMap, string> = {
   standard: 'osm',
   satellite: 'satellite',
-  light: 'light',
 }
 
 function mapStyle(baseMap: BaseMap): maplibregl.StyleSpecification {
@@ -49,15 +48,6 @@ function mapStyle(baseMap: BaseMap): maplibregl.StyleSpecification {
         maxzoom: 19,
         attribution: 'Zdjęcia © Esri, Maxar, Earthstar Geographics',
       },
-      light: {
-        type: 'raster',
-        tiles: ['a', 'b', 'c'].map(
-          (sub) => `https://${sub}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png`,
-        ),
-        tileSize: 256,
-        maxzoom: 20,
-        attribution: '© OpenStreetMap contributors © CARTO',
-      },
     },
     layers: [
       {
@@ -74,12 +64,6 @@ function mapStyle(baseMap: BaseMap): maplibregl.StyleSpecification {
         source: 'satellite',
         layout: { visibility: visibility('satellite') },
         paint: { 'raster-saturation': -0.15 },
-      },
-      {
-        id: 'light',
-        type: 'raster',
-        source: 'light',
-        layout: { visibility: visibility('light') },
       },
     ],
   }

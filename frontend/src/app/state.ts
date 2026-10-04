@@ -24,11 +24,11 @@ export type LayerId =
 
 export type Layers = Record<LayerId, boolean>
 
-/** Podkład mapy: zwykła mapa, zdjęcia satelitarne albo jasna, uproszczona */
-export type BaseMap = 'standard' | 'satellite' | 'light'
+/** Podkład mapy: zwykła mapa albo zdjęcia satelitarne */
+export type BaseMap = 'standard' | 'satellite'
 
 /** Pełne listy (tekstowa alternatywa mapy) otwierane z „Pokaż więcej” w panelu „Dla Ciebie” */
-export const BASE_MAPS: BaseMap[] = ['standard', 'satellite', 'light']
+export const BASE_MAPS: BaseMap[] = ['standard', 'satellite']
 
 export type ListKind = 'places' | 'health' | 'barriers' | 'institutions' | 'events' | 'gaps'
 
