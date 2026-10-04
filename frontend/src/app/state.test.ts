@@ -18,11 +18,35 @@ function run(state: AppState, ...actions: Parameters<typeof appReducer>[1][]) {
 }
 
 describe('appReducer', () => {
-  it('startuje w trybie „wózek” z panelem „Dla Ciebie”', () => {
+  it('pierwsze wejście: bez trybu (ekran wyboru), do czasu wyboru ustawienia „bez profilu”', () => {
     const state = initialState()
-    expect(state.profile).toBe('wheelchair')
-    expect(state.prefs).toEqual(PROFILE_DEFAULTS.wheelchair.prefs)
+    expect(state.profile).toBeNull()
+    expect(state.prefs).toEqual(PROFILE_DEFAULTS.guest.prefs)
     expect(state.panel).toEqual({ kind: 'explore' })
+  })
+
+  it('zapamiętany tryb pomija ekran wyboru', () => {
+    expect(initialState({ profile: 'wheelchair' }).profile).toBe('wheelchair')
+  })
+
+  it('wybór trybu bierze preferencje z /api/profiles, a bez nich - zapas z frontu', () => {
+    const fromApi = { ...PROFILE_DEFAULTS.senior.prefs, max_kerb_height_cm: 4 }
+    let state = run(initialState(), { type: 'chooseProfile', profile: 'senior', prefs: fromApi })
+    expect(state.prefs).toEqual(fromApi)
+    state = run(state, { type: 'chooseProfile', profile: 'wheelchair' })
+    expect(state.prefs).toEqual(PROFILE_DEFAULTS.wheelchair.prefs)
+  })
+
+  it('wybór trybu wraca do panelu „Dla Ciebie”', () => {
+    const state = run(
+      initialState({ profile: 'wheelchair' }),
+      { type: 'setOrigin', point: A },
+      { type: 'setDestination', point: B },
+      { type: 'resetProfile' },
+      { type: 'chooseProfile', profile: 'stroller' },
+    )
+    expect(state.panel).toEqual({ kind: 'explore' })
+    expect(state.history).toEqual([])
   })
 
   it('wybór trybu ustawia preferencje i warstwy, ręczna zmiana oznacza „dostosowany”', () => {

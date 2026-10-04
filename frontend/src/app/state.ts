@@ -71,7 +71,8 @@ function layers(...on: LayerId[]): Layers {
   return { ...NO_LAYERS, ...Object.fromEntries(on.map((id) => [id, true])) }
 }
 
-// Tymczasowo we froncie - docelowo z GET /api/profiles (#87). Wartości jak w planie §4.
+// Zapas na wypadek braku backendu - preferencje trybu przychodzą z GET /api/profiles (#87),
+// patrz chooseProfile. Wartości jak w planie §4.
 // `places` i `reports` są włączone wszędzie, żeby po FE1 mapa wyglądała jak dotąd - warstwy porządkuje #90.
 const WALK: RoutePreferences = {
   profile: 'walk',
@@ -108,7 +109,8 @@ export const PROFILE_DEFAULTS: Record<ProfileId, { prefs: RoutePreferences; laye
 
 export type Action =
   // akcje z planu §3
-  | { type: 'chooseProfile'; profile: ProfileId }
+  /** prefs z GET /api/profiles; bez nich (backend niedostępny) - PROFILE_DEFAULTS */
+  | { type: 'chooseProfile'; profile: ProfileId; prefs?: RoutePreferences }
   | { type: 'resetProfile' }
   | { type: 'setPrefs'; prefs: RoutePreferences }
   | { type: 'toggleLayer'; layer: LayerId; on?: boolean }
@@ -136,9 +138,9 @@ export type Action =
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
 
 export function initialState(saved: Partial<AppState> = {}): AppState {
-  // Do czasu ekranu wyboru trybu (#88) startujemy w trybie „wózek”, żeby demo działało od razu
-  const profile = saved.profile ?? 'wheelchair'
-  const defaults = PROFILE_DEFAULTS[profile]
+  // Bez zapisanego trybu: null = ekran wyboru trybu. Do czasu wyboru - ustawienia „bez profilu”
+  const profile = saved.profile ?? null
+  const defaults = PROFILE_DEFAULTS[profile ?? 'guest']
   return {
     profile,
     prefs: saved.prefs ?? defaults.prefs,
@@ -185,9 +187,12 @@ export function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         profile: action.profile,
-        prefs: defaults.prefs,
+        prefs: action.prefs ?? defaults.prefs,
         layers: defaults.layers,
         customized: false,
+        // Po wyborze trybu zaczynamy od „Dla Ciebie” (plan §5.1)
+        panel: { kind: 'explore' },
+        history: [],
       }
     }
     case 'resetProfile':

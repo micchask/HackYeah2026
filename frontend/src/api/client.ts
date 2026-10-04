@@ -31,6 +31,8 @@ export type SegmentCollection = components['schemas']['SegmentCollection']
 export type Barrier = components['schemas']['Barrier']
 export type BarrierType = components['schemas']['BarrierType']
 export type BarrierList = components['schemas']['BarrierList']
+/** Tryb z ekranu startowego (`GET /api/profiles`): preferencje trasy i domyślne warstwy */
+export type ModePreset = components['schemas']['ModePreset']
 
 export type ProfileId = 'wheelchair' | 'stroller'
 
@@ -143,6 +145,7 @@ export const api = {
     request<Report[]>(`/reports?${new URLSearchParams({ city })}`, { signal }),
   /** bbox: [south, west, north, east] jak w konfiguracji miasta */
   /** bbox: "south,west,north,east" (jak z MapView.onBoundsChange) */
+  profiles: (signal?: AbortSignal) => request<ModePreset[]>('/profiles', { signal }),
   barriers: (city: string, bbox: string, signal?: AbortSignal) =>
     request<BarrierList>(`/barriers?${new URLSearchParams({ city, bbox })}`, { signal }),
   segments: (
