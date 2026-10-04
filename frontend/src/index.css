@@ -272,6 +272,18 @@ button:disabled {
 .point-row:last-child.picking {
   border-radius: 0 0 12px 12px;
 }
+.waypoint-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+.waypoint-count {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
 .point-text,
 .address-search {
   display: flex;
@@ -402,6 +414,10 @@ button:disabled {
 .point-badge-a,
 .point-marker-a {
   background: #0b5cad;
+}
+.point-badge-wp,
+.point-marker-wp {
+  background: var(--primary-600);
 }
 .point-badge-b,
 .point-marker-b {

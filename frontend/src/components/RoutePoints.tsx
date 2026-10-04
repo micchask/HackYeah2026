@@ -13,54 +13,96 @@ export interface Preset {
   destination: NamedPoint
 }
 
-export type PickTarget = 'origin' | 'destination' | 'report'
+export type PickTarget = 'origin' | 'destination' | 'report' | { waypoint: number }
 
 interface Props {
   city: string
   origin: NamedPoint | null
   destination: NamedPoint | null
+  waypoints: (NamedPoint | null)[]
+  maxWaypoints: number
   presets: Preset[]
   pickTarget: PickTarget | null
   onChange: (target: PickTarget, value: NamedPoint) => void
   onPick: (target: PickTarget | null) => void
   onPreset: (preset: Preset) => void
   onSwap: () => void
+  onAddWaypoint: () => void
+  onRemoveWaypoint: (index: number) => void
 }
-
-const ROWS = [
-  { target: 'origin', letter: 'A', title: 'Start', empty: 'Wpisz adres startu' },
-  { target: 'destination', letter: 'B', title: 'Cel', empty: 'Wpisz adres celu' },
-] as const
 
 /** Punkty A/B: wyszukiwarka adresów, gotowe trasy albo kliknięcie na mapie. */
 export function RoutePoints({
   city,
   origin,
   destination,
+  waypoints,
+  maxWaypoints,
   presets,
   pickTarget,
   onChange,
   onPick,
   onPreset,
   onSwap,
+  onAddWaypoint,
+  onRemoveWaypoint,
 }: Props) {
-  const values = { origin, destination }
   const activePreset = presets.find(
-    (p) => p.origin === origin && p.destination === destination,
+    (p) => p.origin === origin && p.destination === destination && waypoints.length === 0,
   )?.label
+
+  const isPicking = (t: PickTarget) => {
+    if (typeof t === 'string') return pickTarget === t
+    return typeof pickTarget === 'object' && pickTarget?.waypoint === t.waypoint
+  }
+
+  const rows = [
+    {
+      target: 'origin' as PickTarget,
+      letter: 'A',
+      title: 'Start',
+      empty: 'Wpisz adres startu',
+      val: origin,
+      isWaypoint: false,
+      index: -1,
+    },
+    ...waypoints.map((wp, i) => ({
+      target: { waypoint: i } as PickTarget,
+      letter: String(i + 1),
+      title: `Przystanek ${i + 1}`,
+      empty: 'Wpisz adres przystanku',
+      val: wp,
+      isWaypoint: true,
+      index: i,
+    })),
+    {
+      target: 'destination' as PickTarget,
+      letter: 'B',
+      title: 'Cel',
+      empty: 'Wpisz adres celu',
+      val: destination,
+      isWaypoint: false,
+      index: -1,
+    },
+  ]
 
   return (
     <fieldset className="route-points">
-      <legend className="visually-hidden">Start i cel trasy</legend>
+      <legend className="visually-hidden">Start, przystanki i cel trasy</legend>
 
       <div className="points">
         <ol className="points-list">
-          {ROWS.map(({ target, letter, title, empty }) => {
-            const picking = pickTarget === target
+          {rows.map(({ target, letter, title, empty, val, isWaypoint, index }) => {
+            const picking = isPicking(target)
+            const key = typeof target === 'string' ? target : `wp-${index}`
             return (
-              <li key={target} className={picking ? 'point-row picking' : 'point-row'}>
+              <li key={key} className={picking ? 'point-row picking' : 'point-row'}>
                 <span
-                  className={`point-badge point-badge-${letter.toLowerCase()}`}
+                  className={`point-badge ${
+                    typeof target === 'string'
+                      ? `point-badge-${letter.toLowerCase()}`
+                      : 'point-badge-wp'
+                  }`}
                   aria-hidden="true"
                 >
                   {letter}
@@ -68,10 +110,20 @@ export function RoutePoints({
                 <AddressSearch
                   label={title}
                   placeholder={picking ? 'Kliknij na mapie…' : empty}
-                  value={values[target]}
+                  value={val}
                   city={city}
                   onSelect={(value) => onChange(target, value)}
                 />
+                {isWaypoint && (
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() => onRemoveWaypoint(index)}
+                    title={`Usuń ${title.toLowerCase()}`}
+                  >
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="icon-button"
@@ -90,10 +142,32 @@ export function RoutePoints({
           className="icon-button swap-button"
           onClick={onSwap}
           disabled={!origin || !destination}
+          title="Odwróć całą trasę razem z kolejnością przystanków"
         >
           <SwapIcon size={18} />
           <span className="visually-hidden">Zamień start i cel</span>
         </button>
+      </div>
+
+      <div className="waypoint-add">
+        <button
+          type="button"
+          className="chip chip-small"
+          onClick={onAddWaypoint}
+          disabled={waypoints.length >= maxWaypoints}
+          title={
+            waypoints.length >= maxWaypoints
+              ? `Możesz dodać maksymalnie ${maxWaypoints} przystanków`
+              : undefined
+          }
+        >
+          + Dodaj przystanek
+        </button>
+        {waypoints.length > 0 && (
+          <span className="waypoint-count">
+            {waypoints.length}/{maxWaypoints}
+          </span>
+        )}
       </div>
 
       <fieldset className="presets">

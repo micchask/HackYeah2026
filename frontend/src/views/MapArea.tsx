@@ -92,7 +92,15 @@ export function MapArea() {
   const navigating = nav.mode !== null
   const { pickTarget, layers, mapSelection, selectedBarrier } = state
   const pickLetter =
-    pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
+    pickTarget === 'origin'
+      ? 'A'
+      : pickTarget === 'destination'
+        ? 'B'
+        : typeof pickTarget === 'object' && pickTarget !== null
+          ? String(pickTarget.waypoint + 1)
+          : pickTarget
+            ? '!'
+            : null
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
   // Wyniki „Pokaż wszystkie” (np. „hotele”): na mapie tylko one - reszta warstw wraca po „Wyczyść”
   const showingResults = !!state.resultSet
@@ -117,6 +125,9 @@ export function MapArea() {
         selectedRoute={state.variant}
         origin={state.origin?.point ?? null}
         destination={state.destination?.point ?? null}
+        waypoints={state.waypoints
+          .filter((waypoint): waypoint is NonNullable<typeof waypoint> => waypoint !== null)
+          .map((waypoint) => waypoint.point)}
         reportPoint={state.reportPoint?.point ?? null}
         selectedSegment={state.segment}
         pickLabel={pickLetter}

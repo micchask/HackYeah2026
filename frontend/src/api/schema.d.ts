@@ -1190,6 +1190,11 @@ export interface components {
             city: string;
             origin: components["schemas"]["LatLon"];
             destination: components["schemas"]["LatLon"];
+            /**
+             * Waypoints
+             * @description Przystanki po drodze, w kolejności odwiedzania (np. sklep między A i B)
+             */
+            waypoints?: components["schemas"]["LatLon"][];
             preferences?: components["schemas"]["RoutePreferences"];
         };
         /** RouteResponse */

@@ -11,6 +11,9 @@ import type { SelectedPlace } from './selectedPlace'
 
 export type ProfileId = 'wheelchair' | 'senior' | 'tourist' | 'stroller' | 'guest'
 
+/** Limit zgodny z walidacją `RouteRequest` w backendzie. */
+export const MAX_WAYPOINTS = 5
+
 export type LayerId =
   | 'barriers'
   | 'health'
@@ -53,6 +56,7 @@ export interface AppState {
   history: PanelState[]
   origin: NamedPoint | null
   destination: NamedPoint | null
+  waypoints: (NamedPoint | null)[]
   route: RouteResponse | null
   /** Zwiększany przez „Przelicz trasę” - ponowne pobranie trasy bez zmiany punktów (#63) */
   routeNonce: number
@@ -142,6 +146,10 @@ export type Action =
   | { type: 'back' }
   | { type: 'setOrigin'; point: NamedPoint | null }
   | { type: 'setDestination'; point: NamedPoint | null }
+  | { type: 'addWaypoint'; point?: NamedPoint }
+  | { type: 'setWaypoint'; index: number; point: NamedPoint | null }
+  | { type: 'removeWaypoint'; index: number }
+  | { type: 'clearWaypoints' }
   | { type: 'setRoute'; route: RouteResponse | null; error?: string | null }
   | { type: 'setVariant'; variant: number }
   | { type: 'setSegment'; segment: number | null }
@@ -186,6 +194,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     history: [],
     origin: null,
     destination: null,
+    waypoints: [],
     route: null,
     routeLoading: false,
     routeError: null,
@@ -263,8 +272,40 @@ export function appReducer(state: AppState, action: Action): AppState {
       return withPoints({ ...state, origin: action.point })
     case 'setDestination':
       return withPoints({ ...state, destination: action.point })
+    case 'addWaypoint':
+      if (state.waypoints.length >= MAX_WAYPOINTS) return state
+      return withPoints({ ...state, waypoints: [...state.waypoints, action.point ?? null] })
+    case 'setWaypoint': {
+      const next = [...state.waypoints]
+      if (action.point) next[action.index] = action.point
+      else next.splice(action.index, 1)
+      return withPoints({ ...state, waypoints: next })
+    }
+    case 'removeWaypoint': {
+      const next = [...state.waypoints]
+      next.splice(action.index, 1)
+      let pickTarget = state.pickTarget
+      if (typeof pickTarget === 'object' && pickTarget !== null) {
+        if (pickTarget.waypoint === action.index) pickTarget = null
+        else if (pickTarget.waypoint > action.index) {
+          pickTarget = { waypoint: pickTarget.waypoint - 1 }
+        }
+      }
+      return withPoints({ ...state, waypoints: next, pickTarget })
+    }
+    case 'clearWaypoints':
+      return {
+        ...state,
+        waypoints: [],
+        pickTarget: typeof state.pickTarget === 'object' ? null : state.pickTarget,
+      }
     case 'swapPoints':
-      return { ...state, origin: state.destination, destination: state.origin }
+      return {
+        ...state,
+        origin: state.destination,
+        destination: state.origin,
+        waypoints: [...state.waypoints].reverse(),
+      }
     case 'routeLoading':
       return { ...state, routeLoading: true, routeError: null }
     case 'setRoute':
@@ -328,6 +369,19 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'toggleSidebar':
       return { ...state, sidebarOpen: action.open ?? !state.sidebarOpen }
     case 'refinePoint': {
+      if (
+        typeof action.target === 'object' &&
+        action.target !== null &&
+        'waypoint' in action.target
+      ) {
+        const i = action.target.waypoint
+        if (state.waypoints[i] === action.expected) {
+          const next = [...state.waypoints]
+          next[i] = action.point
+          return { ...state, waypoints: next }
+        }
+        return state
+      }
       const key = action.target === 'report' ? 'reportPoint' : action.target
       return state[key] === action.expected ? { ...state, [key]: action.point } : state
     }

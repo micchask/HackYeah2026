@@ -4,6 +4,7 @@ import {
   appReducer,
   initialState,
   loadSaved,
+  MAX_WAYPOINTS,
   PROFILE_DEFAULTS,
   saveState,
   STORAGE_KEY,
@@ -106,6 +107,44 @@ describe('appReducer', () => {
     expect(
       run(state, { type: 'refinePoint', target: 'origin', expected: A, point: better }).origin,
     ).toBe(B)
+  })
+
+  it('dodaje wiele przystanków, usuwa je i zachowuje ich kolejność', () => {
+    const first = { label: 'Żabka', point: { lat: 50.055, lon: 19.936 } }
+    const second = { label: 'Apteka', point: { lat: 50.057, lon: 19.938 } }
+    let state = run(
+      initialState(),
+      { type: 'addWaypoint' },
+      { type: 'addWaypoint' },
+      { type: 'setWaypoint', index: 0, point: first },
+      { type: 'setWaypoint', index: 1, point: second },
+    )
+    expect(state.waypoints).toEqual([first, second])
+
+    state = run(state, { type: 'setPickTarget', target: { waypoint: 1 } })
+    state = run(state, { type: 'removeWaypoint', index: 0 })
+    expect(state.waypoints).toEqual([second])
+    expect(state.pickTarget).toEqual({ waypoint: 0 })
+  })
+
+  it('odwraca całą trasę razem z przystankami i pilnuje limitu', () => {
+    const stops = Array.from({ length: MAX_WAYPOINTS }, (_, index) => ({
+      label: `Przystanek ${index + 1}`,
+      point: { lat: 50 + index / 1000, lon: 19 + index / 1000 },
+    }))
+    let state = run(
+      initialState(),
+      { type: 'setOrigin', point: A },
+      { type: 'setDestination', point: B },
+      ...stops.map((point) => ({ type: 'addWaypoint', point }) as const),
+      { type: 'addWaypoint', point: A },
+    )
+    expect(state.waypoints).toEqual(stops)
+
+    state = run(state, { type: 'swapPoints' })
+    expect(state.origin).toBe(B)
+    expect(state.destination).toBe(A)
+    expect(state.waypoints).toEqual([...stops].reverse())
   })
 })
 

@@ -104,6 +104,7 @@ interface Props {
   selectedRoute?: number
   origin: LatLon | null
   destination: LatLon | null
+  waypoints: LatLon[]
   /** Miejsce zgłaszanej bariery (formularz „Zgłoś barierę”) */
   reportPoint?: LatLon | null
   selectedSegment: number | null
@@ -477,6 +478,7 @@ export function MapView({
   selectedRoute = 0,
   origin,
   destination,
+  waypoints = [],
   reportPoint = null,
   selectedSegment,
   pickLabel,
@@ -792,6 +794,7 @@ export function MapView({
 
     const points: [string, string, LatLon | null][] = [
       ['A', 'a', origin],
+      ...waypoints.map((wp, i): [string, string, LatLon | null] => [String(i + 1), 'wp', wp]),
       ['B', 'b', destination],
       ['!', 'report', reportPoint],
     ]
@@ -806,7 +809,7 @@ export function MapView({
           .setLngLat([point.lon, point.lat])
           .addTo(currentMap)
       })
-  }, [origin, destination, reportPoint])
+  }, [origin, destination, waypoints, reportPoint])
 
   useEffect(() => {
     const currentMap = map.current
