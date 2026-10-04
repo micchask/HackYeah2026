@@ -1186,6 +1186,11 @@ button.step-body:hover {
   align-items: center;
   gap: 0.5rem;
 }
+
+.demo-layer-icon {
+  flex: 0 0 auto;
+  display: block;
+}
 .legend-swatch {
   display: inline-block;
   flex: none;

@@ -17,6 +17,27 @@ const DATA: AppData = {
   barriersTruncated: false,
   barriersLoading: false,
   barriersError: null,
+  restSpots: [
+    {
+      id: 'osm:bench/1',
+      kind: 'bench',
+      name: null,
+      location: { lat: 50.06, lon: 19.94 },
+      details: {},
+      source: 'osm',
+    },
+  ],
+  parkingSpots: [
+    {
+      id: 'demo:parking/1',
+      kind: 'parking_disabled',
+      name: 'Parking testowy',
+      location: { lat: 50.06, lon: 19.94 },
+      details: { spaces: 2 },
+      source: 'demo',
+    },
+  ],
+  events: [],
 } as unknown as AppData
 
 function renderChips() {
@@ -40,6 +61,18 @@ describe('LayerChips', () => {
     expect(screen.getByRole('button', { name: 'Bariery' })).toHaveAttribute('aria-pressed', 'true')
     const food = screen.getByRole('button', { name: 'Jedzenie i kultura 2 w widoku' })
     expect(food).toHaveAttribute('aria-pressed', 'true') // FE1 trzyma „places” włączone
+    expect(screen.getByRole('button', { name: 'Odpoczynek 1 w widoku' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: 'Parking OzN 1 w widoku' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Wydarzenia' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
   })
 
   it('klik przełącza warstwę', async () => {

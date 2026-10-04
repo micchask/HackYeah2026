@@ -11,9 +11,16 @@ import type {
   SearchResult,
   SegmentCollection,
 } from '../api/client'
+import type { DemoEvent, DemoPoi } from '../api/demo'
 import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
 import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
+import {
+  DEMO_LAYER_IDS,
+  DEMO_LAYER_META,
+  demoLayerIconDataUrl,
+  type DemoLayerId,
+} from './demoLayerStyle'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
 import { shortInstitutionName } from './institutionStyle'
@@ -59,6 +66,12 @@ interface Props {
   places: Place[]
   /** Klik w miejsce na mapie */
   onPlaceClick?: (place: Place) => void
+  restSpots?: DemoPoi[]
+  parkingSpots?: DemoPoi[]
+  events?: DemoEvent[]
+  demoLayers?: Record<DemoLayerId, boolean>
+  onDemoPoiClick?: (poi: DemoPoi) => void
+  onDemoEventClick?: (event: DemoEvent) => void
   /** Aktywny wariant, rysowany kolorami trudności i używany do wyboru odcinka. */
   route: RouteResponse | null
   /** Wszystkie warianty; nieaktywne są rysowane szaro, każdy innym wzorem. */
@@ -117,6 +130,11 @@ const PLACE_CLUSTERS = 'places-clusters'
 const PLACE_POINTS = 'places-points'
 // Powyżej tego zoomu miejsca są już pojedynczo (w Starym Mieście to ok. 2 budynki na ekran)
 const PLACE_CLUSTER_MAX_ZOOM = 16
+const DEMO_LAYER_VISIBILITY: Record<DemoLayerId, boolean> = {
+  rest: false,
+  parking: false,
+  events: false,
+}
 
 /** Ikony miejsc wg dostępności - te same SVG co w legendzie i na liście. */
 function loadPlaceIcons(map: maplibregl.Map): Promise<void> {
@@ -217,6 +235,72 @@ function placeData(places: Place[]): GeoJSONData {
       },
     })),
   }
+}
+
+function demoPointData(items: { id: string; location: LatLon }[]): GeoJSONData {
+  return {
+    type: 'FeatureCollection',
+    features: items.map((item) => ({
+      type: 'Feature' as const,
+      properties: { id: item.id },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [item.location.lon, item.location.lat],
+      },
+    })),
+  }
+}
+
+function loadDemoLayerIcons(map: maplibregl.Map): Promise<void> {
+  return Promise.all(
+    DEMO_LAYER_IDS.map(
+      (kind) =>
+        new Promise<void>((resolve) => {
+          const meta = DEMO_LAYER_META[kind]
+          const img = new Image(56, 56)
+          img.onload = () => {
+            if (!map.hasImage(meta.image)) map.addImage(meta.image, img, { pixelRatio: 2 })
+            resolve()
+          }
+          img.onerror = () => resolve()
+          img.src = demoLayerIconDataUrl(kind)
+        }),
+    ),
+  ).then(() => undefined)
+}
+
+function addDemoLayers(map: maplibregl.Map) {
+  for (const kind of DEMO_LAYER_IDS) {
+    map.addSource(DEMO_LAYER_META[kind].source, { type: 'geojson', data: EMPTY })
+  }
+  void loadDemoLayerIcons(map).then(() => {
+    if (!map.getStyle()) return
+    for (const kind of DEMO_LAYER_IDS) {
+      const meta = DEMO_LAYER_META[kind]
+      if (map.getLayer(meta.layer)) continue
+      map.addLayer({
+        id: meta.layer,
+        type: 'symbol',
+        source: meta.source,
+        layout: {
+          'icon-image': meta.image,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      })
+      map.on('mouseenter', meta.layer, () => {
+        if (!pickingMap(map)) map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', meta.layer, () => {
+        map.getCanvas().style.cursor = pickingMap(map) ? 'crosshair' : ''
+      })
+    }
+  })
+}
+
+// Tryb wskazywania jest zapisany także w kursorze mapy; pomocniczo dla handlerów dodanych po load.
+function pickingMap(map: maplibregl.Map): boolean {
+  return map.getCanvas().style.cursor === 'crosshair'
 }
 
 const BARRIER_LINES = 'barrier-lines'
@@ -381,6 +465,12 @@ export function MapView({
   zoom,
   places,
   onPlaceClick,
+  restSpots = [],
+  parkingSpots = [],
+  events = [],
+  demoLayers = DEMO_LAYER_VISIBILITY,
+  onDemoPoiClick,
+  onDemoEventClick,
   route,
   routeVariants = [],
   selectedRoute = 0,
@@ -422,7 +512,12 @@ export function MapView({
   const onView = useRef(onViewChange)
   const onBarrier = useRef(onBarrierSelect)
   const onPlace = useRef(onPlaceClick)
+  const onDemoPoi = useRef(onDemoPoiClick)
+  const onDemoEvent = useRef(onDemoEventClick)
   const placesRef = useRef(places)
+  const restSpotsRef = useRef(restSpots)
+  const parkingSpotsRef = useRef(parkingSpots)
+  const eventsRef = useRef(events)
   const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
@@ -446,6 +541,8 @@ export function MapView({
     onView.current = onViewChange
     onBarrier.current = onBarrierSelect
     onPlace.current = onPlaceClick
+    onDemoPoi.current = onDemoPoiClick
+    onDemoEvent.current = onDemoEventClick
   }, [
     onMapClick,
     onSegmentClick,
@@ -456,11 +553,19 @@ export function MapView({
     onViewChange,
     onBarrierSelect,
     onPlaceClick,
+    onDemoPoiClick,
+    onDemoEventClick,
   ])
 
   useEffect(() => {
     placesRef.current = places
   }, [places])
+
+  useEffect(() => {
+    restSpotsRef.current = restSpots
+    parkingSpotsRef.current = parkingSpots
+    eventsRef.current = events
+  }, [restSpots, parkingSpots, events])
 
   useEffect(() => {
     if (!container.current) return
@@ -512,6 +617,27 @@ export function MapView({
         [x - HIT_PX, y - HIT_PX],
         [x + HIT_PX, y + HIT_PX],
       ]
+      if (!picking.current) {
+        const layers = DEMO_LAYER_IDS.map((kind) => DEMO_LAYER_META[kind].layer).filter((layer) =>
+          instance.getLayer(layer),
+        )
+        const [hit] = layers.length ? instance.queryRenderedFeatures(box, { layers }) : []
+        if (hit) {
+          const id = String(hit.properties.id)
+          const kind = DEMO_LAYER_IDS.find(
+            (candidate) => DEMO_LAYER_META[candidate].layer === hit.layer.id,
+          )
+          if (kind === 'events') {
+            const event = eventsRef.current.find((item) => item.id === id)
+            if (event) onDemoEvent.current?.(event)
+          } else {
+            const points = kind === 'rest' ? restSpotsRef.current : parkingSpotsRef.current
+            const point = points.find((item) => item.id === id)
+            if (point) onDemoPoi.current?.(point)
+          }
+          return
+        }
+      }
       if (!picking.current && instance.getLayer(PLACE_CLUSTERS)) {
         const [cluster] = instance.queryRenderedFeatures(box, { layers: [PLACE_CLUSTERS] })
         if (cluster) {
@@ -555,6 +681,7 @@ export function MapView({
       // pod trasą i barierami - to tło informacyjne
       addGapLayers(instance)
       addPlaceLayers(instance)
+      addDemoLayers(instance)
       for (const layer of [PLACE_CLUSTERS, PLACE_POINTS]) {
         instance.on('mouseenter', layer, () => {
           if (!picking.current) instance.getCanvas().style.cursor = 'pointer'
@@ -655,6 +782,42 @@ export function MapView({
     const source = map.current?.getSource('places') as maplibregl.GeoJSONSource | undefined
     source?.setData(placeData(places))
   }, [places, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const data: Record<DemoLayerId, { id: string; location: LatLon }[]> = {
+      rest: restSpots,
+      parking: parkingSpots,
+      events,
+    }
+    for (const kind of DEMO_LAYER_IDS) {
+      const source = currentMap.getSource(DEMO_LAYER_META[kind].source) as
+        maplibregl.GeoJSONSource | undefined
+      source?.setData(demoPointData(data[kind]))
+    }
+  }, [restSpots, parkingSpots, events, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const apply = () => {
+      for (const kind of DEMO_LAYER_IDS) {
+        const layer = DEMO_LAYER_META[kind].layer
+        if (currentMap.getLayer(layer)) {
+          const visibility = demoLayers[kind] ? 'visible' : 'none'
+          if (currentMap.getLayoutProperty(layer, 'visibility') !== visibility) {
+            currentMap.setLayoutProperty(layer, 'visibility', visibility)
+          }
+        }
+      }
+    }
+    apply()
+    currentMap.on('styledata', apply)
+    return () => {
+      currentMap.off('styledata', apply)
+    }
+  }, [demoLayers, mapReady])
 
   useEffect(() => {
     pointMarkers.current.forEach((marker) => marker.remove())

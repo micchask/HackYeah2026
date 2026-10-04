@@ -8,6 +8,7 @@ import {
   type Place,
   type SegmentCollection,
 } from '../api/client'
+import { demoApi, inBbox, type DemoEvent, type DemoPoi } from '../api/demo'
 import { CITY, type AppData } from './context'
 
 // Tyle miejsc naraz trafia na mapę - więcej spowalnia mapę i czytnik ekranu
@@ -70,6 +71,34 @@ export function useMapData(bbox: string | null, placesQuery: string, showGaps = 
   const [barriersTruncated, setBarriersTruncated] = useState(false)
   const [barriersLoading, setBarriersLoading] = useState(false)
   const [barriersError, setBarriersError] = useState<string | null>(null)
+  const [restSpots, setRestSpots] = useState<DemoPoi[]>([])
+  const [parkingSpots, setParkingSpots] = useState<DemoPoi[]>([])
+  const [events, setEvents] = useState<DemoEvent[]>([])
+
+  useEffect(() => {
+    if (!bbox) return
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      void demoApi
+        .restSpots(bbox, controller.signal, CITY)
+        .then(setRestSpots)
+        .catch((error: Error) => {
+          if (error.name !== 'AbortError') setRestSpots([])
+        })
+      void demoApi.parkingSpots(bbox).then((found) => {
+        if (!controller.signal.aborted) setParkingSpots(found)
+      })
+      void demoApi.events().then((upcoming) => {
+        if (!controller.signal.aborted) {
+          setEvents(upcoming.filter((event) => inBbox(event.location, bbox)))
+        }
+      })
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [bbox])
 
   useEffect(() => {
     if (!bbox) return
@@ -138,6 +167,9 @@ export function useMapData(bbox: string | null, placesQuery: string, showGaps = 
     barriersTruncated,
     barriersLoading,
     barriersError,
+    restSpots,
+    parkingSpots,
+    events,
     ...gaps,
   }
 }

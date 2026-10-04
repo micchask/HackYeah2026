@@ -8,8 +8,10 @@ const LAYER_CHIPS: { id: LayerId; label: string }[] = [
   { id: 'health', label: 'Toalety i zdrowie' },
   { id: 'institutions', label: 'Instytucje' },
   { id: 'places', label: 'Jedzenie i kultura' },
+  { id: 'rest', label: 'Odpoczynek' },
+  { id: 'parking', label: 'Parking OzN' },
+  { id: 'events', label: 'Wydarzenia' },
   { id: 'reports', label: 'Zgłoszenia' },
-  // `rest`, `parking`, `events` - dopisze #96 (FE10) razem z ich warstwami na mapie
 ]
 
 export function LayerChips() {

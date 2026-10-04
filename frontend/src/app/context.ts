@@ -1,6 +1,7 @@
 // Konteksty i hooki stanu aplikacji. Provider: AppState.tsx.
 import { createContext, useContext, type Dispatch } from 'react'
 import type { Barrier, DataGapsSummary, Institution, Place, SegmentCollection } from '../api/client'
+import type { DemoEvent, DemoPoi } from '../api/demo'
 import type { Action, AppState } from './state'
 
 export const CITY = 'krakow'
@@ -13,6 +14,10 @@ export interface AppData {
   barriersTruncated: boolean
   barriersLoading: boolean
   barriersError: string | null
+  /** Punkty dodatkowych warstw, odświeżane dla aktualnego bbox mapy. */
+  restSpots: DemoPoi[]
+  parkingSpots: DemoPoi[]
+  events: DemoEvent[]
   /** Braki danych (#31) - pobierane tylko przy włączonej warstwie „gaps” */
   dataGaps: SegmentCollection | null
   dataGapsSummary: DataGapsSummary | null
