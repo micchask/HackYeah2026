@@ -10,14 +10,25 @@ import type { Action, AppState } from './state'
 export function useRouteFetch(state: AppState, dispatch: Dispatch<Action>): void {
   const { origin, destination, waypoints, prefs, routeNonce } = state
   useEffect(() => {
-    if (!origin || !destination) return
-    const validWaypoints = waypoints.filter(wp => wp !== null).map(wp => wp.point)
+    if (!origin || !destination || waypoints.some((waypoint) => waypoint === null)) {
+      dispatch({ type: 'setRoute', route: null })
+      return
+    }
+    const validWaypoints = waypoints
+      .filter((waypoint): waypoint is NamedPoint => waypoint !== null)
+      .map((waypoint) => waypoint.point)
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       dispatch({ type: 'routeLoading' })
       try {
         const route = await api.route(
-          { city: CITY, origin: origin.point, destination: destination.point, waypoints: validWaypoints, preferences: prefs },
+          {
+            city: CITY,
+            origin: origin.point,
+            destination: destination.point,
+            waypoints: validWaypoints,
+            preferences: prefs,
+          },
           controller.signal,
         )
         dispatch({ type: 'setRoute', route })

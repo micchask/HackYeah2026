@@ -44,12 +44,68 @@ def _city_graph(paths: list[list[tuple[float, str]]]) -> CityGraph:
     )
 
 
+def _city_graph_from_graph(graph: nx.MultiDiGraph) -> CityGraph:
+    nodes = list(graph.nodes(data=True))
+    return CityGraph(
+        graph=graph,
+        node_ids=np.array([node for node, _ in nodes]),
+        node_lat=np.array([data["y"] for _, data in nodes]),
+        node_lon=np.array([data["x"] for _, data in nodes]),
+        named_lat=np.array([], dtype=float),
+        named_lon=np.array([], dtype=float),
+        named=[],
+    )
+
+
 def _request() -> RouteRequest:
     return RouteRequest(
         origin=LatLon(lat=50.0, lon=19.0),
         destination=LatLon(lat=50.01, lon=19.01),
         preferences=RoutePreferences(profile="wheelchair"),
     )
+
+
+def _point(graph: nx.MultiDiGraph, node: int) -> LatLon:
+    return LatLon(lat=graph.nodes[node]["y"], lon=graph.nodes[node]["x"])
+
+
+def test_route_visits_multiple_waypoints_in_given_order():
+    graph = nx.MultiDiGraph(created_date="2026-10-03 12:00:00")
+    for node in range(4):
+        graph.add_node(node, y=50.0 + node / 1000, x=19.0 + node / 1000)
+    for node in range(3):
+        graph.add_edge(
+            node,
+            node + 1,
+            length=100,
+            surface="asphalt",
+            highway="footway",
+            name="Trasa testowa",
+        )
+    # Bez przystanków ta krawędź byłaby krótsza. Żądanie musi mimo to przejść przez 1 i 2.
+    graph.add_edge(
+        0,
+        3,
+        length=50,
+        surface="asphalt",
+        highway="footway",
+        name="Skrót",
+    )
+    city_graph = _city_graph_from_graph(graph)
+    request = RouteRequest(
+        origin=_point(graph, 0),
+        destination=_point(graph, 3),
+        waypoints=[_point(graph, 1), _point(graph, 2)],
+        preferences=RoutePreferences(profile="walk"),
+    )
+
+    route = plan_route(request, city_graph)
+
+    assert route.distance_m == 300
+    assert route.alternatives == []
+    assert route.baseline is None
+    assert any("przystanku 1" in segment.instruction for segment in route.segments)
+    assert any("przystanku 2" in segment.instruction for segment in route.segments)
 
 
 def test_stairs_impassable_for_wheelchair():

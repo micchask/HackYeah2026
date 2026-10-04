@@ -19,7 +19,8 @@ interface Props {
   city: string
   origin: NamedPoint | null
   destination: NamedPoint | null
-  waypoints: NamedPoint[]
+  waypoints: (NamedPoint | null)[]
+  maxWaypoints: number
   presets: Preset[]
   pickTarget: PickTarget | null
   onChange: (target: PickTarget, value: NamedPoint) => void
@@ -36,6 +37,7 @@ export function RoutePoints({
   origin,
   destination,
   waypoints,
+  maxWaypoints,
   presets,
   pickTarget,
   onChange,
@@ -51,14 +53,19 @@ export function RoutePoints({
 
   const isPicking = (t: PickTarget) => {
     if (typeof t === 'string') return pickTarget === t
-    if (typeof pickTarget === 'object' && pickTarget !== null && 'waypoint' in pickTarget) {
-      return pickTarget.waypoint === (t as any).waypoint
-    }
-    return false
+    return typeof pickTarget === 'object' && pickTarget?.waypoint === t.waypoint
   }
 
   const rows = [
-    { target: 'origin' as PickTarget, letter: 'A', title: 'Start', empty: 'Wpisz adres startu', val: origin, isWaypoint: false, index: -1 },
+    {
+      target: 'origin' as PickTarget,
+      letter: 'A',
+      title: 'Start',
+      empty: 'Wpisz adres startu',
+      val: origin,
+      isWaypoint: false,
+      index: -1,
+    },
     ...waypoints.map((wp, i) => ({
       target: { waypoint: i } as PickTarget,
       letter: String(i + 1),
@@ -66,14 +73,22 @@ export function RoutePoints({
       empty: 'Wpisz adres przystanku',
       val: wp,
       isWaypoint: true,
-      index: i
+      index: i,
     })),
-    { target: 'destination' as PickTarget, letter: 'B', title: 'Cel', empty: 'Wpisz adres celu', val: destination, isWaypoint: false, index: -1 },
+    {
+      target: 'destination' as PickTarget,
+      letter: 'B',
+      title: 'Cel',
+      empty: 'Wpisz adres celu',
+      val: destination,
+      isWaypoint: false,
+      index: -1,
+    },
   ]
 
   return (
     <fieldset className="route-points">
-      <legend className="visually-hidden">Start i cel trasy</legend>
+      <legend className="visually-hidden">Start, przystanki i cel trasy</legend>
 
       <div className="points">
         <ol className="points-list">
@@ -83,7 +98,11 @@ export function RoutePoints({
             return (
               <li key={key} className={picking ? 'point-row picking' : 'point-row'}>
                 <span
-                  className={`point-badge ${typeof target === 'string' ? 'point-badge-' + letter.toLowerCase() : 'point-badge-wp'}`}
+                  className={`point-badge ${
+                    typeof target === 'string'
+                      ? `point-badge-${letter.toLowerCase()}`
+                      : 'point-badge-wp'
+                  }`}
                   aria-hidden="true"
                 >
                   {letter}
@@ -99,7 +118,7 @@ export function RoutePoints({
                   <button
                     type="button"
                     className="icon-button"
-                    onClick={() => onRemoveWaypoint(index as number)}
+                    onClick={() => onRemoveWaypoint(index)}
                     title={`Usuń ${title.toLowerCase()}`}
                   >
                     <span aria-hidden="true">✕</span>
@@ -122,22 +141,33 @@ export function RoutePoints({
           type="button"
           className="icon-button swap-button"
           onClick={onSwap}
-          disabled={!origin || !destination || waypoints.length > 0}
-          title={waypoints.length > 0 ? "Zamiana niemożliwa z przystankami" : "Zamień start i cel"}
+          disabled={!origin || !destination}
+          title="Odwróć całą trasę razem z kolejnością przystanków"
         >
           <SwapIcon size={18} />
           <span className="visually-hidden">Zamień start i cel</span>
         </button>
       </div>
 
-      <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+      <div className="waypoint-add">
         <button
           type="button"
           className="chip chip-small"
           onClick={onAddWaypoint}
+          disabled={waypoints.length >= maxWaypoints}
+          title={
+            waypoints.length >= maxWaypoints
+              ? `Możesz dodać maksymalnie ${maxWaypoints} przystanków`
+              : undefined
+          }
         >
           + Dodaj przystanek
         </button>
+        {waypoints.length > 0 && (
+          <span className="waypoint-count">
+            {waypoints.length}/{maxWaypoints}
+          </span>
+        )}
       </div>
 
       <fieldset className="presets">

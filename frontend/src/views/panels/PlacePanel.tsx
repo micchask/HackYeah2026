@@ -4,6 +4,7 @@ import { demoApi, isDemoData } from '../../api/demo'
 import { useApp, useAppData } from '../../app/context'
 import { openReport } from '../../app/mapActions'
 import { placeCard, type CardAttribute, type SelectedPlace } from '../../app/selectedPlace'
+import { MAX_WAYPOINTS } from '../../app/state'
 import { SOURCE_LABEL } from '../../components/attributes'
 import { formatDate } from '../../components/format'
 import { EmptyState, LoadingSkeleton, SoonTag } from '../../components/EmptyState'
@@ -70,7 +71,7 @@ function useChangingTable(selection: SelectedPlace): CardAttribute | null {
 }
 
 export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
-  const [, dispatch] = useApp()
+  const [state, dispatch] = useApp()
   const { institutions } = useAppData()
   const changingTable = useChangingTable(selection)
   const card = placeCard(selection, institutions)
@@ -146,7 +147,12 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
         <button
           type="button"
           className="secondary-button"
-          disabled={!named}
+          disabled={!named || state.waypoints.length >= MAX_WAYPOINTS}
+          title={
+            state.waypoints.length >= MAX_WAYPOINTS
+              ? `Możesz dodać maksymalnie ${MAX_WAYPOINTS} przystanków`
+              : undefined
+          }
           onClick={() => {
             if (!named) return
             dispatch({ type: 'addWaypoint', point: named })

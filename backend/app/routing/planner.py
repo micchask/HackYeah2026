@@ -1,6 +1,5 @@
 """Planowanie trasy na grafie i opis tekstowy segment po segmencie (tekstowa alternatywa mapy)."""
 
-import itertools
 import logging
 import math
 from dataclasses import dataclass, field, replace
@@ -130,27 +129,33 @@ def _route_with_fallback(
 
     reach = reachable_nodes(graph, source, profile)
     if len(reach) > 1:
-        alt, d = city_graph.nearest_node_among(
-            req.destination.lat, req.destination.lon, reach - {source}
-        )
+        alt, d = city_graph.nearest_node_among(destination.lat, destination.lon, reach - {source})
         if d <= MAX_FALLBACK_M:
-            warning = (
-                "Do wskazanego celu nie ma dojazdu bez przeszkód (schody, zbyt strome nachylenie "
-                f"albo wysoki krawężnik). Trasa kończy się ok. {round(d)} m od celu, "
-                "w najbliższym dostępnym miejscu."
-            )
+            if stop_no is None:
+                warning = (
+                    "Do wskazanego celu nie ma dojazdu bez przeszkód (schody, zbyt strome "
+                    f"nachylenie albo wysoki krawężnik). Trasa kończy się ok. {round(d)} m "
+                    "od celu, w najbliższym dostępnym miejscu."
+                )
+            else:
+                warning = (
+                    f"Do przystanku {stop_no} nie ma dojazdu bez przeszkód (schody, zbyt "
+                    f"strome nachylenie albo wysoki krawężnik). Trasa przechodzi ok. {round(d)} "
+                    "m od niego, w najbliższym dostępnym miejscu."
+                )
             return shortest_path(graph, source, alt, profile), source, alt, [warning]
 
-    back = reachable_nodes(graph, target, profile, reverse=True)
-    if len(back) > 1:
-        alt, d = city_graph.nearest_node_among(req.origin.lat, req.origin.lon, back - {target})
-        if d <= MAX_FALLBACK_M:
-            warning = (
-                "Z punktu startu nie ma wyjazdu bez przeszkód (schody, zbyt strome nachylenie "
-                f"albo wysoki krawężnik). Trasa zaczyna się ok. {round(d)} m od niego, "
-                "w najbliższym dostępnym miejscu."
-            )
-            return shortest_path(graph, alt, target, profile), alt, target, [warning]
+    if allow_origin_fallback:
+        back = reachable_nodes(graph, target, profile, reverse=True)
+        if len(back) > 1:
+            alt, d = city_graph.nearest_node_among(origin.lat, origin.lon, back - {target})
+            if d <= MAX_FALLBACK_M:
+                warning = (
+                    "Z punktu startu nie ma wyjazdu bez przeszkód (schody, zbyt strome "
+                    f"nachylenie albo wysoki krawężnik). Trasa zaczyna się ok. {round(d)} m "
+                    "od niego, w najbliższym dostępnym miejscu."
+                )
+                return shortest_path(graph, alt, target, profile), alt, target, [warning]
     raise NoRouteError
 
 
@@ -164,13 +169,22 @@ class _Legs:
 
 def _join_legs(stops: list[int], find) -> _Legs:
     """Skleja ścieżki kolejnych odcinków stop[i] → stop[i+1] (wspólny węzeł raz)."""
-    legs = _Legs(path=[stops[0]])
-    for stop_no, (a, b) in enumerate(itertools.pairwise(stops)):
-        if a == b:
-            continue
-        if stop_no and len(legs.path) > 1:
-            legs.breaks.append((len(legs.path) - 1, stop_no + 1))
-        legs.path.extend(find(a, b)[1:])
+    legs = _Legs(path=[])
+    for leg_index in range(len(stops) - 1):
+        path = find(leg_index, stops[leg_index], stops[leg_index + 1])
+        if not legs.path:
+            legs.path.extend(path)
+        elif path:
+            if legs.path[-1] != path[0]:
+                raise NoRouteError
+            legs.path.extend(path[1:])
+
+        # Każdy odcinek poza ostatnim kończy się na kolejnym przystanku.
+        if leg_index < len(stops) - 2 and len(legs.path) > 1:
+            legs.breaks.append((len(legs.path) - 2, leg_index + 1))
+
+    if not legs.path:
+        legs.path.append(stops[0])
     return legs
 
 
@@ -231,24 +245,23 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     started = perf_counter()
     fallback_warnings: list[str] = []
     try:
-        def find_leg(a: int, b: int) -> list[int]:
-            i = all_stops.index(b)
-            stop_no = i if i <= len(stops) else None
+
+        def find_leg(leg_index: int, a: int, b: int) -> list[int]:
+            destination_index = leg_index + 1
+            stop_no = destination_index if destination_index <= len(stops) else None
             path, actual_a, actual_b, warn = _route_with_fallback(
                 city_graph,
                 profile,
                 a,
                 b,
-                points[i - 1],
-                points[i],
+                points[leg_index],
+                points[destination_index],
                 stop_no=stop_no,
-                allow_origin_fallback=a == source,
+                allow_origin_fallback=leg_index == 0,
             )
             fallback_warnings.extend(warn)
-            if a == source:
-                all_stops[0] = actual_a
-            if b == target:
-                all_stops[-1] = actual_b
+            all_stops[leg_index] = actual_a
+            all_stops[destination_index] = actual_b
             return path
 
         legs = _join_legs(all_stops, find_leg)
@@ -521,14 +534,16 @@ def _group(edges: list[dict[str, Any]], city_graph: CityGraph) -> list[_Segment]
     absorbed: list[_Segment] = []
     for seg in segments:
         tiny = seg.length < MIN_SEGMENT_M and not seg.key[1]
-        if absorbed and tiny and not absorbed[-1].key[1]:
+        previous_ends_at_stop = absorbed and any("_break" in edge for edge in absorbed[-1].edges)
+        if absorbed and tiny and not absorbed[-1].key[1] and not previous_ends_at_stop:
             _extend(absorbed[-1], seg)
         else:
             absorbed.append(seg)
 
     merged: list[_Segment] = []
     for seg in absorbed:
-        if merged and merged[-1].key == seg.key:
+        previous_ends_at_stop = merged and any("_break" in edge for edge in merged[-1].edges)
+        if merged and merged[-1].key == seg.key and not previous_ends_at_stop:
             _extend(merged[-1], seg)
         else:
             merged.append(seg)
@@ -589,7 +604,7 @@ def _to_segment(
     length = seg.length
     street, steps = seg.key
     difficulty = _segment_difficulty(seg.edges)
-    
+
     stop_no = next((stop for e in seg.edges if (stop := e.get("_break")) is not None), None)
 
     if prev is None:
@@ -597,10 +612,10 @@ def _to_segment(
         lead = f"Ruszaj na {compass}"
     else:
         lead = _turn(prev, seg)
-    
+
     instruction = f"{lead}: {street}, {round(length)} m."
     if stop_no is not None:
-        instruction += f" (Osiągniesz przystanek {stop_no})"
+        instruction += f" Dotrzesz do przystanku {stop_no}."
 
     surfaces = [tag(e, "surface") for e in seg.edges]
     known = [s for s in surfaces if s]
