@@ -1,6 +1,8 @@
 import { useId, useState } from 'react'
 import type { Place } from '../api/client'
 import { ATTRIBUTE_LABEL, VALUE_LABEL } from './attributes'
+import { PlaceAccessIcon } from './PlaceAccessIcon'
+import { ACCESS_LABEL, accessibilityOf, GROUP_LABEL, placeGroup } from './placeCategories'
 
 // Lista pokazuje miejsca porcjami - setki pozycji naraz to męczarnia z czytnikiem ekranu
 const PAGE = 20
@@ -37,9 +39,20 @@ interface Props {
   onQueryChange: (query: string) => void
   /** Maksymalna liczba miejsc z API - gdy jest ich tyle, w okolicy może być więcej */
   limit: number
+  /** Ile miejsc z widoku ukrywają wyłączone chipy warstw (lista filtruje tak jak mapa) */
+  hiddenByLayers?: number
+  /** „Pokaż na mapie” - zaznacza miejsce i otwiera jego okienko */
+  onShow?: (place: Place) => void
 }
 
-export function PlaceList({ places, query, onQueryChange, limit }: Props) {
+export function PlaceList({
+  places,
+  query,
+  onQueryChange,
+  limit,
+  hiddenByLayers = 0,
+  onShow,
+}: Props) {
   const searchId = useId()
   // Licznik "pokaż więcej" wraca do pierwszej porcji, gdy przyjdzie nowa lista
   const [shown, setShown] = useState({ list: places, count: PAGE })
@@ -70,12 +83,25 @@ export function PlaceList({ places, query, onQueryChange, limit }: Props) {
             : places.length === limit
               ? `Pokazujemy ${limit} miejsc z widoku mapy. Przybliż mapę lub wyszukaj po nazwie.`
               : `Miejsca w widoku mapy: ${places.length}`}
+          {hiddenByLayers > 0 &&
+            ` Ukryte przez wyłączone warstwy: ${hiddenByLayers} – włącz je chipami nad mapą.`}
         </p>
       </div>
       <ul className="places">
         {visible.map((p) => (
           <li key={p.id} className="place">
             <h3 className="place-name">{p.name ?? 'Bez nazwy'}</h3>
+            <p className="place-access">
+              <PlaceAccessIcon access={accessibilityOf(p)} size={18} />
+              <span>
+                {ACCESS_LABEL[accessibilityOf(p)]} · {GROUP_LABEL[placeGroup(p)]}
+              </span>
+              {onShow && (
+                <button type="button" className="link-button" onClick={() => onShow(p)}>
+                  Pokaż na mapie<span className="visually-hidden">: {p.name ?? 'miejsce'}</span>
+                </button>
+              )}
+            </p>
             <ul className="attributes">
               {p.attributes?.map((a) => (
                 <li key={a.key} className="attribute">
