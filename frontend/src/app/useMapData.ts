@@ -1,12 +1,68 @@
 // Dane mapy dla widocznego obszaru: miejsca, instytucje, bariery (przeniesione z dawnego HomePage).
 import { useEffect, useState } from 'react'
-import { api, type Barrier, type Institution, type Place } from '../api/client'
+import {
+  api,
+  type Barrier,
+  type DataGapsSummary,
+  type Institution,
+  type Place,
+  type SegmentCollection,
+} from '../api/client'
 import { CITY, type AppData } from './context'
 
 // Tyle miejsc naraz trafia na mapę - więcej spowalnia mapę i czytnik ekranu
 export const PLACES_LIMIT = 200
+// Na mapie braków pokazujemy też odcinki z nieprecyzyjnym nachyleniem (0.5), lista liczy <= 0.4
+export const GAPS_MAP_MAX_CONFIDENCE = 0.5
 
-export function useMapData(bbox: string | null, placesQuery: string): AppData {
+/** Braki danych (#31): odcinki o niskiej pewności w widoku mapy + podsumowanie dla obszaru demo */
+function useDataGaps(bbox: string | null, on: boolean) {
+  const [dataGaps, setDataGaps] = useState<SegmentCollection | null>(null)
+  const [dataGapsSummary, setSummary] = useState<DataGapsSummary | null>(null)
+  const [dataGapsError, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!on || !bbox) return
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      const [s, w, n, e] = bbox.split(',').map(Number)
+      api
+        .segments(CITY, [s, w, n, e], {
+          maxConfidence: GAPS_MAP_MAX_CONFIDENCE,
+          signal: controller.signal,
+        })
+        .then((found) => {
+          setDataGaps(found)
+          setError(null)
+        })
+        .catch((e: Error) => {
+          if (e.name !== 'AbortError') setError(e.message)
+        })
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [bbox, on])
+
+  // Podsumowanie jest dla całego obszaru demo - wystarczy raz
+  useEffect(() => {
+    if (!on || dataGapsSummary) return
+    const controller = new AbortController()
+    api
+      .dataGaps(CITY, controller.signal)
+      .then(setSummary)
+      .catch((e: Error) => {
+        if (e.name !== 'AbortError') setError(e.message)
+      })
+    return () => controller.abort()
+  }, [on, dataGapsSummary])
+
+  return { dataGaps: on ? dataGaps : null, dataGapsSummary, dataGapsError }
+}
+
+export function useMapData(bbox: string | null, placesQuery: string, showGaps = false): AppData {
+  const gaps = useDataGaps(bbox, showGaps)
   const [places, setPlaces] = useState<Place[]>([])
   const [placesError, setPlacesError] = useState<string | null>(null)
   const [institutions, setInstitutions] = useState<Institution[]>([])
@@ -82,5 +138,6 @@ export function useMapData(bbox: string | null, placesQuery: string): AppData {
     barriersTruncated,
     barriersLoading,
     barriersError,
+    ...gaps,
   }
 }

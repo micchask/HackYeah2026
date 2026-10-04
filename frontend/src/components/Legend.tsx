@@ -1,6 +1,7 @@
 import type { BarrierType, Difficulty } from '../api/client'
 import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
+import { GAP_CLASSES, GAP_COLOR, GAP_LABEL } from './dataGapsStyle'
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL } from './difficulty'
 import { INSTITUTION_COLOR } from './institutionStyle'
 import { PlaceAccessIcon } from './PlaceAccessIcon'
@@ -15,6 +16,7 @@ interface Props {
   barrierTypes?: BarrierType[]
   /** Na mapie są miejsca (warstwa z klastrami) */
   showPlaces?: boolean
+  showDataGaps?: boolean
 }
 
 /** Legenda pokazuje tylko to, co jest na mapie. Kolor nigdy nie jest jedynym nośnikiem informacji. */
@@ -25,6 +27,7 @@ export function Legend({
   otherRoutes = [],
   barrierTypes = [],
   showPlaces = false,
+  showDataGaps = false,
 }: Props) {
   return (
     <section className="map-legend" aria-labelledby="legend-heading">
@@ -90,6 +93,17 @@ export function Legend({
             </li>
           </>
         )}
+        {showDataGaps &&
+          GAP_CLASSES.map((gap) => (
+            <li key={gap}>
+              <span
+                className={`legend-swatch legend-swatch-gap-${gap}`}
+                style={{ color: GAP_COLOR[gap] }}
+                aria-hidden="true"
+              />
+              {GAP_LABEL[gap]}
+            </li>
+          ))}
       </ul>
     </section>
   )

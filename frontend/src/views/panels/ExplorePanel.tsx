@@ -4,6 +4,7 @@ import { openReport } from '../../app/mapActions'
 import { fromSearchResult } from '../../app/selectedPlace'
 import { PLACES_LIMIT } from '../../app/useMapData'
 import { BarrierList } from '../../components/BarrierList'
+import { DataGapsSection } from '../../components/DataGapsSection'
 import { InstitutionList } from '../../components/InstitutionList'
 import { PlaceList } from '../../components/PlaceList'
 import { GROUP_LABEL, placeGroup } from '../../components/placeCategories'
@@ -57,6 +58,13 @@ export function ExplorePanel() {
         onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'barriers', on })}
         selected={state.selectedBarrier}
         onSelect={(id) => dispatch({ type: 'selectBarrier', id })}
+      />
+      <DataGapsSection
+        summary={data.dataGapsSummary}
+        error={data.dataGapsError}
+        visible={state.layers.gaps}
+        onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'gaps', on })}
+        onShow={(point) => dispatch({ type: 'focusMap', point })}
       />
       <InstitutionList
         institutions={data.institutions}

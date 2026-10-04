@@ -108,6 +108,8 @@ export function MapArea() {
         showBarriers={showBarriers}
         selectedBarrier={state.selectedBarrier}
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
+        dataGaps={data.dataGaps}
+        focus={state.mapFocus}
       />
       <TopBar />
       {pickLetter && (
@@ -139,7 +141,8 @@ export function MapArea() {
       {(route ||
         visible.institutions.length > 0 ||
         visible.barriers.length > 0 ||
-        visible.places.length > 0) && (
+        visible.places.length > 0 ||
+        layers.gaps) && (
         <Legend
           showRoute={!!route}
           showBaseline={!!route?.baseline && !route.is_mock}
@@ -147,6 +150,7 @@ export function MapArea() {
           otherRoutes={otherRoutes}
           barrierTypes={[...new Set(visible.barriers.map((b) => b.type))]}
           showPlaces={visible.places.length > 0}
+          showDataGaps={layers.gaps}
         />
       )}
     </div>
