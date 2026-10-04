@@ -13,7 +13,7 @@ import { RoutePanel } from './panels/RoutePanel'
 export const SIDEBAR_BODY_ID = 'sidebar-body'
 
 export function Sidebar() {
-  const [{ panel, history, sidebarOpen }, dispatch] = useApp()
+  const [{ panel, history, sidebarOpen, navigation }, dispatch] = useApp()
   const heading = useRef<HTMLHeadingElement>(null)
   const first = useRef(true)
   const body = useRef<HTMLDivElement>(null)
@@ -27,6 +27,9 @@ export function Sidebar() {
     }
     heading.current?.focus()
   }, [panel])
+
+  // W nawigacji cały ekran ma mapa i karta manewru (NavigationView)
+  if (navigation) return null
 
   return (
     <aside className="sidebar" data-open={sidebarOpen} aria-labelledby="panel-heading">

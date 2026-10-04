@@ -131,7 +131,16 @@ interface Props {
   focus?: { point: LatLon; seq: number } | null
   /** Podkład mapy */
   baseMap?: BaseMap
+  /** Nawigacja w trakcie trasy: pozycja i kierunek użytkownika */
+  navigation?: { point: LatLon; heading: number } | null
+  /** Kamera podąża za pozycją (wyłącza ją przesunięcie mapy ręką) */
+  follow?: boolean
+  onFollowChange?: (follow: boolean) => void
 }
+
+/** Kamera w nawigacji: blisko, pochylona, pozycja w dolnej części ekranu - jak w mapach Google */
+const NAV_ZOOM = 18
+const NAV_PITCH = 55
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
 const HIT_PX = 6
@@ -462,6 +471,9 @@ export function MapView({
   dataGaps = null,
   focus = null,
   baseMap = 'standard',
+  navigation = null,
+  follow = true,
+  onFollowChange,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -483,6 +495,9 @@ export function MapView({
   const routeRef = useRef(route)
   const barriersRef = useRef(barriers)
   const baseMapRef = useRef(baseMap)
+  const navigating = useRef(navigation !== null)
+  const onFollow = useRef(onFollowChange)
+  const navMarker = useRef<maplibregl.Marker | null>(null)
 
   // Zmiana podkładu: tylko widoczność warstw rastrowych - trasa, bariery i miejsca zostają
   useEffect(() => {
@@ -500,6 +515,11 @@ export function MapView({
     routeRef.current = route
   }, [route])
 
+  // przed efektem rysowania trasy - w nawigacji nie dopasowujemy widoku do całej trasy
+  useEffect(() => {
+    navigating.current = navigation !== null
+  }, [navigation])
+
   useEffect(() => {
     barriersRef.current = barriers
   }, [barriers])
@@ -514,7 +534,9 @@ export function MapView({
     onView.current = onViewChange
     onBarrier.current = onBarrierSelect
     onPlace.current = onPlaceClick
+    onFollow.current = onFollowChange
   }, [
+    onFollowChange,
     onMapClick,
     onSegmentClick,
     onBoundsChange,
@@ -556,6 +578,10 @@ export function MapView({
       )
     }
     instance.on('moveend', reportBounds)
+    // Przesunięcie mapy ręką w nawigacji: kamera przestaje podążać („Wyśrodkuj” ją przywraca)
+    instance.on('dragstart', (event) => {
+      if (navigating.current && event.originalEvent) onFollow.current?.(false)
+    })
     const updateLabels = () => {
       const el = container.current
       if (!el) return
@@ -811,7 +837,8 @@ export function MapView({
         ...displayedRoutes.flatMap((variant) => variant.segments.flatMap((s) => s.geometry)),
         ...(route?.baseline?.geometry ?? []),
       ]
-      if (coords.length > 1) {
+      // w nawigacji widok ustawia kamera podążająca za pozycją, nie cała trasa
+      if (coords.length > 1 && !navigating.current) {
         const bounds = new maplibregl.LngLatBounds()
         coords.forEach((p) => bounds.extend([p.lon, p.lat]))
         currentMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 700 })
@@ -890,6 +917,65 @@ export function MapView({
     const source = currentMap.getSource('data-gaps') as maplibregl.GeoJSONSource | undefined
     source?.setData(gapData(dataGaps))
   }, [dataGaps, mapReady])
+
+  // Nawigacja: kropka z kierunkiem i kamera podążająca za pozycją
+  const navLat = navigation?.point.lat
+  const navLon = navigation?.point.lon
+  const navHeading = navigation?.heading
+  const navActive = navigation !== null
+  const wasNavigating = useRef(false)
+
+  useEffect(() => {
+    navigating.current = navActive
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    if (navActive) {
+      wasNavigating.current = true
+      return
+    }
+    if (!wasNavigating.current) return
+    // Koniec nawigacji: płaska mapa, północ u góry, cała trasa w widoku
+    wasNavigating.current = false
+    navMarker.current?.remove()
+    navMarker.current = null
+    const flat = { pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } }
+    const coords = routeRef.current?.segments.flatMap((s) => s.geometry) ?? []
+    if (coords.length > 1) {
+      const bounds = new maplibregl.LngLatBounds()
+      coords.forEach((p) => bounds.extend([p.lon, p.lat]))
+      currentMap.fitBounds(bounds, { ...flat, padding: 80, maxZoom: 17, duration: 700 })
+    } else {
+      currentMap.easeTo({ ...flat, duration: 600 })
+    }
+  }, [navActive, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady || navLat === undefined || navLon === undefined) return
+    if (!navMarker.current) {
+      const el = document.createElement('div')
+      el.className = 'nav-puck'
+      el.setAttribute('aria-hidden', 'true')
+      navMarker.current = new maplibregl.Marker({
+        element: el,
+        rotationAlignment: 'map',
+        pitchAlignment: 'map',
+      })
+        .setLngLat([navLon, navLat])
+        .addTo(currentMap)
+    }
+    navMarker.current.setLngLat([navLon, navLat]).setRotation(navHeading ?? 0)
+    if (!follow) return
+    currentMap.easeTo({
+      center: [navLon, navLat],
+      bearing: navHeading ?? currentMap.getBearing(),
+      pitch: NAV_PITCH,
+      zoom: NAV_ZOOM,
+      // pozycja niżej na ekranie - przed nami widać więcej drogi, u góry jest karta manewru
+      padding: { top: currentMap.getContainer().clientHeight * 0.35, bottom: 0, left: 0, right: 0 },
+      duration: 900,
+    })
+  }, [navLat, navLon, navHeading, follow, mapReady])
 
   useEffect(() => {
     const currentMap = map.current

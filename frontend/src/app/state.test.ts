@@ -249,4 +249,18 @@ describe('powłoka: podkład mapy i panel', () => {
       state.prefs,
     ])
   })
+  it('nawigacja: start, przeliczenie z bieżącej pozycji i koniec', () => {
+    const state = run(
+      initialState(),
+      { type: 'setOrigin', point: A },
+      { type: 'setDestination', point: B },
+    )
+    const started = run(state, { type: 'startNavigation', mode: 'sim' })
+    expect(started.navigation).toBe('sim')
+    const here = { lat: 50.07, lon: 19.95 }
+    const rerouted = run(started, { type: 'rerouteFrom', point: here })
+    expect(rerouted.origin).toEqual({ label: 'Twoja pozycja', point: here })
+    expect(rerouted.destination).toEqual(B)
+    expect(run(rerouted, { type: 'stopNavigation' }).navigation).toBeNull()
+  })
 })

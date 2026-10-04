@@ -294,3 +294,33 @@ export const ArrowLeftIcon = (p: IconProps) => (
     <path d="M19 12H5M11 6l-6 6 6 6" />
   </Icon>
 )
+
+export const NavigationIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 11 22 2l-9 19-2-8z" />
+  </Icon>
+)
+
+export const VolumeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M11 5 6 9H2v6h4l5 4z" />
+    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+    <path d="M19 5a10 10 0 0 1 0 14" />
+  </Icon>
+)
+
+export const VolumeOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M11 5 6 9H2v6h4l5 4z" />
+    <path d="m22 9-6 6" />
+    <path d="m16 9 6 6" />
+  </Icon>
+)
+
+export const CrosshairIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </Icon>
+)
