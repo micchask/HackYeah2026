@@ -25,7 +25,7 @@ import {
   placeIconSvg,
   placeKind,
 } from './placeCategories'
-import { shortInstitutionName } from './institutionStyle'
+import { institutionMarkerLabel, shortInstitutionName } from './institutionStyle'
 
 export type BaseMap = 'standard' | 'satellite'
 
@@ -448,7 +448,7 @@ function institutionMarker(inst: Institution): HTMLButtonElement {
   // Klawiatura i czytniki ekranu korzystają z listy instytucji w panelu - bez 32 przystanków Tab na mapie
   el.tabIndex = -1
   el.title = inst.name
-  el.setAttribute('aria-label', `${inst.name} – pokaż szczegóły`)
+  el.setAttribute('aria-label', institutionMarkerLabel(inst.name))
   // Ta sama ikona co przy miejscach: rodzaj (urząd, muzeum...) + kwadracik dostępności
   const dot = document.createElement('img')
   dot.className = 'inst-marker-icon'

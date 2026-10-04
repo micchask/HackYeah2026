@@ -167,6 +167,10 @@ export function Legend(props: Props) {
       </button>
       {open && (
         <section id={popoverId} className="popover legend-popover" aria-label="Legenda mapy">
+          {/* Fokusowalny element w środku: przewijaną legendę da się obsłużyć klawiaturą (WCAG 2.1.1) */}
+          <button type="button" className="link-button popover-close" onClick={toggle}>
+            Zamknij legendę
+          </button>
           <LegendContent {...props} />
         </section>
       )}

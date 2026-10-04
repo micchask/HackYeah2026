@@ -25,6 +25,8 @@
   --shadow: 0 1px 2px rgb(15 27 45 / 5%), 0 4px 14px rgb(15 27 45 / 8%);
   --shadow-lg: 0 2px 6px rgb(15 27 45 / 6%), 0 14px 36px rgb(15 27 45 / 14%);
   --radius: 16px;
+  /* podpis rodzaju instytucji: 5,8:1 na białym (WCAG 1.4.3, #32) */
+  --institution-text: #00707a;
   --radius-lg: 22px;
   --sidebar-w: 392px;
   --gutter: 16px;
@@ -49,6 +51,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* #00707a miał na ciemnym tle 2,5-3:1 - jaśniejszy turkus ma 6,8-9:1 (#32) */
+    --institution-text: #4fc3cc;
     --text: #e8eef8;
     --muted: #a8b3c6;
     --bg: #0a1120;
@@ -586,15 +590,25 @@ button:disabled {
   margin: 0;
 }
 .comparison-table-wrap {
-  overflow-x: auto;
   margin: 0.75rem -0.25rem;
 }
 .comparison-table {
+  /* mieści się w panelu bez przewijania w poziomie (WCAG 1.4.10, 2.1.1 - #32) */
   width: 100%;
-  min-width: 620px;
+  table-layout: fixed;
   border-spacing: 0;
   border-collapse: separate;
   font-size: 0.82rem;
+}
+/* Tabela porównania wariantów bez przewijania: wartości i nazwy wariantów dzielą wyrazy
+   z łącznikiem (polskie reguły, lang="pl"), nazwy cech w pierwszej kolumnie - nie */
+.comparison-table td,
+.comparison-table thead th {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.comparison-table thead th:first-child {
+  width: 27%;
 }
 .comparison-table caption {
   padding: 0 0.25rem 0.4rem;
@@ -1162,7 +1176,7 @@ button.step-body:hover {
 }
 .institution-kind {
   margin: 0 0 0.15rem;
-  color: #00707a;
+  color: var(--institution-text);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -2834,6 +2848,10 @@ main:focus {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.popover-close {
+  display: block;
+  margin: 0 0 8px auto;
+}
 .popover fieldset {
   margin: 0 0 16px;
 }
@@ -4131,6 +4149,12 @@ a.browse-link {
   border: 0;
   border-radius: 999px;
   font-weight: 700;
+}
+/* Tryb ciemny: --error jest tam jasny (#ff8a80) i biały tekst miał 2,28:1 - ciemniejsza czerwień: 6,5:1 (#32) */
+@media (prefers-color-scheme: dark) {
+  .nav-exit {
+    background: #b3261e;
+  }
 }
 /* w nawigacji kontrolki MapLibre zasłaniałyby pasek na dole */
 .map-wrap:has(.nav-view) .maplibregl-ctrl-bottom-right {

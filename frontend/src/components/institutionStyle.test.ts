@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shortInstitutionName } from './institutionStyle'
+import { institutionMarkerLabel, shortInstitutionName } from './institutionStyle'
 
 describe('shortInstitutionName', () => {
   it('skraca nazwy jednostek, ale zostawia kontekst', () => {
@@ -20,5 +20,19 @@ describe('shortInstitutionName', () => {
     expect(short.startsWith('UMK · Wydział Ewidencji')).toBe(true)
     expect(short.length).toBeLessThanOrEqual(34)
     expect(short.endsWith('…')).toBe(true)
+  })
+})
+
+describe('institutionMarkerLabel (WCAG 2.5.3 Label in Name)', () => {
+  it('zaczyna się od widocznego podpisu znacznika i zawiera pełną nazwę', () => {
+    const name = 'Urząd Miasta Krakowa — Magistrat (Kancelaria Prezydenta)'
+    const visible = shortInstitutionName(name).replace(/…$/, '').trimEnd()
+    const label = institutionMarkerLabel(name)
+    expect(label.startsWith(visible)).toBe(true)
+    expect(label).toContain(name)
+  })
+
+  it('nie powtarza nazwy, gdy podpis jest pełną nazwą', () => {
+    expect(institutionMarkerLabel('Teatr KTO')).toBe('Teatr KTO – pokaż szczegóły')
   })
 })
