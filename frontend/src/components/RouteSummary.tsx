@@ -14,15 +14,18 @@ function Comparison({
   route,
   comparisonRoute,
   selectedVariant,
+  showRough,
 }: {
   route: RouteResponse
   comparisonRoute?: RouteResponse
   selectedVariant: number
+  showRough: boolean
 }) {
   const variants = comparisonRoute ? buildRouteVariants(comparisonRoute) : []
   const baseline = route.baseline && !route.is_mock ? route.baseline : null
   const baselineDescription = baseline
-    ? `Zwykła trasa (szara linia na mapie): ${formatKm(baseline.distance_m)}, schody: ${baseline.stairs_count}, nierówna nawierzchnia: ${baseline.rough_surface_m} m.`
+    ? `Zwykła trasa (szara linia na mapie): ${formatKm(baseline.distance_m)}, schody: ${baseline.stairs_count}` +
+      (showRough ? `, nierówna nawierzchnia: ${baseline.rough_surface_m} m.` : '.')
     : null
 
   return (
@@ -66,12 +69,14 @@ function Comparison({
                   <td key={variant.index}>{variant.route.stairs_count || 'brak'}</td>
                 ))}
               </tr>
-              <tr>
-                <th scope="row">Bruk / nierówna nawierzchnia</th>
-                {variants.map((variant) => (
-                  <td key={variant.index}>{Math.round(variant.route.rough_surface_m ?? 0)} m</td>
-                ))}
-              </tr>
+              {showRough && (
+                <tr>
+                  <th scope="row">Bruk / nierówna nawierzchnia</th>
+                  {variants.map((variant) => (
+                    <td key={variant.index}>{Math.round(variant.route.rough_surface_m ?? 0)} m</td>
+                  ))}
+                </tr>
+              )}
               <tr>
                 <th scope="row">Dostępność</th>
                 {variants.map((variant) => (
@@ -113,6 +118,8 @@ interface Props {
   selectedVariant?: number
   /** Otwiera odcinek w opisie trasy (panel szczegółów) */
   onSelectSegment?: (index: number) => void
+  /** false = tryb nie oznacza bruku (turysta, gość) - bez statystyk o bruku */
+  showRough?: boolean
 }
 
 /** Najważniejsze liczby trasy i porównanie z najkrótszą zwykłą trasą pieszą. */
@@ -122,10 +129,12 @@ export function RouteSummary({
   comparisonRoute,
   selectedVariant = 0,
   onSelectSegment,
+  showRough = true,
 }: Props) {
   const minutes = routeMinutes(route)
   const stairs = route.stairs_count ?? null
-  const rough = route.rough_surface_m ?? null
+  // tryb bez oznaczania bruku (turysta, gość) - bez statystyki „0 m”, która wprowadzałaby w błąd
+  const rough = showRough ? (route.rough_surface_m ?? null) : null
 
   return (
     <section className="card summary" aria-labelledby="summary-heading">
@@ -185,6 +194,7 @@ export function RouteSummary({
           route={route}
           comparisonRoute={comparisonRoute}
           selectedVariant={selectedVariant}
+          showRough={showRough}
         />
       </details>
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.models import LayerId, ModeId, ModePreset, RoutePreferences
+from app.models import BarrierType, LayerId, ModeId, ModePreset, RoutePreferences
 
 router = APIRouter(tags=["profiles"])
 
@@ -16,6 +16,15 @@ _WALK_PREFERENCES = RoutePreferences(
     max_incline_percent=30,
     max_kerb_height_cm=30,
     avoid_rough_surface=False,
+)
+
+# Turysta: na trasie oznaczamy tylko schody - bruk i podejścia nie są dla niego trudnością
+_TOURIST_PREFERENCES = _WALK_PREFERENCES.model_copy(
+    update={"marked_barriers": [BarrierType.STAIRS]}
+)
+# Gość: wszystko poza brukiem (schody, krawężniki, strome podejścia, zgłoszenia)
+_GUEST_PREFERENCES = _WALK_PREFERENCES.model_copy(
+    update={"marked_barriers": [b for b in BarrierType if b != BarrierType.ROUGH_SURFACE]}
 )
 
 # Jedno źródło presetów dla frontendu (docs/plan-frontend-claude.md §4).
@@ -50,7 +59,7 @@ MODE_PRESETS: list[ModePreset] = [
             max_kerb_height_cm=5,
             avoid_rough_surface=True,
         ),
-        layers=_layers(LayerId.HEALTH, LayerId.REST, LayerId.INSTITUTIONS),
+        layers=_layers(LayerId.BARRIERS, LayerId.HEALTH, LayerId.REST, LayerId.INSTITUTIONS),
     ),
     ModePreset(
         id=ModeId.TOURIST,
@@ -58,7 +67,7 @@ MODE_PRESETS: list[ModePreset] = [
         description="Najkrótsza piesza trasa, schody dozwolone.",
         icon="🧳",
         profile="walk",
-        preferences=_WALK_PREFERENCES,
+        preferences=_TOURIST_PREFERENCES,
         layers=_layers(LayerId.INSTITUTIONS, LayerId.PLACES, LayerId.EVENTS),
     ),
     ModePreset(
@@ -82,7 +91,7 @@ MODE_PRESETS: list[ModePreset] = [
         description="Zwykła trasa piesza. Tryb możesz zmienić w każdej chwili.",
         icon="👤",
         profile="walk",
-        preferences=_WALK_PREFERENCES,
+        preferences=_GUEST_PREFERENCES,
         layers=_layers(LayerId.INSTITUTIONS),
     ),
 ]

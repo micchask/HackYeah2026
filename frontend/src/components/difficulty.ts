@@ -10,5 +10,5 @@ export const DIFFICULTY_COLOR: Record<Difficulty, string> = {
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   easy: 'łatwy odcinek',
   moderate: 'utrudnienia lub brak danych',
-  hard: 'trudny odcinek (bruk, pochyłość)',
+  hard: 'trudny odcinek (bariera na trasie)',
 }

@@ -4,7 +4,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from app.models.accessibility import AttributeStatus
-from app.models.barrier import RouteBarrier
+from app.models.barrier import BarrierType, RouteBarrier
 from app.models.geo import LatLon
 
 
@@ -20,6 +20,11 @@ class RoutePreferences(BaseModel):
         default=None,
         description="Profil routingu: 'wheelchair', 'stroller', 'senior' albo 'walk'; "
         "brak lub nieznany = 'walk'. Presety trybów: GET /api/profiles",
+    )
+    marked_barriers: list[BarrierType] | None = Field(
+        default=None,
+        description="Które bariery oznaczać na trasie (trudność odcinka, bariery, ostrzeżenia, "
+        "podsumowanie); null = wszystkie. Np. turysta: tylko 'stairs'. Nie zmienia wyboru trasy.",
     )
 
 
