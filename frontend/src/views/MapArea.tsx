@@ -108,6 +108,7 @@ export function MapArea() {
         selectedRoute={state.variant}
         origin={state.origin?.point ?? null}
         destination={state.destination?.point ?? null}
+        waypoints={state.waypoints.filter(Boolean).map(wp => wp.point)}
         reportPoint={state.reportPoint?.point ?? null}
         selectedSegment={state.segment}
         pickLabel={pickLetter}

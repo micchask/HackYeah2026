@@ -78,8 +78,11 @@ export function RoutePanel() {
           city={CITY}
           origin={origin}
           destination={destination}
+          waypoints={waypoints}
           presets={DEMO_ROUTES}
           pickTarget={pickTarget}
+          onAddWaypoint={() => dispatch({ type: 'addWaypoint' })}
+          onRemoveWaypoint={(index) => dispatch({ type: 'removeWaypoint', index })}
           onChange={(target, value) => {
             dispatch(setPointAction(target, value))
             dispatch({ type: 'setPickTarget', target: null })

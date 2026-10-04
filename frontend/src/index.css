@@ -400,6 +400,10 @@ button:disabled {
   font-size: 1rem;
 }
 .point-badge-a,
+.point-marker-wp {
+  background-color: var(--primary-600);
+}
+
 .point-marker-a {
   background: #0b5cad;
 }

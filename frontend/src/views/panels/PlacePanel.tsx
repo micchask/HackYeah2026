@@ -146,6 +146,18 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
         <button
           type="button"
           className="secondary-button"
+          disabled={!named}
+          onClick={() => {
+            if (!named) return
+            dispatch({ type: 'addWaypoint', point: named })
+            dispatch({ type: 'openPanel', panel: { kind: 'route' } })
+          }}
+        >
+          Dodaj przystanek
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
           disabled={!card.point}
           onClick={() => card.point && dispatch({ type: 'focusMap', point: card.point })}
         >

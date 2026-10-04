@@ -51,6 +51,7 @@ export interface AppState {
   history: PanelState[]
   origin: NamedPoint | null
   destination: NamedPoint | null
+  waypoints: NamedPoint[]
   route: RouteResponse | null
   /** Zwiększany przez „Przelicz trasę” - ponowne pobranie trasy bez zmiany punktów (#63) */
   routeNonce: number
@@ -136,6 +137,9 @@ export type Action =
   | { type: 'back' }
   | { type: 'setOrigin'; point: NamedPoint | null }
   | { type: 'setDestination'; point: NamedPoint | null }
+  | { type: 'addWaypoint'; point?: NamedPoint }
+  | { type: 'setWaypoint'; index: number; point: NamedPoint | null }
+  | { type: 'removeWaypoint'; index: number }
   | { type: 'setRoute'; route: RouteResponse | null; error?: string | null }
   | { type: 'setVariant'; variant: number }
   | { type: 'setSegment'; segment: number | null }
@@ -175,6 +179,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     history: [],
     origin: null,
     destination: null,
+    waypoints: [],
     route: null,
     routeLoading: false,
     routeError: null,
@@ -250,8 +255,26 @@ export function appReducer(state: AppState, action: Action): AppState {
       return withPoints({ ...state, origin: action.point })
     case 'setDestination':
       return withPoints({ ...state, destination: action.point })
+    case 'addWaypoint':
+      return withPoints({ ...state, waypoints: [...state.waypoints, action.point || (null as any)] })
+    case 'setWaypoint': {
+      const next = [...state.waypoints]
+      if (action.point) next[action.index] = action.point
+      else next.splice(action.index, 1)
+      return withPoints({ ...state, waypoints: next })
+    }
+    case 'removeWaypoint': {
+      const next = [...state.waypoints]
+      next.splice(action.index, 1)
+      return withPoints({ ...state, waypoints: next })
+    }
     case 'swapPoints':
-      return { ...state, origin: state.destination, destination: state.origin }
+      return {
+        ...state,
+        origin: state.destination,
+        destination: state.origin,
+        waypoints: [...state.waypoints].reverse(),
+      }
     case 'routeLoading':
       return { ...state, routeLoading: true, routeError: null }
     case 'setRoute':
