@@ -7,7 +7,8 @@ from typing import Any
 
 from app.cities import CityConfig
 from app.db.tables import SegmentRow
-from app.models import Barrier, BarrierType, LatLon, Place
+from app.models import Barrier, BarrierType, LatLon, Place, Report
+from app.models.barrier import BarrierReport
 from app.routing.planner import edge_barriers
 
 Coords = list[tuple[float, float]]
@@ -45,9 +46,17 @@ def segment_barrier(row: SegmentRow, coords: Coords) -> Barrier | None:
     )
 
 
-def report_barrier(place: Place) -> Barrier:
-    """Potwierdzone zgłoszenie (z providera `user_reports`) jako bariera-punkt."""
+def report_barrier(place: Place, report: Report | None = None) -> Barrier:
+    """Zgłoszenie (provider `user_reports`) jako bariera-punkt; `report` dodaje stan głosowania."""
     attribute = place.attributes[0]
+    votes = None
+    if report is not None:
+        votes = BarrierReport(
+            report_id=report.id,
+            status=report.status,
+            confirmations=report.confirmations,
+            denials=report.denials,
+        )
     return Barrier(
         id=place.id,
         type=BarrierType.REPORTED,
@@ -58,6 +67,7 @@ def report_barrier(place: Place) -> Barrier:
         source_ref=attribute.provenance.source_ref,
         confidence=attribute.confidence,
         last_verified=attribute.provenance.last_verified,
+        report=votes,
     )
 
 
@@ -89,14 +99,19 @@ def barriers_in_bbox(
     Rzuca SQLAlchemyError, gdy baza nie odpowiada.
     """
     from app.db.segments import segments_in_bbox
-    from app.providers.user_reports import UserReportsProvider
+    from app.providers.user_reports import UserReportsProvider, visible_reports
 
     # Bariera zawsze oznacza trudny odcinek (te same progi), więc filtr w SQL nic nie gubi
     rows = segments_in_bbox(city.id, bbox, difficulty="hard")
     barriers = [b for row, coords in rows if (b := segment_barrier(row, coords))]
     _name_unnamed(city, barriers)
-    reports = UserReportsProvider(city).fetch_places()
-    barriers += [report_barrier(p) for p in reports if _in_bbox(p.location, bbox)]
+    # niepotwierdzone też - inni mogą je potwierdzić albo powiedzieć, że problemu już nie ma (#62)
+    provider = UserReportsProvider(city)
+    barriers += [
+        report_barrier(provider.to_place(r), r)
+        for r in visible_reports(city.id)
+        if _in_bbox(r.location, bbox)
+    ]
     if types:
         barriers = [b for b in barriers if b.type in types]
     return sorted(barriers, key=lambda b: (TYPE_ORDER.index(b.type), b.street or "~", b.id))

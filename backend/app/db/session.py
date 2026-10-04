@@ -35,6 +35,7 @@ COLUMN_MIGRATIONS = [
     "ALTER TABLE reports ADD COLUMN IF NOT EXISTS valid_until DATE",
     "ALTER TABLE reports ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE",
     "CREATE INDEX IF NOT EXISTS ix_reports_status ON reports (status)",
+    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter VARCHAR",
 ]
 
 

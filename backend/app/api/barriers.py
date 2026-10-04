@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.api.segments import NO_DATABASE, parse_bbox
 from app.cities import CityConfig, get_city
 from app.config import get_settings
-from app.models import BarrierList, BarrierType
+from app.models import Barrier, BarrierList, BarrierType
 
 router = APIRouter(tags=["barriers"])
 
@@ -16,6 +16,18 @@ TypesFilter = Annotated[
     list[BarrierType] | None,
     Query(description="Tylko te typy, np. ?types=stairs&types=kerb"),
 ]
+
+
+def limit_barriers(barriers: list[Barrier], limit: int) -> BarrierList:
+    """Limit dotyczy barier z danych (schody, bruk…); zgłoszeń użytkowników nie obcinamy.
+
+    Zgłoszeń jest mało, a są sortowane na końcu - bez tego przy setkach odcinków w widoku
+    limit wycinał je wszystkie i nowe zgłoszenie nie pojawiało się na mapie (#62).
+    """
+    reports = [b for b in barriers if b.type == BarrierType.REPORTED][:limit]
+    others = [b for b in barriers if b.type != BarrierType.REPORTED]
+    kept = others[: max(0, limit - len(reports))]
+    return BarrierList(barriers=kept + reports, truncated=len(kept) < len(others))
 
 
 def _city(city_id: str) -> CityConfig:
@@ -48,4 +60,4 @@ def list_barriers(
         barriers = barriers_in_bbox(config, area, set(types) if types else None)
     except SQLAlchemyError as exc:
         raise HTTPException(status_code=503, detail=NO_DATABASE) from exc
-    return BarrierList(barriers=barriers[:limit], truncated=len(barriers) > limit)
+    return limit_barriers(barriers, limit)

@@ -88,3 +88,35 @@ describe('BarrierList', () => {
     expect(screen.getByText(/pokazujemy część – przybliż mapę/)).toBeInTheDocument()
   })
 })
+
+describe('BarrierList – zgłoszenia użytkowników (#62)', () => {
+  it('zwinięta lista nie chowa zgłoszeń i pokazuje ich stan głosowania', () => {
+    const stairs: Barrier[] = Array.from({ length: 6 }, (_, i) => ({
+      ...BARRIERS[0],
+      id: `segment:s-${i}`,
+      street: `Schody ${i}`,
+    }))
+    const report: Barrier = {
+      ...BARRIERS[2],
+      report: { report_id: 'r-1', status: 'pending', confirmations: 1, denials: 0 },
+    }
+    render(
+      <BarrierList
+        barriers={[...stairs, report]}
+        truncated={false}
+        loading={false}
+        error={null}
+        visible
+        onVisibleChange={() => {}}
+        selected={null}
+        onSelect={() => {}}
+        collapsedLimit={3}
+      />,
+    )
+    expect(screen.getByText('Niedziałająca winda')).toBeInTheDocument()
+    expect(
+      screen.getByText('Niepotwierdzone – na razie potwierdzone przez 1 osobę'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Schody 5')).not.toBeInTheDocument() // reszta zwinięta
+  })
+})

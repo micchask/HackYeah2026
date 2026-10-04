@@ -1,4 +1,8 @@
-"""Zgłoszenia użytkowników jako źródło danych (tylko potwierdzone przez moderację)."""
+"""Zgłoszenia użytkowników jako źródło danych.
+
+Do danych miejsc (i docelowo tras) trafiają tylko potwierdzone - przez innych użytkowników (#62)
+albo moderację. Na mapie widać też niepotwierdzone (`visible_reports`), z przyciskami głosowania.
+"""
 
 from datetime import UTC, date, datetime
 
@@ -10,6 +14,7 @@ from app.models import (
     ReportStatus,
     SourceType,
 )
+from app.normalization.merge import AGREEMENT_BONUS
 from app.providers.base import Provider, register_provider
 from app.report_store import get_report_store
 
@@ -50,10 +55,24 @@ class UserReportsProvider(Provider):
                         fetched_at=datetime.now(UTC),
                         last_verified=report.updated_at or report.created_at,
                     ),
-                    confidence=self.base_confidence,
+                    # każde potwierdzenie innej osoby podnosi wiarygodność (#62)
+                    confidence=round(
+                        min(1.0, self.base_confidence + AGREEMENT_BONUS * report.confirmations), 2
+                    ),
                 )
             ],
         )
+
+
+def visible_reports(city_id: str) -> list[Report]:
+    """Zgłoszenia pokazywane na mapie: niepotwierdzone i potwierdzone, bez wygasłych."""
+    today = datetime.now(UTC).date()
+    open_statuses = {ReportStatus.PENDING, ReportStatus.CONFIRMED}
+    return [
+        r
+        for r in get_report_store().list(city_id)
+        if r.status in open_statuses and not _expired(r, today)
+    ]
 
 
 def _expired(report: Report, today: date) -> bool:

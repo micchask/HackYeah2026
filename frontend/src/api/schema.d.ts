@@ -159,6 +159,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/{report_id}/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vote On Report
+         * @description Inna osoba potwierdza zgłoszenie albo mówi, że problemu już nie ma (#62).
+         *
+         *     Przewaga 2 głosów jednej strony zmienia status (patrz app/report_votes.py). Jeden głos
+         *     na zgłoszenie z urządzenia - kolejny zastępuje poprzedni.
+         */
+        post: operations["vote_on_report_api_reports__report_id__votes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/{report_id}": {
         parameters: {
             query?: never;
@@ -321,6 +344,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * City Stats
+         * @description Dashboard miasta: pokrycie danymi, bariery, ranking ulic, zgłoszenia (obszar demo).
+         */
+        get: operations["city_stats_api_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -387,6 +430,16 @@ export interface components {
             confidence: number;
             /** Last Verified */
             last_verified?: string | null;
+            /** @description Tylko dla zgłoszeń użytkowników: status i głosy innych osób */
+            report?: components["schemas"]["BarrierReport"] | null;
+        };
+        /** BarrierCount */
+        BarrierCount: {
+            type: components["schemas"]["BarrierType"];
+            /** Count */
+            count: number;
+            /** Length M */
+            length_m: number;
         };
         /** BarrierList */
         BarrierList: {
@@ -398,6 +451,23 @@ export interface components {
              * @default false
              */
             truncated: boolean;
+        };
+        /**
+         * BarrierReport
+         * @description Stan zgłoszenia użytkownika pokazanego jako bariera - do głosowania (#62).
+         */
+        BarrierReport: {
+            /** Report Id */
+            report_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "confirmed";
+            /** Confirmations */
+            confirmations: number;
+            /** Denials */
+            denials: number;
         };
         /**
          * BarrierType
@@ -445,6 +515,74 @@ export interface components {
             pois?: {
                 [key: string]: unknown;
             };
+        };
+        /** CityStats */
+        CityStats: {
+            /** City */
+            city: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Network Length M
+             * @description Długość sieci pieszej w obszarze demo
+             */
+            network_length_m: number;
+            /** Network Segments */
+            network_segments: number;
+            /** Coverage */
+            coverage: components["schemas"]["Coverage"][];
+            /**
+             * Gap Length M
+             * @description Odcinki bez danych o nawierzchni (jak /api/data-gaps)
+             */
+            gap_length_m: number;
+            /** Gap Share */
+            gap_share: number;
+            /** Barriers Total */
+            barriers_total: number;
+            /** Barriers By Type */
+            barriers_by_type: components["schemas"]["BarrierCount"][];
+            /** Priority Weights */
+            priority_weights: {
+                [key: string]: number;
+            };
+            /** Priority Streets */
+            priority_streets: components["schemas"]["PriorityStreet"][];
+            /**
+             * Reports Total
+             * @description None = magazyn zgłoszeń niedostępny
+             */
+            reports_total: number | null;
+            /** Reports By Status */
+            reports_by_status: components["schemas"]["ReportStatusCount"][];
+            /** Reports By Type */
+            reports_by_type: components["schemas"]["ReportTypeCount"][];
+        };
+        /** Coverage */
+        Coverage: {
+            /**
+             * Key
+             * @description Cecha odcinka, np. 'surface', 'incline_percent'
+             */
+            key: string;
+            /**
+             * Sources
+             * @description Skąd pochodzi, np. ['osm'] albo ['nmt_gugik']
+             */
+            sources: string[];
+            /**
+             * Length M
+             * @description Długość odcinków, które mają tę cechę
+             */
+            length_m: number;
+            /**
+             * Share
+             * @description Udział w długości całej sieci pieszej
+             */
+            share: number;
         };
         /**
          * DataGapsSummary
@@ -742,6 +880,25 @@ export interface components {
          * @enum {string}
          */
         PoiKind: "bench" | "changing_table";
+        /**
+         * PriorityStreet
+         * @description Ulica do naprawy w pierwszej kolejności - argument dla miasta (B2G).
+         */
+        PriorityStreet: {
+            /** Street */
+            street: string;
+            /**
+             * Score
+             * @description Suma wag barier (patrz `priority_weights`)
+             */
+            score: number;
+            /** Barriers */
+            barriers: number;
+            /** By Type */
+            by_type: {
+                [key: string]: number;
+            };
+        };
         /** Provenance */
         Provenance: {
             /**
@@ -811,6 +968,18 @@ export interface components {
             created_at: string;
             /** Updated At */
             updated_at?: string | null;
+            /**
+             * Confirmations
+             * @description Głosy „Potwierdzam” innych osób
+             * @default 0
+             */
+            confirmations: number;
+            /**
+             * Denials
+             * @description Głosy „Problemu już nie ma”
+             * @default 0
+             */
+            denials: number;
         };
         /**
          * ReportCreate
@@ -833,23 +1002,52 @@ export interface components {
              * @description Przewidywany koniec utrudnienia (np. remontu), jeśli znany
              */
             valid_until?: string | null;
+            /**
+             * Reporter
+             * @description Losowy identyfikator urządzenia - autor nie może potwierdzić własnego zgłoszenia. Bez danych osobowych.
+             */
+            reporter?: string | null;
         };
         /**
          * ReportStatus
          * @enum {string}
          */
         ReportStatus: "pending" | "confirmed" | "rejected" | "resolved";
+        /** ReportStatusCount */
+        ReportStatusCount: {
+            status: components["schemas"]["ReportStatus"];
+            /** Count */
+            count: number;
+        };
         /**
          * ReportType
          * @enum {string}
          */
         ReportType: "barrier" | "elevator_broken" | "construction" | "inaccessible_entrance" | "blocked_parking";
+        /** ReportTypeCount */
+        ReportTypeCount: {
+            type: components["schemas"]["ReportType"];
+            /** Count */
+            count: number;
+        };
         /**
          * ReportUpdate
          * @description Zmiana statusu przez moderację (na razie bez logowania - patrz #37).
          */
         ReportUpdate: {
             status: components["schemas"]["ReportStatus"];
+        };
+        /**
+         * ReportVote
+         * @description Głos innej osoby: potwierdza zgłoszenie albo mówi, że problemu już nie ma.
+         */
+        ReportVote: {
+            vote: components["schemas"]["VoteKind"];
+            /**
+             * Voter
+             * @description Losowy identyfikator urządzenia
+             */
+            voter: string;
         };
         /**
          * RouteAlternative
@@ -1181,6 +1379,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VoteKind
+         * @enum {string}
+         */
+        VoteKind: "confirm" | "deny";
     };
     responses: never;
     parameters: never;
@@ -1439,6 +1642,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vote_on_report_api_reports__report_id__votes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportVote"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1723,6 +1961,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BarrierList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    city_stats_api_stats_get: {
+        parameters: {
+            query?: {
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CityStats"];
                 };
             };
             /** @description Validation Error */

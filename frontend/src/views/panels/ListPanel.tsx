@@ -55,6 +55,7 @@ export function ListPanel({ list }: { list: ListKind }) {
           onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'barriers', on })}
           selected={state.selectedBarrier}
           onSelect={(id) => dispatch({ type: 'selectBarrier', id })}
+          onReportVoted={() => data.refreshBarriers()}
         />
       </div>
     )

@@ -262,6 +262,12 @@ export function ExplorePanel() {
               </button>
             </li>
           ))}
+          <li>
+            <a href="#/miasto" className="browse-link">
+              Dashboard miasta
+              <ChevronRightIcon size={16} />
+            </a>
+          </li>
         </ul>
       </nav>
     </div>

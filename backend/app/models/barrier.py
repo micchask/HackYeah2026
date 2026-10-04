@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +13,7 @@ class BarrierType(StrEnum):
     KERB = "kerb"  # krawężnik >= 6 cm
     STEEP = "steep"  # nachylenie > 6%
     ROUGH_SURFACE = "rough_surface"  # bruk, kocie łby, żwir, nawierzchnia nieutwardzona
-    REPORTED = "reported"  # potwierdzone zgłoszenie użytkownika
+    REPORTED = "reported"  # zgłoszenie użytkownika (niepotwierdzone albo potwierdzone)
 
 
 class RouteBarrier(BaseModel):
@@ -20,6 +21,15 @@ class RouteBarrier(BaseModel):
 
     type: BarrierType
     description: str = Field(description="Np. 'Krawężnik ok. 10 cm'")
+
+
+class BarrierReport(BaseModel):
+    """Stan zgłoszenia użytkownika pokazanego jako bariera - do głosowania (#62)."""
+
+    report_id: str
+    status: Literal["pending", "confirmed"]
+    confirmations: int
+    denials: int
 
 
 class Barrier(BaseModel):
@@ -34,6 +44,9 @@ class Barrier(BaseModel):
     source_ref: str | None = None
     confidence: float = Field(ge=0, le=1)
     last_verified: datetime | None = None
+    report: BarrierReport | None = Field(
+        default=None, description="Tylko dla zgłoszeń użytkowników: status i głosy innych osób"
+    )
 
 
 class BarrierList(BaseModel):

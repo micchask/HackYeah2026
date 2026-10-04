@@ -270,6 +270,8 @@ const BARRIER_LINES = 'barrier-lines'
 const BARRIER_SELECTED = 'barrier-selected'
 const BARRIER_ICONS = 'barrier-icons'
 const BARRIER_ICON_SELECTED = 'barrier-icon-selected'
+// Zgłoszenia użytkowników (#62): przy każdym przybliżeniu - jest ich mało, a muszą być widoczne
+const REPORT_ICONS = 'barrier-report-icons'
 // Ikony dopiero od tego zoomu - wcześniej setki barier zasłoniłyby mapę
 const BARRIER_ICON_MIN_ZOOM = 15
 
@@ -353,12 +355,32 @@ function addBarrierLayers(map: maplibregl.Map) {
       type: 'symbol',
       source: 'barriers',
       minzoom: BARRIER_ICON_MIN_ZOOM,
-      filter: ['all', ['==', ['geometry-type'], 'Point'], ['!=', ['get', 'selected'], true]],
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'Point'],
+        ['!=', ['get', 'selected'], true],
+        ['!=', ['get', 'type'], 'reported'],
+      ],
       layout: {
         'icon-image': icon,
         // przy kolizji zostają ważniejsze: schody, krawężnik, zgłoszenia…
         'symbol-sort-key': ['get', 'rank'],
       },
+      paint: { 'icon-opacity': ['case', ['==', ['get', 'pending'], true], 0.55, 1] },
+    })
+    map.addLayer({
+      id: REPORT_ICONS,
+      type: 'symbol',
+      source: 'barriers',
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'Point'],
+        ['!=', ['get', 'selected'], true],
+        ['==', ['get', 'type'], 'reported'],
+      ],
+      layout: { 'icon-image': icon, 'icon-allow-overlap': true },
+      // niepotwierdzone - półprzezroczyste
+      paint: { 'icon-opacity': ['case', ['==', ['get', 'pending'], true], 0.55, 1] },
     })
     // Wybrana bariera zawsze widoczna (icon-allow-overlap nie przyjmuje wyrażeń z danych)
     map.addLayer({
@@ -380,6 +402,8 @@ function barrierData(barriers: Barrier[], selected: string | null): GeoJSONData 
         type: b.type,
         rank: BARRIER_TYPES.indexOf(b.type),
         selected: b.id === selected,
+        // niepotwierdzone zgłoszenie (#62) - półprzezroczysta ikona
+        pending: b.report?.status === 'pending',
       }
       const icon = {
         type: 'Feature' as const,
@@ -604,7 +628,8 @@ export function MapView({
         }
       }
       if (!picking.current && instance.getLayer(BARRIER_ICONS)) {
-        const [barrier] = instance.queryRenderedFeatures(box, { layers: [BARRIER_ICONS] })
+        const layers = [REPORT_ICONS, BARRIER_ICONS].filter((id) => instance.getLayer(id))
+        const [barrier] = instance.queryRenderedFeatures(box, { layers })
         if (barrier) {
           onBarrier.current?.(String(barrier.properties.id))
           return
@@ -838,7 +863,13 @@ export function MapView({
     const currentMap = map.current
     if (!currentMap || !mapReady) return
     const apply = () => {
-      for (const layer of [BARRIER_LINES, BARRIER_SELECTED, BARRIER_ICONS, BARRIER_ICON_SELECTED]) {
+      for (const layer of [
+        BARRIER_LINES,
+        BARRIER_SELECTED,
+        BARRIER_ICONS,
+        BARRIER_ICON_SELECTED,
+        REPORT_ICONS,
+      ]) {
         if (currentMap.getLayer(layer))
           currentMap.setLayoutProperty(layer, 'visibility', showBarriers ? 'visible' : 'none')
       }
@@ -993,11 +1024,22 @@ export function MapView({
         const box = instance.getElement().getBoundingClientRect()
         const area = currentMap.getContainer().getBoundingClientRect()
         const margin = 12
+        // u góry mapy jest pasek z wyszukiwarką i filtrami, z lewej panel - okienko ma być obok nich
+        const shell = currentMap.getContainer().closest('.shell')
+        const bar = shell?.querySelector('.top-search')
+        const top = Math.max(area.top, bar?.getBoundingClientRect().bottom ?? area.top) + margin
+        const sidebar = shell?.querySelector('.sidebar[data-open="true"]')
+        const sideBox = sidebar?.getBoundingClientRect()
+        // panel z lewej (desktop) - na telefonie panel jest na dole i zajmuje całą szerokość
+        const left =
+          (sideBox && sideBox.width < area.width / 2
+            ? Math.max(area.left, sideBox.right)
+            : area.left) + margin
         let dx = 0
         let dy = 0
-        if (box.top < area.top + margin) dy = box.top - area.top - margin
+        if (box.top < top) dy = box.top - top
         else if (box.bottom > area.bottom - margin) dy = box.bottom - area.bottom + margin
-        if (box.left < area.left + margin) dx = box.left - area.left - margin
+        if (box.left < left) dx = box.left - left
         else if (box.right > area.right - margin) dx = box.right - area.right + margin
         if (dx || dy) currentMap.panBy([dx, dy], { duration: 300 })
       })
@@ -1009,10 +1051,13 @@ export function MapView({
       zoom: Math.max(currentMap.getZoom(), 16),
       duration: 600,
     })
+    // po wycentrowaniu: dociągnij okienko, jeśli wchodzi pod pasek filtrów albo poza mapę
+    currentMap.once('moveend', fit)
     return () => {
       // usuwamy bez zdarzenia 'close' - to zmiana wyboru, nie zamknięcie przez użytkownika
       instance.off('close', onClose)
       el.removeEventListener(POPUP_RESIZE_EVENT, fit)
+      currentMap.off('moveend', fit)
       instance.remove()
     }
   }, [popupKey, popupLat, popupLon, mapReady])
