@@ -251,7 +251,6 @@ export function ExplorePanel() {
           {(
             [
               ['places', 'Wszystkie miejsca'],
-              ['institutions', 'Instytucje publiczne'],
               ['gaps', 'Braki danych o dostępności'],
             ] as const
           ).map(([list, label]) => (
