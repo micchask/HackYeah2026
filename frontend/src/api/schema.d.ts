@@ -159,6 +159,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Active Reports
+         * @description Potwierdzone zgłoszenia, które teraz wpływają na trasy (#63) - z rodzajem wpływu.
+         */
+        get: operations["list_active_reports_api_reports_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/{report_id}/votes": {
         parameters: {
             query?: never;
@@ -383,6 +403,29 @@ export interface components {
             status: components["schemas"]["AttributeStatus"];
             /** Alternatives */
             alternatives?: components["schemas"]["AccessibilityAttribute"][];
+        };
+        /**
+         * ActiveReport
+         * @description Potwierdzone zgłoszenie, które teraz wpływa na trasy (#63).
+         */
+        ActiveReport: {
+            /** Id */
+            id: string;
+            type: components["schemas"]["ReportType"];
+            /**
+             * Effect
+             * @description block - odcinek omijany, penalty - omijany, jeśli jest objazd, warn - tylko ostrzeżenie (winda, wejście, parking)
+             * @enum {string}
+             */
+            effect: "block" | "penalty" | "warn";
+            /** Label */
+            label: string;
+            location: components["schemas"]["LatLon"];
+            /**
+             * Active Until
+             * Format: date-time
+             */
+            active_until: string;
         };
         /**
          * AttributeKey
@@ -980,6 +1023,11 @@ export interface components {
              * @default 0
              */
             denials: number;
+            /**
+             * Last Confirmed At
+             * @description Ostatnie „Potwierdzam” - od niego liczy się ważność (#63)
+             */
+            last_confirmed_at?: string | null;
         };
         /**
          * ReportCreate
@@ -1180,6 +1228,11 @@ export interface components {
             explanation: string;
             /** Alternatives */
             alternatives?: components["schemas"]["RouteAlternative"][];
+            /**
+             * Reports Considered
+             * @description Aktywne zgłoszenia uwzględnione przy liczeniu - nowe poza tą listą oznaczają, że trasę warto przeliczyć (#63)
+             */
+            reports_considered?: string[];
         };
         /**
          * RouteSegment
@@ -1647,6 +1700,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_active_reports_api_reports_active_get: {
+        parameters: {
+            query?: {
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveReport"][];
                 };
             };
             /** @description Validation Error */

@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.cities import CityConfig, get_city
-from app.models import Report, ReportCreate, ReportStatus, ReportUpdate, ReportVote
+from app.models import ActiveReport, Report, ReportCreate, ReportStatus, ReportUpdate, ReportVote
 from app.report_store import ReportStore, StorageUnavailable, get_report_store
 from app.report_votes import VoteError, cast_vote, device_hash
 
@@ -64,6 +64,17 @@ def list_reports(
         raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
 
 
+@router.get("/reports/active", response_model=list[ActiveReport])
+def list_active_reports(store: Store, city: str = "krakow") -> list[ActiveReport]:
+    """Potwierdzone zgłoszenia, które teraz wpływają na trasy (#63) - z rodzajem wpływu."""
+    from app.routing.reports import active_reports
+
+    try:
+        return active_reports(store.list(_city(city).id), datetime.now(UTC))
+    except StorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
+
+
 @router.post("/reports/{report_id}/votes", response_model=Report)
 def vote_on_report(report_id: str, payload: ReportVote, store: Store) -> Report:
     """Inna osoba potwierdza zgłoszenie albo mówi, że problemu już nie ma (#62).
@@ -92,4 +103,7 @@ def update_report(
         raise HTTPException(status_code=503, detail=STORAGE_ERROR) from exc
     if report is None:
         raise HTTPException(status_code=404, detail="Nie ma takiego zgłoszenia.")
+    from app.routing.reports import invalidate
+
+    invalidate(report.city)  # trasy od razu uwzględnią zmianę (#63)
     return report

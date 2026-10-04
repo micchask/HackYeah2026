@@ -231,4 +231,18 @@ describe('powłoka: podkład mapy i panel', () => {
     expect(opened.sidebarOpen).toBe(true)
     expect(opened.history).toEqual([{ kind: 'explore' }])
   })
+  it('„Przelicz trasę” zmienia tylko licznik, który ponawia pobranie trasy (#63)', () => {
+    const state = run(
+      initialState(),
+      { type: 'setOrigin', point: A },
+      { type: 'setDestination', point: B },
+    )
+    const next = run(state, { type: 'recalculateRoute' })
+    expect(next.routeNonce).toBe(state.routeNonce + 1)
+    expect([next.origin, next.destination, next.prefs]).toEqual([
+      state.origin,
+      state.destination,
+      state.prefs,
+    ])
+  })
 })
