@@ -148,7 +148,8 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
   const defaults = PROFILE_DEFAULTS[profile ?? 'guest']
   return {
     profile,
-    prefs: saved.prefs ?? defaults.prefs,
+    // Zapis ze starszej wersji może nie mieć nowych ustawień - brakujące bierzemy z trybu
+    prefs: { ...defaults.prefs, ...saved.prefs },
     customized: saved.customized ?? false,
     layers: { ...defaults.layers, ...saved.layers },
     panel: { kind: 'explore' },

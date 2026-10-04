@@ -154,6 +154,17 @@ describe('zapamiętywanie w przeglądarce', () => {
     expect(initialState(loadSaved(storage)).profile).toBe('senior')
   })
 
+  it('zapis ze starszej wersji: brakujące ustawienia i warstwy biorą się z trybu', () => {
+    const defaults = PROFILE_DEFAULTS.wheelchair
+    const [key] = Object.keys(defaults.prefs) as (keyof typeof defaults.prefs)[]
+    const oldPrefs: Partial<typeof defaults.prefs> = { ...defaults.prefs }
+    delete oldPrefs[key]
+    const saved = JSON.stringify({ profile: 'wheelchair', prefs: oldPrefs, layers: {} })
+    const state = initialState(loadSaved({ getItem: () => saved }))
+    expect(state.prefs).toEqual(defaults.prefs)
+    expect(state.layers).toEqual(defaults.layers)
+  })
+
   it('zepsute dane albo zablokowana pamięć nie psują startu', () => {
     expect(loadSaved({ getItem: () => '{zepsute' })).toEqual({})
     expect(loadSaved({ getItem: () => '{"profile":"nieznany"}' })).toEqual({})
