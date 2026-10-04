@@ -584,6 +584,16 @@ button:disabled {
   border-collapse: separate;
   font-size: 0.82rem;
 }
+/* Tabela porównania wariantów bez przewijania: wartości i nazwy wariantów dzielą wyrazy
+   z łącznikiem (polskie reguły, lang="pl"), nazwy cech w pierwszej kolumnie - nie */
+.comparison-table td,
+.comparison-table thead th {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.comparison-table thead th:first-child {
+  width: 27%;
+}
 .comparison-table caption {
   padding: 0 0.25rem 0.4rem;
   color: var(--text);
@@ -3946,19 +3956,6 @@ a.browse-link {
   .page-brand h1 {
     display: none;
   }
-}
-
-/* ---------- audyt dostępności (#32) ---------- */
-
-/* Tabela porównania wariantów bez przewijania: wartości i nazwy wariantów dzielą wyrazy
-   z łącznikiem (polskie reguły, lang="pl"), nazwy cech w pierwszej kolumnie - nie */
-.comparison-table td,
-.comparison-table thead th {
-  overflow-wrap: break-word;
-  hyphens: auto;
-}
-.comparison-table thead th:first-child {
-  width: 27%;
 }
 
 /* Nowa bariera na otwartej trasie (#63) */
