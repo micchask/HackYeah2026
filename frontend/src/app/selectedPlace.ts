@@ -5,7 +5,12 @@ import { isDemoData, type DemoPoi } from '../api/demo'
 import { ATTRIBUTE_LABEL, SOURCE_LABEL, VALUE_LABEL } from '../components/attributes'
 import { STATUS_LABEL } from '../components/dataStatus'
 import { formatKm } from '../components/format'
-import { type Access, accessibilityOf, placeKindLabel } from '../components/placeCategories'
+import {
+  type Access,
+  accessibilityOf,
+  institutionAccess,
+  placeKindLabel,
+} from '../components/placeCategories'
 
 export type SelectedPlace =
   | { kind: 'institution'; id: string }
@@ -147,7 +152,7 @@ function institutionCard(inst: Institution): PlaceCard {
     subtitle: inst.address,
     point: inst.location?.point ?? null,
     // Opisy z deklaracji to wolny tekst - nie zgadujemy z nich „dostępne/niedostępne”
-    access: 'unknown',
+    access: institutionAccess(inst),
     accessNote: 'Ocena dla wózka nie jest jednoznaczna – szczegóły z deklaracji dostępności niżej.',
     attributes: (inst.attributes ?? []).map((a) => ({
       key: a.category,

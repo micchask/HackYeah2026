@@ -16,7 +16,15 @@ import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { visibleLabels } from './declutter'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
-import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
+import {
+  ACCESS_LEVELS,
+  PLACE_KINDS,
+  accessibilityOf,
+  institutionAccess,
+  institutionKind,
+  placeIconSvg,
+  placeKind,
+} from './placeCategories'
 import { shortInstitutionName } from './institutionStyle'
 
 export type BaseMap = 'standard' | 'satellite'
@@ -157,21 +165,27 @@ const PLACE_POINTS = 'places-points'
 // Powyżej tego zoomu miejsca są już pojedynczo (w Starym Mieście to ok. 2 budynki na ekran)
 const PLACE_CLUSTER_MAX_ZOOM = 16
 
-/** Ikony miejsc wg dostępności - te same SVG co w legendzie i na liście. */
+// Rozmiar znacznika w px CSS; duży kwadrat zajmuje lewą górną część, kwadracik - prawy dolny róg
+const PLACE_ICON_SIZE = 32
+
+/** Ikony miejsc: rodzaj (kawiarnia, muzeum...) + kwadracik dostępności - po jednej na parę. */
 function loadPlaceIcons(map: maplibregl.Map): Promise<void> {
+  const size = PLACE_ICON_SIZE
   return Promise.all(
-    ACCESS_LEVELS.map(
-      (access) =>
-        new Promise<void>((resolve) => {
-          const img = new Image(48, 48)
-          img.onload = () => {
-            if (!map.hasImage(`place-${access}`))
-              map.addImage(`place-${access}`, img, { pixelRatio: 2 })
-            resolve()
-          }
-          img.onerror = () => resolve()
-          img.src = `data:image/svg+xml;utf8,${encodeURIComponent(accessIconSvg(access, 48))}`
-        }),
+    PLACE_KINDS.flatMap((kind) =>
+      ACCESS_LEVELS.map(
+        (access) =>
+          new Promise<void>((resolve) => {
+            const id = `place-${kind}-${access}`
+            const img = new Image(size * 2, size * 2)
+            img.onload = () => {
+              if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 })
+              resolve()
+            }
+            img.onerror = () => resolve()
+            img.src = `data:image/svg+xml;utf8,${encodeURIComponent(placeIconSvg(kind, access, size * 2))}`
+          }),
+      ),
     ),
   ).then(() => undefined)
 }
@@ -234,8 +248,10 @@ function addPlaceLayers(map: maplibregl.Map) {
         source: 'places',
         filter: ['!', ['has', 'point_count']],
         layout: {
-          'icon-image': ['concat', 'place-', ['get', 'access']],
+          'icon-image': ['concat', 'place-', ['get', 'kind'], '-', ['get', 'access']],
           'icon-allow-overlap': true,
+          // punkt wskazuje środek kwadratu rodzaju, nie środek całego obrazka
+          'icon-offset': [(3.5 * PLACE_ICON_SIZE) / 34, (3.5 * PLACE_ICON_SIZE) / 34],
         },
       },
       // pod trasą i barierami
@@ -249,7 +265,7 @@ function placeData(places: Place[]): GeoJSONData {
     type: 'FeatureCollection',
     features: places.map((place) => ({
       type: 'Feature' as const,
-      properties: { id: place.id, access: accessibilityOf(place) },
+      properties: { id: place.id, kind: placeKind(place), access: accessibilityOf(place) },
       geometry: {
         type: 'Point' as const,
         coordinates: [place.location.lon, place.location.lat],
@@ -418,6 +434,12 @@ function barrierData(barriers: Barrier[], selected: string | null): GeoJSONData 
   }
 }
 
+// Środek kwadratu rodzaju leży 13.5/34 szerokości od lewego górnego rogu ikony
+const INST_ICON_OFFSET: [number, number] = [
+  -(13.5 * PLACE_ICON_SIZE) / 34,
+  PLACE_ICON_SIZE / 2 - (13.5 * PLACE_ICON_SIZE) / 34,
+]
+
 function institutionMarker(inst: Institution): HTMLButtonElement {
   const el = document.createElement('button')
   el.type = 'button'
@@ -426,8 +448,14 @@ function institutionMarker(inst: Institution): HTMLButtonElement {
   el.tabIndex = -1
   el.title = inst.name
   el.setAttribute('aria-label', `${inst.name} – pokaż szczegóły`)
-  const dot = document.createElement('span')
-  dot.className = 'inst-marker-dot'
+  // Ta sama ikona co przy miejscach: rodzaj (urząd, muzeum...) + kwadracik dostępności
+  const dot = document.createElement('img')
+  dot.className = 'inst-marker-icon'
+  dot.alt = ''
+  dot.width = dot.height = PLACE_ICON_SIZE
+  dot.src = `data:image/svg+xml;utf8,${encodeURIComponent(
+    placeIconSvg(institutionKind(inst), institutionAccess(inst), PLACE_ICON_SIZE),
+  )}`
   const label = document.createElement('span')
   label.className = 'inst-marker-label'
   label.textContent = shortInstitutionName(inst.name)
@@ -999,8 +1027,8 @@ export function MapView({
       el.addEventListener('click', () => onSelect.current(inst.id))
       created.set(
         inst.id,
-        // kotwica z lewej: środek kropki (14 px) dokładnie w punkcie, podpis obok
-        new maplibregl.Marker({ element: el, anchor: 'left', offset: [-7, 0] })
+        // kotwica z lewej: środek kwadratu rodzaju dokładnie w punkcie, podpis obok
+        new maplibregl.Marker({ element: el, anchor: 'left', offset: INST_ICON_OFFSET })
           .setLngLat([inst.location.point.lon, inst.location.point.lat])
           .addTo(currentMap),
       )
