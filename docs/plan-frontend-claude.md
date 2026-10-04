@@ -1,3 +1,6 @@
+> **Plan zrealizowany 4.10.2026** (zadania #86–#97, potem redesign #117). Dokument zostaje jako zapis
+> decyzji projektowych; aktualny układ kodu opisuje `docs/development.md`.
+
 # Plan przebudowy frontendu – wersja Claude
 
 > Specyfikacja dla agenta (LLM) i zespołu. Bazuje na `planfront.txt` (główny odnośnik) i stanie repo z 4.10.2026.
