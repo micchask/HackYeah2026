@@ -13,16 +13,14 @@ const institution: Institution = {
 }
 
 describe('InstitutionPopup', () => {
-  it('mały dymek: rodzaj, nazwa, adres; „Szczegóły” otwiera kartę, Esc zamyka', () => {
-    const onDetails = vi.fn()
+  it('mały dymek: rodzaj, nazwa, adres, bez „Szczegóły” (karta jest w panelu); Esc zamyka', () => {
     const onClose = vi.fn()
-    render(<InstitutionPopup institution={institution} onDetails={onDetails} onClose={onClose} />)
+    render(<InstitutionPopup institution={institution} onClose={onClose} />)
     expect(screen.getByRole('heading', { name: 'Muzeum testowe' })).toHaveFocus()
     expect(screen.getByText('muzeum')).toBeInTheDocument()
     expect(screen.getByText('Rynek Główny 1, Kraków')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Szczegóły' }))
+    expect(screen.queryByRole('button', { name: 'Szczegóły' })).not.toBeInTheDocument()
     fireEvent.keyDown(screen.getByRole('heading', { name: 'Muzeum testowe' }), { key: 'Escape' })
-    expect(onDetails).toHaveBeenCalledOnce()
     expect(onClose).toHaveBeenCalledOnce()
   })
 })
