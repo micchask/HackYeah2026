@@ -52,6 +52,8 @@ export interface AppState {
   origin: NamedPoint | null
   destination: NamedPoint | null
   route: RouteResponse | null
+  /** Zwiększany przez „Przelicz trasę” - ponowne pobranie trasy bez zmiany punktów (#63) */
+  routeNonce: number
   routeLoading: boolean
   routeError: string | null
   variant: number
@@ -150,6 +152,7 @@ export type Action =
   | { type: 'setPlacesQuery'; query: string }
   | { type: 'showResults'; query: string; results: SearchResult[] }
   | { type: 'clearResults' }
+  | { type: 'recalculateRoute' }
   | { type: 'setBaseMap'; baseMap: BaseMap }
   | { type: 'toggleSidebar'; open?: boolean }
   | { type: 'focusMap'; point: LatLon }
@@ -187,6 +190,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     placesQuery: '',
     resultSet: null,
     mapFocus: null,
+    routeNonce: 0,
   }
 }
 
@@ -290,6 +294,8 @@ export function appReducer(state: AppState, action: Action): AppState {
       }
     case 'clearResults':
       return { ...state, resultSet: null }
+    case 'recalculateRoute':
+      return { ...state, routeNonce: state.routeNonce + 1 }
     case 'setBaseMap':
       return { ...state, baseMap: action.baseMap }
     case 'toggleSidebar':

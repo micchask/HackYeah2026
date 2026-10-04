@@ -30,6 +30,20 @@ export function visibleLayerData(data: LayerInput, layers: Layers): LayerInput {
   }
 }
 
+const NO_LAYER_DATA: LayerInput = { places: [], institutions: [], barriers: [] }
+
+/**
+ * Co rysuje mapa. Po „Pokaż wszystkie” dla rodzaju („hotele”) - tylko te wyniki (osobne punkty
+ * z nazwami), bez pozostałych warstw; „Wyczyść” przywraca warstwy z chipów.
+ */
+export function mapLayerData(
+  data: LayerInput,
+  layers: Layers,
+  showingResults: boolean,
+): LayerInput {
+  return showingResults ? NO_LAYER_DATA : visibleLayerData(data, layers)
+}
+
 function inBbox(bbox: string | null, lat: number, lon: number): boolean {
   if (!bbox) return true
   const [s, w, n, e] = bbox.split(',').map(Number)

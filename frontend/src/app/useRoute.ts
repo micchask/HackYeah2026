@@ -8,7 +8,7 @@ import type { Action, AppState } from './state'
 
 /** Efekt w AppProvider: przelicza trasę po zmianie punktów lub preferencji. */
 export function useRouteFetch(state: AppState, dispatch: Dispatch<Action>): void {
-  const { origin, destination, prefs } = state
+  const { origin, destination, prefs, routeNonce } = state
   useEffect(() => {
     if (!origin || !destination) return
     const controller = new AbortController()
@@ -29,7 +29,8 @@ export function useRouteFetch(state: AppState, dispatch: Dispatch<Action>): void
       clearTimeout(timer)
       controller.abort()
     }
-  }, [origin, destination, prefs, dispatch])
+    // routeNonce: „Przelicz trasę” po nowym zgłoszeniu na trasie (#63)
+  }, [origin, destination, prefs, routeNonce, dispatch])
 }
 
 export interface ActiveRoute {

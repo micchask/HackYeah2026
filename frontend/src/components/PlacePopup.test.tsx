@@ -15,19 +15,17 @@ const address: SearchResult = {
 }
 
 describe('PlacePopup', () => {
-  it('mały dymek: rodzaj, nazwa z fokusem, podtytuł i „Szczegóły”', () => {
-    const onDetails = vi.fn()
-    render(<PlacePopup result={address} onDetails={onDetails} onClose={vi.fn()} />)
+  it('mały dymek: rodzaj, nazwa z fokusem, podtytuł, bez „Szczegóły” (karta jest w panelu)', () => {
+    render(<PlacePopup result={address} onClose={vi.fn()} />)
     expect(screen.getByRole('heading', { name: 'Grodzka 20' })).toHaveFocus()
     expect(screen.getByText('adres')).toBeInTheDocument()
     expect(screen.getByText('Stare Miasto · 350 m od środka mapy')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Szczegóły' }))
-    expect(onDetails).toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Szczegóły' })).not.toBeInTheDocument()
   })
 
   it('Esc zamyka dymek', () => {
     const onClose = vi.fn()
-    render(<PlacePopup result={address} onDetails={vi.fn()} onClose={onClose} />)
+    render(<PlacePopup result={address} onClose={onClose} />)
     fireEvent.keyDown(screen.getByRole('heading', { name: 'Grodzka 20' }), { key: 'Escape' })
     expect(onClose).toHaveBeenCalled()
   })

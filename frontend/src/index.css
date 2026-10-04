@@ -1250,39 +1250,6 @@ button.step-body:hover {
   border-left-color: var(--surface);
 }
 
-/* "Więcej informacji" - wyraźny przycisk na całą szerokość okienka */
-.more-button {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 0.6rem;
-  padding: 0.5rem 0.75rem;
-  color: var(--accent-text);
-  font-weight: 700;
-  text-align: left;
-  background: var(--accent);
-  border: none;
-  border-radius: 10px;
-}
-.more-button:hover {
-  background: var(--accent-strong);
-}
-.more-button span {
-  flex: 1;
-}
-.more-chevron {
-  transition: transform 0.2s;
-}
-.more-button[aria-expanded='true'] {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-}
-.more-button[aria-expanded='true'] .more-chevron {
-  transform: rotate(180deg);
-}
-
 /* ---------- zgłoś barierę ---------- */
 
 .point-marker-report {
@@ -1866,7 +1833,6 @@ button.step-body:hover {
   box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
 }
 .result-pin-label {
-  display: none;
   max-width: 12rem;
   overflow: hidden;
   color: #7a0b1d;
@@ -1880,8 +1846,11 @@ button.step-body:hover {
     -1px 1px 0 #fff,
     1px 1px 0 #fff;
 }
-.map[data-result-labels='on'] .result-pin-label,
-.result-pin:hover .result-pin-label {
+/* nazwa kolidująca z bliższym wynikiem - ukryta, ale widać ją po najechaniu */
+.result-pin-label.collide {
+  display: none;
+}
+.result-pin:hover .result-pin-label.collide {
   display: inline;
 }
 .search-results-head {
@@ -3340,6 +3309,11 @@ main:focus {
     min-height: 44px;
     padding: 0 16px 0 12px;
   }
+  /* rozwinięty dolny panel: przycisk nie zasłania jego opcji; wraca po zwinięciu panelu
+     (zgłoszenie jest też w karcie miejsca, panelu trasy i dymku na mapie) */
+  .map-report-button[data-sheet-open='true'] {
+    display: none;
+  }
   .map-banner,
   .map-loading {
     left: 50%;
@@ -3990,4 +3964,17 @@ a.browse-link {
 }
 .comparison-table thead th:first-child {
   width: 27%;
+}
+
+/* Nowa bariera na otwartej trasie (#63) */
+.route-report-alert {
+  margin-bottom: 12px;
+}
+.route-report-alert p {
+  margin: 0 0 8px;
+}
+.route-report-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }

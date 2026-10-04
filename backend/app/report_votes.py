@@ -71,6 +71,10 @@ def cast_vote(store, report_id: str, vote: ReportVote, now: datetime) -> Report:
     status = status_after_votes(report.status, confirmations, denials)
     if status != report.status:
         store.set_status(report_id, status)
+        # trasy od razu uwzględnią potwierdzenie / zamknięcie zgłoszenia (#63)
+        from app.routing.reports import invalidate
+
+        invalidate(report.city)
     updated = store.get(report_id)
     assert updated is not None
     return updated

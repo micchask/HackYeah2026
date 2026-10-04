@@ -1,7 +1,7 @@
 // Pełnoekranowa mapa + nakładki: kontrolki (Warstwy, Legenda), zgłoszenie, baner wskazywania punktu.
 import { useApp, useAppData } from '../app/context'
 import { openReport, useMapClick } from '../app/mapActions'
-import { visibleLayerData } from '../app/layerData'
+import { mapLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
 import { AlertIcon, PinIcon } from '../components/icons'
@@ -19,8 +19,6 @@ function usePopup(): MapPopup | null {
   const [{ mapSelection, selectedBarrier }, dispatch] = useApp()
   const { institutions, barriers, refreshBarriers } = useAppData()
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
-  const details = (place: SelectedPlace) => () =>
-    dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
   // „Zgłoś problem tutaj” w okienku: panel zgłoszenia z tym miejscem (#95)
   const report = (label: string, point: { lat: number; lon: number }) => () => {
     close()
@@ -38,7 +36,6 @@ function usePopup(): MapPopup | null {
         <InstitutionPopup
           key={institution.id}
           institution={institution}
-          onDetails={details(mapSelection)}
           onClose={close}
           onReport={report(institution.name, point)}
         />
@@ -54,7 +51,6 @@ function usePopup(): MapPopup | null {
         <PlacePopup
           key={result.id}
           result={result}
-          onDetails={details(mapSelection)}
           onClose={close}
           onReport={report(result.label, result.point)}
         />
@@ -90,8 +86,10 @@ export function MapArea() {
   const pickLetter =
     pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
-  const visible = visibleLayerData(data, layers)
-  const showBarriers = layers.barriers || layers.reports
+  // Wyniki „Pokaż wszystkie” (np. „hotele”): na mapie tylko one - reszta warstw wraca po „Wyczyść”
+  const showingResults = !!state.resultSet
+  const visible = mapLayerData(data, layers, showingResults)
+  const showBarriers = !showingResults && (layers.barriers || layers.reports)
   // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
   const select = (selection: SelectedPlace) => {
     dispatch({ type: 'selectOnMap', selection })
@@ -137,7 +135,7 @@ export function MapArea() {
         showBarriers={showBarriers}
         selectedBarrier={state.selectedBarrier}
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
-        dataGaps={data.dataGaps}
+        dataGaps={showingResults ? null : data.dataGaps}
         focus={state.mapFocus}
         baseMap={state.baseMap}
       />
@@ -156,6 +154,8 @@ export function MapArea() {
       <button
         type="button"
         className="map-report-button"
+        // na telefonie rozwinięty dolny panel zakrywa mapę - przycisk chowa się, żeby nie zasłaniać panelu
+        data-sheet-open={state.sidebarOpen}
         aria-pressed={pickTarget === 'report'}
         onClick={() => {
           if (pickTarget === 'report') {

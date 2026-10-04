@@ -23,6 +23,7 @@ export type Difficulty = components['schemas']['Difficulty']
 export type ReportCreate = components['schemas']['ReportCreate']
 export type Report = components['schemas']['Report']
 export type VoteKind = components['schemas']['VoteKind']
+export type ActiveReport = components['schemas']['ActiveReport']
 export type BarrierReport = components['schemas']['BarrierReport']
 export type City = components['schemas']['CityConfig']
 export type GeocodeResult = components['schemas']['GeocodeResult']
@@ -149,6 +150,9 @@ export const api = {
       // identyfikator urządzenia: autor nie potwierdzi potem własnego zgłoszenia (#62)
       body: JSON.stringify({ ...body, reporter: getDeviceId() }),
     }),
+  /** Potwierdzone zgłoszenia, które teraz wpływają na trasy (#63) */
+  activeReports: (city: string, signal?: AbortSignal) =>
+    request<ActiveReport[]>(`/reports/active?${new URLSearchParams({ city })}`, { signal }),
   voteReport: (reportId: string, vote: VoteKind) =>
     request<Report>(`/reports/${encodeURIComponent(reportId)}/votes`, {
       method: 'POST',
