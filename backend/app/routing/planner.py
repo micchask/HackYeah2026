@@ -21,6 +21,7 @@ from app.models import (
     RouteResponse,
     RouteSegment,
 )
+from app.routing import reports as route_reports
 from app.routing.elevation import NMT_SOURCE
 from app.routing.graph import (
     CityGraph,
@@ -169,9 +170,26 @@ class _RouteCandidate:
     geometry: list[LatLon]
 
 
+def _load_reports(city_id: str):
+    """Zgłoszenia miasta do routingu; bez bazy - trasa bez nich (to nie błąd trasy)."""
+    from app.report_store import StorageUnavailable, get_report_store
+
+    def load():
+        try:
+            return get_report_store().list(city_id)
+        except StorageUnavailable:
+            logger.warning("Zgłoszenia niedostępne - trasa bez nich")
+            return []
+
+    return load
+
+
 def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     profile = profile_from_preferences(req.preferences)
     graph = city_graph.graph
+    now = datetime.now(UTC)
+    # potwierdzone zgłoszenia (#63): blokady i kary na krawędziach, bez przeładowania grafu
+    applied = route_reports.sync_reports(req.city, city_graph, _load_reports(req.city), now)
     source, d_source = city_graph.nearest_node(req.origin.lat, req.origin.lon)
     target, d_target = city_graph.nearest_node(req.destination.lat, req.destination.lon)
 
@@ -222,6 +240,9 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
 
     route_accessibility, route_confidence = aggregate_route_scores(main.segments)
     warnings: list[str] = list(fallback_warnings)
+    warnings += route_reports.report_warnings(
+        applied, main.edges, [(p.lon, p.lat) for p in main.geometry], city_graph, now
+    )
     for label, d in (("A", d_source), ("B", d_target)):
         if d > 50 and not fallback_warnings:
             warnings.append(f"Punkt {label} jest {round(d)} m od najbliższego chodnika.")
@@ -262,6 +283,7 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
         baseline=baseline,
         explanation=explanation,
         alternatives=alternatives,
+        reports_considered=sorted(applied.reports),
     )
 
 

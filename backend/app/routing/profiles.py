@@ -178,6 +178,12 @@ def edge_cost(edge: dict[str, Any], profile: RoutingProfile) -> float | None:
     length = float(edge.get("length", 0.0))
     multiplier = 1.0
 
+    # potwierdzone zgłoszenia użytkowników (#63, routing/reports.py): blokada albo duża kara
+    if edge.get("report_block"):
+        return None
+    if penalty := edge.get("report_penalty"):
+        multiplier *= float(penalty)
+
     if is_steps(edge) and profile.avoid_stairs:
         if not stair_ramp(edge, profile):
             return None

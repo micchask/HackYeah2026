@@ -3974,3 +3974,16 @@ a.browse-link {
     display: none;
   }
 }
+
+/* Nowa bariera na otwartej trasie (#63) */
+.route-report-alert {
+  margin-bottom: 12px;
+}
+.route-report-alert p {
+  margin: 0 0 8px;
+}
+.route-report-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
