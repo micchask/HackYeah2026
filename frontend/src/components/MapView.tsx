@@ -29,52 +29,58 @@ import { shortInstitutionName } from './institutionStyle'
 
 export type BaseMap = 'standard' | 'satellite'
 
-// Dwa podkłady w jednym stylu - przełączanie widoczności nie przeładowuje warstw aplikacji
-const BASE_LAYERS: Record<BaseMap, string> = {
-  standard: 'osm',
-  satellite: 'satellite',
+// Domyślny podkład: wektorowa mapa MapLibre z danymi OpenStreetMap (OpenFreeMap - bez klucza API)
+export const VECTOR_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
+
+const OSM_RASTER: maplibregl.RasterSourceSpecification = {
+  type: 'raster',
+  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+  tileSize: 256,
+  maxzoom: 19,
+  attribution: '© OpenStreetMap contributors',
 }
 
-function mapStyle(baseMap: BaseMap): maplibregl.StyleSpecification {
-  const visibility = (id: BaseMap) => (id === baseMap ? 'visible' : 'none')
-  return {
-    version: 8,
-    sources: {
-      osm: {
-        type: 'raster',
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        maxzoom: 19,
-        attribution: '© OpenStreetMap contributors',
-      },
-      satellite: {
-        type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        ],
-        tileSize: 256,
-        maxzoom: 19,
-        attribution: 'Zdjęcia © Esri, Maxar, Earthstar Geographics',
-      },
+const SATELLITE: maplibregl.RasterSourceSpecification = {
+  type: 'raster',
+  tiles: [
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  ],
+  tileSize: 256,
+  maxzoom: 19,
+  attribution: 'Zdjęcia © Esri, Maxar, Earthstar Geographics',
+}
+
+const SATELLITE_LAYER = 'satellite'
+
+/**
+ * Satelita jako warstwa nad podkładem, a pod warstwami aplikacji. Przełączanie to tylko jej
+ * widoczność - trasa, bariery i miejsca zostają bez przeładowania stylu.
+ */
+function addSatelliteLayer(map: maplibregl.Map, baseMap: BaseMap) {
+  if (map.getLayer(SATELLITE_LAYER)) return
+  if (!map.getSource(SATELLITE_LAYER)) map.addSource(SATELLITE_LAYER, SATELLITE)
+  map.addLayer({
+    id: SATELLITE_LAYER,
+    type: 'raster',
+    source: SATELLITE_LAYER,
+    layout: { visibility: baseMap === 'satellite' ? 'visible' : 'none' },
+    paint: { 'raster-saturation': -0.15 },
+  })
+}
+
+/** Zapasowy podkład, gdy styl wektorowy się nie wczyta: rastrowe kafelki OSM, przygaszone. */
+const RASTER_FALLBACK_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: { osm: OSM_RASTER },
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+      // przygaszony podkład, żeby kolory trasy były czytelne
+      paint: { 'raster-saturation': -0.6, 'raster-contrast': -0.1 },
     },
-    layers: [
-      {
-        id: 'osm',
-        type: 'raster',
-        source: 'osm',
-        layout: { visibility: visibility('standard') },
-        // przygaszony podkład, żeby kolory trasy były czytelne
-        paint: { 'raster-saturation': -0.6, 'raster-contrast': -0.1 },
-      },
-      {
-        id: 'satellite',
-        type: 'raster',
-        source: 'satellite',
-        layout: { visibility: visibility('satellite') },
-        paint: { 'raster-saturation': -0.15 },
-      },
-    ],
-  }
+  ],
 }
 
 type GeoJSONData = Parameters<maplibregl.GeoJSONSource['setData']>[0]
@@ -191,7 +197,7 @@ function loadPlaceIcons(map: maplibregl.Map): Promise<void> {
   ).then(() => undefined)
 }
 
-/** Kółko klastra z liczbą - rysowane w canvasie, bo rastrowy podkład nie ma fontów dla symboli. */
+/** Kółko klastra z liczbą - rysowane w canvasie, więc nie zależy od fontów podkładu. */
 function clusterImage(count: number): ImageData {
   const scale = 2
   const radius = count < 10 ? 15 : count < 100 ? 18 : 22
@@ -529,15 +535,17 @@ export function MapView({
   const onFollow = useRef(onFollowChange)
   const navMarker = useRef<maplibregl.Marker | null>(null)
 
-  // Zmiana podkładu: tylko widoczność warstw rastrowych - trasa, bariery i miejsca zostają
+  // Zmiana podkładu: tylko widoczność warstwy satelity - trasa, bariery i miejsca zostają
   useEffect(() => {
     baseMapRef.current = baseMap
     const instance = map.current
     if (!instance || !mapReady) return
-    for (const [id, layer] of Object.entries(BASE_LAYERS)) {
-      if (instance.getLayer(layer)) {
-        instance.setLayoutProperty(layer, 'visibility', id === baseMap ? 'visible' : 'none')
-      }
+    if (instance.getLayer(SATELLITE_LAYER)) {
+      instance.setLayoutProperty(
+        SATELLITE_LAYER,
+        'visibility',
+        baseMap === 'satellite' ? 'visible' : 'none',
+      )
     }
   }, [baseMap, mapReady])
 
@@ -587,12 +595,21 @@ export function MapView({
 
     const instance = new maplibregl.Map({
       container: container.current,
-      style: mapStyle(baseMapRef.current),
+      style: VECTOR_STYLE_URL,
       center: [center[1], center[0]],
       zoom,
       attributionControl: false,
     })
     map.current = instance
+
+    // Styl wektorowy niedostępny (sieć, serwer) - zanim mapa się wczyta, przejdź na kafelki OSM
+    let fallback = false
+    const onStyleError = () => {
+      if (fallback || instance.isStyleLoaded()) return
+      fallback = true
+      instance.setStyle(RASTER_FALLBACK_STYLE)
+    }
+    instance.on('error', onStyleError)
 
     // Kontrolki jak w aplikacjach mapowych: prawy dół, nad nimi przyciski Warstwy / Legenda
     instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
@@ -683,6 +700,8 @@ export function MapView({
       onClick.current({ lat: e.lngLat.lat, lon: e.lngLat.lng })
     })
     instance.on('load', () => {
+      instance.off('error', onStyleError)
+      addSatelliteLayer(instance, baseMapRef.current)
       // pod trasą i barierami - to tło informacyjne
       addGapLayers(instance)
       addPlaceLayers(instance)
