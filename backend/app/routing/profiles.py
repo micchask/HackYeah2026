@@ -73,11 +73,43 @@ PROFILES: dict[str, RoutingProfile] = {
         wheelchair_no_impassable=False,
         speed_m_s=1.1,
     ),
+    # Wolniejsze tempo, mniej podejść: bez schodów, lekka kara za bruk, wolniejszy marsz
+    "senior": RoutingProfile(
+        name="senior",
+        avoid_stairs=True,
+        max_incline_percent=8.0,
+        max_kerb_height_cm=5.0,
+        surface_penalty={s: 1.5 for s in ROUGH_SURFACES | UNPAVED_SURFACES},
+        stair_ramp_tags=("ramp:wheelchair",),
+        unknown_incline_penalty=1.3,
+        unknown_kerb_penalty=1.2,
+        wheelchair_no_impassable=False,
+        speed_m_s=0.8,
+    ),
+    # Zwykły spacer (turysta, „bez profilu”): najkrótsza droga, bez kar i blokad
+    "walk": RoutingProfile(
+        name="walk",
+        avoid_stairs=False,
+        max_incline_percent=100.0,
+        hard_max_incline_percent=100.0,
+        max_kerb_height_cm=100.0,
+        surface_penalty={},
+        unknown_penalty=1.0,
+        stair_ramp_tags=(),
+        unknown_incline_penalty=1.0,
+        unknown_kerb_penalty=1.0,
+        wheelchair_no_impassable=False,
+        speed_m_s=1.3,
+    ),
 }
+
+# Nieznany albo pusty profil: neutralny spacer, a nie (jak kiedyś) po cichu wózek
+DEFAULT_PROFILE = "walk"
 
 
 def profile_from_preferences(prefs: RoutePreferences) -> RoutingProfile:
-    base = PROFILES.get(prefs.profile or "", PROFILES["wheelchair"])
+    """Kary bierzemy z profilu, a limity (schody, nachylenie, krawężnik) zawsze z preferencji."""
+    base = PROFILES.get(prefs.profile or "", PROFILES[DEFAULT_PROFILE])
     penalty = base.surface_penalty if prefs.avoid_rough_surface else {}
     return replace(
         base,

@@ -55,6 +55,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Profiles
+         * @description Tryby z ekranu startowego: preferencje trasy i domyślne warstwy mapy.
+         */
+        get: operations["list_profiles_api_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/routes": {
         parameters: {
             query?: never;
@@ -494,6 +514,12 @@ export interface components {
             /** Lon */
             lon: number;
         };
+        /**
+         * LayerId
+         * @description Warstwy mapy (chipy). Kolejność = kolejność chipów.
+         * @enum {string}
+         */
+        LayerId: "barriers" | "health" | "institutions" | "places" | "reports" | "rest" | "parking" | "events";
         /** LineStringGeometry */
         LineStringGeometry: {
             /**
@@ -510,6 +536,42 @@ export interface components {
                 number,
                 number
             ][];
+        };
+        /**
+         * ModeId
+         * @description Tryb wybierany na ekranie startowym (docs/plan-frontend-claude.md §4).
+         * @enum {string}
+         */
+        ModeId: "wheelchair" | "senior" | "tourist" | "stroller" | "guest";
+        /** ModePreset */
+        ModePreset: {
+            id: components["schemas"]["ModeId"];
+            /**
+             * Label
+             * @description Potrzeba, nie diagnoza, np. 'Poruszam się na wózku'
+             */
+            label: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon
+             * @description Emoji ikony trybu
+             */
+            icon: string;
+            /**
+             * Profile
+             * @description Profil routingu, np. 'walk' (klucz w routing/profiles.py)
+             */
+            profile: string;
+            /** @description Domyślne preferencje trasy dla trybu */
+            preferences: components["schemas"]["RoutePreferences"];
+            /**
+             * Layers
+             * @description Które warstwy mapy są domyślnie włączone
+             */
+            layers: {
+                [key: string]: boolean;
+            };
         };
         /** Place */
         Place: {
@@ -720,7 +782,7 @@ export interface components {
             prefer_lit_paths: boolean;
             /**
              * Profile
-             * @description Gotowy preset: 'wheelchair' lub 'stroller' (opcjonalnie)
+             * @description Profil routingu: 'wheelchair', 'stroller', 'senior' albo 'walk'; brak lub nieznany = 'walk'. Presety trybów: GET /api/profiles
              */
             profile?: string | null;
         };
@@ -1044,6 +1106,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_api_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModePreset"][];
                 };
             };
         };
