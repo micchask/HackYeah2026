@@ -5,7 +5,7 @@ Zasady cyklicznego odświeżania, obsługi awarii i moderacji opisuje
 
 | Źródło | Provider | Typ | Licencja | Status | Co daje |
 |---|---|---|---|---|---|
-| OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy, krawężniki (węzły `barrier=kerb` / `kerb=*` / `kerb:height`) |
+| OpenStreetMap (Overpass) | `osm` | API | ODbL | działa | `wheelchair`, `toilets:wheelchair`, `surface`, `tactile_paving`, graf pieszy, krawężniki (węzły `barrier=kerb` / `kerb=*` / `kerb:height`), przewijaki (`changing_table=*`, stary tag `diaper`). Miejsca: w całym mieście te z tagami dostępności, w `demo_bbox` wszystkie nazwane `amenity`/`shop` + noclegi i atrakcje (`tourism`) - wyszukiwarka „hotel” / „przewijak” pokazuje wszystkie. Odświeżenie samych miejsc: `python -m app.seed --refresh-places` |
 | Kraków – otwarte dane | `krakow_open_data` | pliki/API | TODO | stub | TODO: wybrać zbiory |
 | MSIP Kraków | `msip` | WMS/WFS | TODO | stub | TODO: chodniki, przejścia, schody |
 | Zgłoszenia użytkowników | `user_reports` | baza | własne | stub | aktualne problemy (zepsuta winda, remont) |

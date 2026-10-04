@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,6 +24,11 @@ class SearchResult(BaseModel):
     point: LatLon
     institution_id: str | None = Field(default=None, description="Dla source=institution")
     place: Place | None = Field(default=None, description="Dla source=place: miejsce z atrybutami")
+    match: Literal["name", "category"] = Field(
+        default="name",
+        description="'category' = zapytanie o rodzaj/cechę (np. 'hotel', 'przewijak') - "
+        "zwracamy WSZYSTKIE takie miejsca w obszarze, a nie kilka najlepszych dopasowań",
+    )
     distance_m: float | None = Field(
         default=None, description="Odległość od punktu `lat`/`lon` z zapytania (np. środka mapy)"
     )

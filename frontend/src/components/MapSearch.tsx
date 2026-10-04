@@ -21,7 +21,12 @@ interface Props {
   /** Środek widoku mapy - bliższe wyniki wyżej */
   near: LatLon | null
   onSelect: (result: SearchResult) => void
+  /** Zapytanie o rodzaj/cechę ("hotel", "przewijak"): pokaż wszystkie wyniki na mapie */
+  onShowAll?: (results: SearchResult[], query: string) => void
 }
+
+// Pierwsza opcja listy przy zapytaniu o rodzaj - "Pokaż wszystkie na mapie"
+type Option = { type: 'all' } | { type: 'result'; result: SearchResult }
 
 type Status = 'idle' | 'loading' | 'done' | 'error'
 
@@ -30,7 +35,7 @@ function badgeFor(r: SearchResult): string | null {
   return SOURCE_BADGE[r.source]
 }
 
-export function MapSearch({ city, near, onSelect }: Props) {
+export function MapSearch({ city, near, onSelect, onShowAll }: Props) {
   const id = useId()
   const inputId = `${id}-input`
   const listId = `${id}-list`
@@ -45,6 +50,11 @@ export function MapSearch({ city, near, onSelect }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   const term = query.trim()
+  const isCategory = !!onShowAll && results[0]?.match === 'category'
+  const options: Option[] = [
+    ...(isCategory ? [{ type: 'all' } as const] : []),
+    ...results.map((result) => ({ type: 'result' as const, result })),
+  ]
   // Zaokrąglony środek - przesuwanie mapy o kilka metrów nie wywołuje nowego zapytania
   const nearKey = near ? `${near.lat.toFixed(3)},${near.lon.toFixed(3)}` : ''
 
@@ -88,8 +98,20 @@ export function MapSearch({ city, near, onSelect }: Props) {
     setStatus('idle')
   }
 
+  function showAll() {
+    onShowAll?.(results, term)
+    setDirty(false)
+    setOpen(false)
+    setStatus('idle')
+  }
+
+  function choose(option: Option) {
+    if (option.type === 'all') showAll()
+    else select(option.result)
+  }
+
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    const count = results.length
+    const count = options.length
     switch (e.key) {
       case 'ArrowDown':
         if (!count) return
@@ -105,10 +127,11 @@ export function MapSearch({ city, near, onSelect }: Props) {
         break
       case 'Enter': {
         // Enter bez wybranej podpowiedzi bierze pierwszą - jak w mapach Google
-        const pick = results[active >= 0 ? active : 0]
+        // (przy zapytaniu o rodzaj pierwsza to "Pokaż wszystkie na mapie")
+        const pick = options[active >= 0 ? active : 0]
         if (open && pick) {
           e.preventDefault()
-          select(pick)
+          choose(pick)
         }
         break
       }
@@ -129,11 +152,14 @@ export function MapSearch({ city, near, onSelect }: Props) {
 
   const expanded = open && results.length > 0
   const noResults = status === 'done' && dirty && results.length === 0
+  const count = `${results.length} ${plural(results.length, 'wynik', 'wyniki', 'wyników')}`
   const announcement =
     status === 'loading'
       ? 'Szukam…'
       : expanded
-        ? `${results.length} ${plural(results.length, 'wynik', 'wyniki', 'wyników')}. Strzałki wybierają, Enter zatwierdza.`
+        ? isCategory
+          ? `${count}. Enter pokazuje wszystkie na mapie, strzałki wybierają jeden.`
+          : `${count}. Strzałki wybierają, Enter zatwierdza.`
         : noResults
           ? 'Brak wyników w obszarze demo.'
           : ''
@@ -182,7 +208,21 @@ export function MapSearch({ city, near, onSelect }: Props) {
         className="suggestions map-search-results"
         hidden={!expanded}
       >
-        {results.map((r, i) => {
+        {isCategory && (
+          <div
+            id={`${listId}-0`}
+            role="option"
+            aria-selected={active === 0}
+            className={`suggestion show-all${active === 0 ? ' active' : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={showAll}
+          >
+            <span className="suggestion-label">Pokaż wszystkie na mapie ({results.length})</span>
+            <span className="suggestion-meta">„{term}” – od najbliższych środka mapy</span>
+          </div>
+        )}
+        {results.map((r, index) => {
+          const i = isCategory ? index + 1 : index
           const badge = badgeFor(r)
           const meta = [
             r.kind,

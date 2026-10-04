@@ -9,6 +9,7 @@ Miejsca przeszukujemy w pamięci - z tego samego cache providerów, z którego `
 """
 
 import math
+import os
 import re
 import unicodedata
 from functools import lru_cache
@@ -17,7 +18,7 @@ from pathlib import Path
 from app import geocoding
 from app.cities import CityConfig
 from app.institutions import load_institutions
-from app.models import Institution, LatLon, Place
+from app.models import AttributeKey, Institution, LatLon, Place
 from app.models.search import SearchResult, SearchResultKind
 from app.providers.service import cache_path
 
@@ -49,6 +50,12 @@ CATEGORY_PL = {
     "post_office": "poczta",
     "hotel": "hotel",
     "hostel": "hostel",
+    "guest_house": "pensjonat",
+    "apartment": "apartament",
+    "motel": "motel",
+    "gallery": "galeria",
+    "viewpoint": "punkt widokowy",
+    "gift": "pamiątki",
     "museum": "muzeum",
     "theatre": "teatr",
     "cinema": "kino",
@@ -72,6 +79,44 @@ CATEGORY_PL = {
     "kiosk": "kiosk",
     "ice_cream": "lody",
 }
+
+
+# Zapytanie o rodzaj albo cechę -> wszystkie takie miejsca w obszarze (sortowane od najbliższych)
+MAX_BROWSE = 200
+# Grupy rodzajów pod jedną nazwą
+CATEGORY_GROUPS = {"nocleg": {"hotel", "hostel", "guest_house", "apartment", "motel"}}
+# Cechy dostępności: słowo -> (klucz atrybutu miejsca, kategoria w deklaracjach instytucji)
+FEATURES = {"przewijak": (AttributeKey.CHANGING_TABLE, "przewijak")}
+
+
+def same_word(query: str, name: str) -> bool:
+    """Ta sama nazwa w innej formie: 'hotele' ~ 'hotel', 'apteki' ~ 'apteka', 'muzea' ~ 'muzeum'.
+
+    Wspólny rdzeń (prawie całe krótsze słowo) i podobna długość - żeby 'bank' != 'bankomat'.
+    Wejście znormalizowane. Wielowyrazowe nazwy ('sklep spozywczy') - zgodność albo prefiks.
+    """
+    if query == name:
+        return True
+    if " " in name or " " in query:
+        return len(query) >= 4 and name.startswith(query)
+    if abs(len(query) - len(name)) > 3:
+        return False
+    common = len(os.path.commonprefix([query, name]))
+    shorter = min(len(query), len(name))
+    return common >= max(3, shorter - 1)
+
+
+def match_categories(query: str) -> set[str]:
+    """Kategorie OSM, o które pyta zapytanie (puste = to nie jest zapytanie o rodzaj)."""
+    found = {cat for cat, pl in CATEGORY_PL.items() if same_word(query, normalize(pl))}
+    for name, cats in CATEGORY_GROUPS.items():
+        if same_word(query, name):
+            found |= cats
+    return found
+
+
+def match_feature(query: str) -> tuple[AttributeKey, str] | None:
+    return next((f for word, f in FEATURES.items() if same_word(query, word)), None)
 
 
 def normalize(text: str) -> str:
@@ -192,13 +237,84 @@ def load_places(city: CityConfig) -> list[Place]:
     return _places_from_file(str(path), path.stat().st_mtime)
 
 
+def browse(city: CityConfig, query: str, near: LatLon | None = None) -> list[SearchResult]:
+    """Wszystkie miejsca danego rodzaju ('hotel') albo z daną cechą ('przewijak') w obszarze.
+
+    Puste = zapytanie nie dotyczy rodzaju ani cechy (zwykłe wyszukiwanie po nazwie).
+    """
+    categories = match_categories(query)
+    feature = match_feature(query)
+    if not categories and not feature:
+        return []
+    attr_key, inst_category = feature or (None, None)
+
+    results: list[SearchResult] = []
+    for inst in load_institutions(city.id):
+        if not inst.location or not city.contains(inst.location.point.lat, inst.location.point.lon):
+            continue
+        has_feature = inst_category is not None and any(
+            a.category == inst_category and a.value for a in inst.attributes or []
+        )
+        if not (has_feature or same_word(query, normalize(inst.kind))):
+            continue
+        results.append(
+            SearchResult(
+                id=f"institution:{inst.id}",
+                source=SearchResultKind.INSTITUTION,
+                label=inst.name,
+                description=inst.address,
+                kind=inst.kind,
+                point=inst.location.point,
+                institution_id=inst.id,
+                match="category",
+            )
+        )
+
+    for place in load_places(city):
+        if not city.contains(place.location.lat, place.location.lon):
+            continue
+        has_feature = attr_key is not None and any(
+            a.key == attr_key and a.value is True for a in place.attributes
+        )
+        if not (has_feature or place.category in categories):
+            continue
+        kind = CATEGORY_PL.get(place.category or "")
+        label = place.name or (kind.capitalize() if kind else "Miejsce bez nazwy")
+        results.append(
+            SearchResult(
+                id=f"place:{place.id}",
+                source=SearchResultKind.PLACE,
+                label=label,
+                kind=kind,
+                point=place.location,
+                place=place,
+                match="category",
+            )
+        )
+
+    for r in results:
+        _with_distance(r, near)
+    results.sort(key=lambda r: (r.distance_m or 0, normalize(r.label)))
+    unique: list[SearchResult] = []
+    for r in results:
+        if not _is_duplicate(r, unique):
+            unique.append(r)
+    return unique[:MAX_BROWSE]
+
+
 def search(
     city: CityConfig, query: str, limit: int = 8, near: LatLon | None = None
 ) -> list[SearchResult]:
-    """`near` (np. środek widoku mapy) - bliższe wyniki wyżej i odległość w `distance_m`."""
+    """`near` (np. środek widoku mapy) - bliższe wyniki wyżej i odległość w `distance_m`.
+
+    Zapytanie o rodzaj ('hotele') albo cechę ('przewijak') zwraca WSZYSTKIE takie miejsca
+    (do MAX_BROWSE, `match="category"`) - `limit` dotyczy tylko wyszukiwania po nazwie.
+    """
     q = normalize(query)
     if len(q) < 2:
         return []
+    if found := browse(city, q, near):
+        return found
     institutions = search_institutions(load_institutions(city.id), q, city, near)
     institutions = institutions[:MAX_INSTITUTIONS]
     places = search_places(load_places(city), q, city, near)[:MAX_PLACES]
