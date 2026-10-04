@@ -70,15 +70,25 @@ interface Props {
   onPick: (picking: boolean) => void
   /** Środek odcinka trasy zaznaczonego w opisie trasy, jeśli jakiś jest */
   segmentPoint: NamedPoint | null
+  /** Rozwinięty od razu (w osobnym panelu zgłoszenia) */
+  defaultOpen?: boolean
 }
 
 /** Anonimowe zgłoszenie bariery: miejsce, rodzaj, wartość, komentarz. Bez danych osobowych. */
-export function ReportForm({ city, point, onPointChange, picking, onPick, segmentPoint }: Props) {
+export function ReportForm({
+  city,
+  point,
+  onPointChange,
+  picking,
+  onPick,
+  segmentPoint,
+  defaultOpen = false,
+}: Props) {
   const id = useId()
   const formId = `${id}-form`
   const commentHintId = `${id}-comment-hint`
 
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [type, setType] = useState<ReportType>('barrier')
   const [fieldKey, setFieldKey] = useState<AttributeKey>(BARRIER_FIELDS[0].key)
   const [rawValue, setRawValue] = useState<string>(BARRIER_FIELDS[0].initial)
