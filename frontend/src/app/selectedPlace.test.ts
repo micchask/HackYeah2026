@@ -59,9 +59,9 @@ const institution: Institution = {
 }
 
 describe('placeCard', () => {
-  it('miejsce z /api/places: grupa po polsku, status, paszport ze źródłem, datą i konfliktem', () => {
+  it('miejsce z /api/places: rodzaj po polsku, status, paszport ze źródłem, datą i konfliktem', () => {
     const card = placeCard({ kind: 'place', place }, [])!
-    expect(card).toMatchObject({ title: 'Apteka Pod Tygrysem', kind: 'zdrowie', access: 'limited' })
+    expect(card).toMatchObject({ title: 'Apteka Pod Tygrysem', kind: 'apteka', access: 'limited' })
     expect(card.attributes[0]).toMatchObject({
       label: 'dostępność dla wózka',
       value: 'częściowo',

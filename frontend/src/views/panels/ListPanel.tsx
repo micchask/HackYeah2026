@@ -11,7 +11,7 @@ import { DataGapsSection } from '../../components/DataGapsSection'
 import { EmptyState, LoadingSkeleton, SoonTag } from '../../components/EmptyState'
 import { CalendarIcon } from '../../components/icons'
 import { InstitutionList } from '../../components/InstitutionList'
-import { GROUP_LABEL, placeGroup, placeLayer } from '../../components/placeCategories'
+import { placeKindLabel, placeLayer } from '../../components/placeCategories'
 import { PlaceList } from '../../components/PlaceList'
 
 export function ListPanel({ list }: { list: ListKind }) {
@@ -33,7 +33,7 @@ export function ListPanel({ list }: { list: ListKind }) {
         <PlaceList
           places={shown}
           hiddenByLayers={list === 'places' ? data.places.length - shown.length : 0}
-          onShow={(place) => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
+          onShow={(place) => select(fromPlace(place, placeKindLabel(place)))}
           query={state.placesQuery}
           onQueryChange={(query) => dispatch({ type: 'setPlacesQuery', query })}
           limit={PLACES_LIMIT}
