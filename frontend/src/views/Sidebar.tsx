@@ -2,6 +2,8 @@
 // Zwinięty na desktopie znika całkiem (przycisk w pasku wyszukiwania), na telefonie zostaje nagłówek.
 import { useEffect, useRef } from 'react'
 import { useApp } from '../app/context'
+import { ROUTE_OBJECTS_M } from '../app/layerData'
+import { useActiveRoute } from '../app/useRoute'
 import { ArrowLeftIcon, ChevronLeftIcon } from '../components/icons'
 import { panelTitle } from './panelTitles'
 import { ExplorePanel } from './panels/ExplorePanel'
@@ -9,11 +11,13 @@ import { ListPanel } from './panels/ListPanel'
 import { PlacePanel } from './panels/PlacePanel'
 import { ReportPanel } from './panels/ReportPanel'
 import { RoutePanel } from './panels/RoutePanel'
+import { SwitchRow } from './SettingsDrawer'
 
 export const SIDEBAR_BODY_ID = 'sidebar-body'
 
 export function Sidebar() {
-  const [{ panel, history, sidebarOpen, navigation }, dispatch] = useApp()
+  const [{ panel, history, sidebarOpen, navigation, showAllObjects }, dispatch] = useApp()
+  const { active } = useActiveRoute()
   const heading = useRef<HTMLHeadingElement>(null)
   const first = useRef(true)
   const body = useRef<HTMLDivElement>(null)
@@ -70,6 +74,20 @@ export function Sidebar() {
         </button>
       </div>
       <div ref={body} id={SIDEBAR_BODY_ID} className="sidebar-body" hidden={!sidebarOpen}>
+        {active && (
+          <div className="sidebar-map-filter">
+            <SwitchRow
+              label="Pokaż wszystkie obiekty na mapie"
+              description={
+                showAllObjects
+                  ? 'Widać wszystkie miejsca, instytucje i bariery z włączonych warstw.'
+                  : `Teraz widać tylko obiekty do ${ROUTE_OBJECTS_M} m od trasy.`
+              }
+              checked={showAllObjects}
+              onChange={(on) => dispatch({ type: 'setShowAllObjects', on })}
+            />
+          </div>
+        )}
         {panel.kind === 'explore' && <ExplorePanel />}
         {panel.kind === 'route' && <RoutePanel />}
         {panel.kind === 'place' && <PlacePanel place={panel.place} />}

@@ -75,6 +75,8 @@ export interface AppState {
   mapFocus: { point: LatLon; seq: number } | null
   /** Trwająca nawigacja: prawdziwy GPS albo symulacja przejścia trasy; null = podgląd trasy */
   navigation: NavigationMode | null
+  /** false = przy wyznaczonej trasie mapa pokazuje tylko obiekty blisko trasy */
+  showAllObjects: boolean
 }
 
 const NO_LAYERS: Layers = {
@@ -164,6 +166,7 @@ export type Action =
   | { type: 'setBaseMap'; baseMap: BaseMap }
   | { type: 'toggleSidebar'; open?: boolean }
   | { type: 'focusMap'; point: LatLon }
+  | { type: 'setShowAllObjects'; on: boolean }
   /** Adres z geokodera zamiast współrzędnych - tylko jeśli punkt to nadal ten kliknięty */
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
 
@@ -200,6 +203,7 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     mapFocus: null,
     routeNonce: 0,
     navigation: null,
+    showAllObjects: false,
   }
 }
 
@@ -319,6 +323,8 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, origin: { label: 'Twoja pozycja', point: action.point } }
     case 'setBaseMap':
       return { ...state, baseMap: action.baseMap }
+    case 'setShowAllObjects':
+      return { ...state, showAllObjects: action.on }
     case 'toggleSidebar':
       return { ...state, sidebarOpen: action.open ?? !state.sidebarOpen }
     case 'refinePoint': {

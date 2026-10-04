@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useApp, useAppData } from '../app/context'
 import { openReport, useMapClick } from '../app/mapActions'
-import { mapLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
+import { useMapObjects } from '../app/useMapObjects'
 import { useNavigation } from '../app/useNavigation'
 import { useActiveRoute } from '../app/useRoute'
 import { AlertIcon, PinIcon } from '../components/icons'
@@ -96,7 +96,8 @@ export function MapArea() {
   // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
   // Wyniki „Pokaż wszystkie” (np. „hotele”): na mapie tylko one - reszta warstw wraca po „Wyczyść”
   const showingResults = !!state.resultSet
-  const visible = mapLayerData(data, layers, showingResults)
+  // Przy wyznaczonej trasie - tylko obiekty do 100 m od niej (przełącznik w panelu bocznym)
+  const { visible } = useMapObjects()
   const showBarriers = !showingResults && (layers.barriers || layers.reports)
   // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
   const select = (selection: SelectedPlace) => {
@@ -174,12 +175,11 @@ export function MapArea() {
 /** Nakładki podglądu mapy - chowane w nawigacji */
 function MapOverlays() {
   const [state, dispatch] = useApp()
-  const data = useAppData()
   const { route, otherRoutes } = useActiveRoute()
   const { pickTarget, layers } = state
   const pickLetter =
     pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
-  const visible = mapLayerData(data, layers, !!state.resultSet)
+  const { visible } = useMapObjects()
   return (
     <>
       <div className="map-controls">
