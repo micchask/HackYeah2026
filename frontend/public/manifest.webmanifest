@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Dostępne trasy – Kraków",
-  "short_name": "Dostępne trasy",
+  "name": "BezPrzeszkód – dostępne trasy w Krakowie",
+  "short_name": "BezPrzeszkód",
   "description": "Trasy bez barier i dostępne miejsca dla osób na wózku, seniorów i rodzin z wózkiem dziecięcym",
   "lang": "pl",
   "start_url": "/",

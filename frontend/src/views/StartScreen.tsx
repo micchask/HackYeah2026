@@ -66,7 +66,7 @@ export function StartDialog({ onChoose }: { onChoose: (id: ProfileId) => void })
         <div className="start-hero">
           <div className="start-brand">
             <LogoMark size={44} />
-            <span>Kraków bez Barier</span>
+            <span>BezPrzeszkód</span>
           </div>
           <p id={`${id}-lead`} className="start-lead">
             Trasy bez schodów i dostępne miejsca w Krakowie – dopasowane do tego, jak się poruszasz.
