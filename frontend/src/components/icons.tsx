@@ -145,3 +145,152 @@ export const ChevronDownIcon = (p: IconProps) => (
     <path d="m6 9 6 6 6-6" />
   </Icon>
 )
+
+export const SeniorIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="11" cy="4.5" r="2" />
+    <path d="M11 7.5 9.5 14l2.5 2.5V21" />
+    <path d="M9.5 14 7 21" />
+    <path d="M10.5 9.5 14 11" />
+    <path d="M16 11.5V21" />
+  </Icon>
+)
+
+export const CameraIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </Icon>
+)
+
+export const UserIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21a8 8 0 0 1 16 0" />
+  </Icon>
+)
+
+export const LayersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 3 9 5-9 5-9-5z" />
+    <path d="m3 13 9 5 9-5" />
+  </Icon>
+)
+
+export const ListIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 6h11M9 12h11M9 18h11" />
+    <circle cx="4.5" cy="6" r="1" />
+    <circle cx="4.5" cy="12" r="1" />
+    <circle cx="4.5" cy="18" r="1" />
+  </Icon>
+)
+
+export const PanelIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="3" />
+    <path d="M9 4v16" />
+  </Icon>
+)
+
+export const ChevronLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m15 6-6 6 6 6" />
+  </Icon>
+)
+
+export const ChevronRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m9 6 6 6-6 6" />
+  </Icon>
+)
+
+export const CloseIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Icon>
+)
+
+export const ToiletIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="7" cy="4.5" r="1.5" />
+    <circle cx="17" cy="4.5" r="1.5" />
+    <path d="M5 8h4l1 7H8v6M6 15v6" />
+    <path d="m17 8-3 8h6zM16 16v5M18 16v5" />
+  </Icon>
+)
+
+export const ParkingIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="4" />
+    <path d="M9.5 17V7h3.5a3 3 0 0 1 0 6H9.5" />
+  </Icon>
+)
+
+export const CalendarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="16" rx="3" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </Icon>
+)
+
+export const BenchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 10h16M3 14h18M6 14v5M18 14v5M6 10V6M18 10V6" />
+  </Icon>
+)
+
+export const BuildingIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 21h18M5 21V10l7-5 7 5v11" />
+    <path d="M9 21v-6h6v6M9 11h.01M15 11h.01" />
+  </Icon>
+)
+
+export const CoffeeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" />
+    <path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3" />
+  </Icon>
+)
+
+export const MegaphoneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 10v4h3l8 4V6L7 10z" />
+    <path d="M19 9a4 4 0 0 1 0 6M8 14l1 5h3l-1-4" />
+  </Icon>
+)
+
+export const ImageIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="3" />
+    <circle cx="9" cy="10" r="1.8" />
+    <path d="m21 16-5-5-9 9" />
+  </Icon>
+)
+
+export const CarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 16V11l2-5h10l2 5v5M3 11h18v6H3z" />
+    <circle cx="7.5" cy="17.5" r="1.5" />
+    <circle cx="16.5" cy="17.5" r="1.5" />
+  </Icon>
+)
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+)
+
+export const SparkIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
+  </Icon>
+)
+
+export const ArrowLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </Icon>
+)

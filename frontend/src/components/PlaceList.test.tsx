@@ -47,21 +47,31 @@ const basilica: Place = {
 }
 
 describe('PlaceList', () => {
-  it('przy konflikcie pokazuje wartości z obu źródeł', () => {
-    render(<PlaceList places={[basilica]} query="" onQueryChange={vi.fn()} limit={200} />)
-
-    expect(screen.getByText('źródła się nie zgadzają')).toBeInTheDocument()
-    expect(screen.getByText(/dane wprowadzone ręcznie · pewność 70%/)).toBeInTheDocument()
-    expect(screen.getByText(/OpenStreetMap · pewność 60%/)).toBeInTheDocument()
+  it('w liście tylko nazwa, kategoria i status - szczegóły po kliknięciu', async () => {
+    const onShow = vi.fn()
+    render(
+      <PlaceList
+        places={[basilica]}
+        query=""
+        onQueryChange={vi.fn()}
+        limit={200}
+        onShow={onShow}
+      />,
+    )
+    const item = screen.getByRole('button', { name: /Bazylika Mariacka/ })
+    expect(item).toHaveTextContent('częściowo dostępne')
+    expect(screen.queryByText(/pewność/)).not.toBeInTheDocument()
+    await userEvent.click(item)
+    expect(onShow).toHaveBeenCalledWith(basilica)
   })
 
   it('pokazuje miejsca porcjami po 20', async () => {
     const places = Array.from({ length: 45 }, (_, i) => place(i))
     render(<PlaceList places={places} query="" onQueryChange={vi.fn()} limit={200} />)
 
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(20)
-    await userEvent.click(screen.getByRole('button', { name: 'Pokaż więcej miejsc (25)' }))
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(40)
+    expect(screen.getAllByRole('button', { name: /Miejsce [0-9]+/ })).toHaveLength(20)
+    await userEvent.click(screen.getByRole('button', { name: 'Pokaż więcej (25)' }))
+    expect(screen.getAllByRole('button', { name: /Miejsce [0-9]+/ })).toHaveLength(40)
   })
 
   it('wyszukiwarka ma etykietę i przekazuje tekst', async () => {
@@ -70,5 +80,6 @@ describe('PlaceList', () => {
 
     await userEvent.type(screen.getByRole('searchbox', { name: 'Szukaj miejsca po nazwie' }), 'S')
     expect(onQueryChange).toHaveBeenCalledWith('S')
+    expect(screen.getByText('Brak miejsc w widoku')).toBeInTheDocument()
   })
 })

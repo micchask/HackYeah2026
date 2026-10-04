@@ -1,3 +1,5 @@
+import { CarIcon } from './icons'
+import { SoonTag } from './EmptyState'
 import { formatKm } from './format'
 import { buildRouteVariants } from './routeVariants'
 import type { RouteResponse } from '../api/client'
@@ -8,19 +10,37 @@ interface Props {
   onChange: (index: number) => void
 }
 
+/** 1–2 najważniejsze cechy wariantu zamiast zdań. */
+function features(route: RouteResponse): { label: string; tone: 'good' | 'warn' }[] {
+  const out: { label: string; tone: 'good' | 'warn' }[] = []
+  const stairs = route.stairs_count ?? 0
+  out.push(
+    stairs === 0
+      ? { label: 'bez schodów', tone: 'good' }
+      : { label: `schody: ${stairs}`, tone: 'warn' },
+  )
+  const rough = Math.round(route.rough_surface_m ?? 0)
+  if (rough < 100) out.push({ label: 'mało bruku', tone: 'good' })
+  else if (route.confidence >= 0.7) out.push({ label: 'dane potwierdzone', tone: 'good' })
+  else out.push({ label: `bruk ${rough} m`, tone: 'warn' })
+  return out
+}
+
 /** Wybór między trasą główną a różniącymi się od niej wariantami z API. */
 export function RouteAlternatives({ route, selected, onChange }: Props) {
   const choices = buildRouteVariants(route)
   if (choices.length < 2) return null
 
   return (
-    <section className="card route-alternatives" aria-labelledby="route-alternatives-heading">
-      <h2 id="route-alternatives-heading">Wybierz trasę</h2>
-      <p className="meta">Porównaj warianty i wybierz ten, który chcesz zobaczyć na mapie.</p>
+    <section className="route-alternatives" aria-labelledby="route-alternatives-heading">
+      <h2 id="route-alternatives-heading" className="section-label">
+        Warianty trasy
+      </h2>
       <fieldset className="route-choices">
         <legend className="visually-hidden">Dostępne warianty trasy</legend>
         {choices.map(({ index, label, route: choice }) => {
           const minutes = Math.max(1, Math.round(choice.duration_s / 60))
+          const isSelected = selected === index
           return (
             <div key={`${label}-${index}`} className="route-choice">
               <input
@@ -28,33 +48,54 @@ export function RouteAlternatives({ route, selected, onChange }: Props) {
                 type="radio"
                 name="route-variant"
                 value={index}
-                checked={selected === index}
+                checked={isSelected}
                 onChange={() => onChange(index)}
                 aria-describedby={`route-choice-${index}-description`}
               />
               <label htmlFor={`route-choice-${index}`} className="route-choice-content">
                 <span className="route-choice-head">
                   <span className="route-choice-label">{label}</span>
-                  <span className="route-choice-head-end">
-                    {selected === index && <span className="route-choice-selected">Wybrana</span>}
-                    <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
-                  </span>
+                  {isSelected && <span className="visually-hidden">Wybrana</span>}
+                  <span className="route-choice-time">{minutes} min</span>
                 </span>
-                <span className="route-choice-stats">
-                  ok. {minutes} min · schody: {choice.stairs_count || 'brak'} · bruk / nierówna
-                  nawierzchnia: {Math.round(choice.rough_surface_m ?? 0)} m
+                <span className="route-choice-meta">
+                  <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
+                  {features(choice).map((f) => (
+                    <span key={f.label} className={`route-feature route-feature-${f.tone}`}>
+                      {f.label}
+                    </span>
+                  ))}
                 </span>
                 <span className="route-choice-scores">
                   dostępność {choice.accessibility_score}/100 · pewność danych{' '}
                   {Math.round(choice.confidence * 100)}%
                 </span>
-                <span id={`route-choice-${index}-description`} className="route-choice-description">
+                <span
+                  id={`route-choice-${index}-description`}
+                  className={
+                    isSelected
+                      ? 'route-choice-description'
+                      : 'route-choice-description visually-hidden'
+                  }
+                >
                   {choice.explanation}
                 </span>
               </label>
             </div>
           )
         })}
+        <div className="route-choice route-choice-soon" aria-disabled="true">
+          <span className="route-choice-soon-icon" aria-hidden="true">
+            <CarIcon size={18} />
+          </span>
+          <span className="route-choice-content">
+            <span className="route-choice-head">
+              <span className="route-choice-label">Auto + wózek</span>
+              <SoonTag />
+            </span>
+            <span className="route-choice-meta">Parking dla OzN i dojście do celu</span>
+          </span>
+        </div>
       </fieldset>
     </section>
   )

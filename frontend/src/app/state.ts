@@ -24,17 +24,29 @@ export type LayerId =
 
 export type Layers = Record<LayerId, boolean>
 
+/** Podkład mapy: zwykła mapa, zdjęcia satelitarne albo jasna, uproszczona */
+export type BaseMap = 'standard' | 'satellite' | 'light'
+
+/** Pełne listy (tekstowa alternatywa mapy) otwierane z „Pokaż więcej” w panelu „Dla Ciebie” */
+export const BASE_MAPS: BaseMap[] = ['standard', 'satellite', 'light']
+
+export type ListKind = 'places' | 'health' | 'barriers' | 'institutions' | 'events' | 'gaps'
+
 export type PanelState =
   | { kind: 'explore' } // „Dla Ciebie”
   | { kind: 'route' } // A/B, warianty, opis
   | { kind: 'place'; place: SelectedPlace } // karta miejsca
   | { kind: 'report'; point: NamedPoint | null } // zgłoszenie
+  | { kind: 'list'; list: ListKind } // pełna lista
 
 export interface AppState {
   profile: ProfileId | null // null = pokaż StartScreen
   prefs: RoutePreferences
   customized: boolean
   layers: Layers
+  baseMap: BaseMap
+  /** Lewy panel rozwinięty (desktop) / dolny panel wysunięty (telefon) */
+  sidebarOpen: boolean
   panel: PanelState
   history: PanelState[]
   origin: NamedPoint | null
@@ -138,6 +150,8 @@ export type Action =
   | { type: 'setPlacesQuery'; query: string }
   | { type: 'showResults'; query: string; results: SearchResult[] }
   | { type: 'clearResults' }
+  | { type: 'setBaseMap'; baseMap: BaseMap }
+  | { type: 'toggleSidebar'; open?: boolean }
   | { type: 'focusMap'; point: LatLon }
   /** Adres z geokodera zamiast współrzędnych - tylko jeśli punkt to nadal ten kliknięty */
   | { type: 'refinePoint'; target: PickTarget; expected: NamedPoint; point: NamedPoint }
@@ -152,6 +166,8 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
     prefs: { ...defaults.prefs, ...saved.prefs },
     customized: saved.customized ?? false,
     layers: { ...defaults.layers, ...saved.layers },
+    baseMap: saved.baseMap ?? 'standard',
+    sidebarOpen: true,
     panel: { kind: 'explore' },
     history: [],
     origin: null,
@@ -174,9 +190,12 @@ export function initialState(saved: Partial<AppState> = {}): AppState {
   }
 }
 
+// Otwarcie widoku zawsze pokazuje panel - także zwinięty
 function open(state: AppState, panel: PanelState): AppState {
-  if (state.panel.kind === panel.kind && panel.kind !== 'place') return { ...state, panel }
-  return { ...state, panel, history: [...state.history, state.panel] }
+  if (state.panel.kind === panel.kind && panel.kind !== 'place' && panel.kind !== 'list') {
+    return { ...state, panel, sidebarOpen: true }
+  }
+  return { ...state, panel, sidebarOpen: true, history: [...state.history, state.panel] }
 }
 
 // Po ustawieniu obu punktów panel przechodzi do trasy (jak „Trasa” w mapach Google)
@@ -271,6 +290,10 @@ export function appReducer(state: AppState, action: Action): AppState {
       }
     case 'clearResults':
       return { ...state, resultSet: null }
+    case 'setBaseMap':
+      return { ...state, baseMap: action.baseMap }
+    case 'toggleSidebar':
+      return { ...state, sidebarOpen: action.open ?? !state.sidebarOpen }
     case 'refinePoint': {
       const key = action.target === 'report' ? 'reportPoint' : action.target
       return state[key] === action.expected ? { ...state, [key]: action.point } : state
@@ -281,7 +304,7 @@ export function appReducer(state: AppState, action: Action): AppState {
 // --- zapamiętywanie w przeglądarce (bez lokalizacji - prywatność) -------------------------
 
 export const STORAGE_KEY = 'kbb.app.v1'
-export type Saved = Pick<AppState, 'profile' | 'prefs' | 'customized' | 'layers'>
+export type Saved = Pick<AppState, 'profile' | 'prefs' | 'customized' | 'layers' | 'baseMap'>
 
 export function loadSaved(storage: Pick<Storage, 'getItem'> | null): Partial<AppState> {
   try {
@@ -289,6 +312,7 @@ export function loadSaved(storage: Pick<Storage, 'getItem'> | null): Partial<App
     if (!raw) return {}
     const saved = JSON.parse(raw) as Partial<Saved>
     if (saved.profile && !(saved.profile in PROFILE_DEFAULTS)) return {}
+    if (saved.baseMap && !BASE_MAPS.includes(saved.baseMap)) delete saved.baseMap
     return saved
   } catch {
     return {}
@@ -297,9 +321,9 @@ export function loadSaved(storage: Pick<Storage, 'getItem'> | null): Partial<App
 
 export function saveState(storage: Pick<Storage, 'setItem'> | null, state: Saved): void {
   // Wybieramy pola wprost - nawet przekazany cały stan nie zapisze punktów trasy
-  const { profile, prefs, customized, layers } = state
+  const { profile, prefs, customized, layers, baseMap } = state
   try {
-    storage?.setItem(STORAGE_KEY, JSON.stringify({ profile, prefs, customized, layers }))
+    storage?.setItem(STORAGE_KEY, JSON.stringify({ profile, prefs, customized, layers, baseMap }))
   } catch {
     // tryb prywatny / zablokowane dane strony: aplikacja działa bez zapamiętywania
   }

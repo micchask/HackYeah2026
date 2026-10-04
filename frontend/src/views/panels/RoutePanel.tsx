@@ -31,6 +31,9 @@ export function RoutePanel() {
     layers,
   } = state
   const [restSpots, setRestSpots] = useState<RestSpotsState | null>(null)
+  // Opis krok po kroku zwinięty; odcinek wybrany na mapie sam go rozwija
+  const [stepsOpen, setStepsOpen] = useState(false)
+  const showSteps = stepsOpen || segment !== null
   const selectSegment = (index: number | null) => dispatch({ type: 'setSegment', segment: index })
   const visibleRestSpots =
     active && restSpots?.route === active
@@ -116,7 +119,19 @@ export function RoutePanel() {
               selectedVariant={variant}
               onSelectSegment={selectSegment}
             />
-            <RouteDescription route={active} selected={segment} onSelect={selectSegment} />
+            <details
+              className="disclosure"
+              open={showSteps}
+              onToggle={(event) => {
+                const open = event.currentTarget.open
+                if (open === showSteps) return
+                setStepsOpen(open)
+                if (!open) selectSegment(null)
+              }}
+            >
+              <summary>Opis krok po kroku · {active.segments.length} odc.</summary>
+              <RouteDescription route={active} selected={segment} onSelect={selectSegment} />
+            </details>
             {layers.rest && (
               <output className="card route-rest-spots" aria-live="polite">
                 <strong>Miejsca odpoczynku na trasie:</strong>{' '}
@@ -129,10 +144,10 @@ export function RoutePanel() {
             )}
             <button
               type="button"
-              className="chip route-report-button"
+              className="secondary-button route-report-button"
               onClick={() => openReport(dispatch, segmentPoint)}
             >
-              Zgłoś barierę na tej trasie
+              <AlertIcon size={18} /> Zgłoś barierę na tej trasie
             </button>
           </div>
         )}

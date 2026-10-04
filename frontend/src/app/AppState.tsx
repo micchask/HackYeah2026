@@ -14,16 +14,26 @@ function browserStorage(): Storage | null {
   }
 }
 
+function isPhone(): boolean {
+  try {
+    return window.matchMedia('(max-width: 768px)').matches
+  } catch {
+    return false
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, undefined, () =>
-    initialState(loadSaved(browserStorage())),
-  )
-  const { profile, prefs, customized, layers } = state
+  const [state, dispatch] = useReducer(appReducer, undefined, () => ({
+    ...initialState(loadSaved(browserStorage())),
+    // Na telefonie dolny panel startuje zwinięty - najpierw widać mapę
+    sidebarOpen: !isPhone(),
+  }))
+  const { profile, prefs, customized, layers, baseMap } = state
 
   // Zapamiętujemy tylko tryb i personalizację - bez punktów trasy (prywatność)
   useEffect(() => {
-    saveState(browserStorage(), { profile, prefs, customized, layers })
-  }, [profile, prefs, customized, layers])
+    saveState(browserStorage(), { profile, prefs, customized, layers, baseMap })
+  }, [profile, prefs, customized, layers, baseMap])
 
   useRouteFetch(state, dispatch)
   const data = useMapData(state.mapBbox, state.placesQuery, state.layers.gaps)

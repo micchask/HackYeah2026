@@ -1,11 +1,11 @@
-// Ekran wyboru trybu (plan §5.1, #88): pełnoekranowy dialog nad mapą, gdy nie wybrano trybu.
-import { useEffect, useId, useRef, type KeyboardEvent } from 'react'
+// Ekran powitalny (plan §5.1): pełny ekran, gdy w przeglądarce nie ma zapisanego profilu.
+// Wybór kafelka + „Kontynuuj”; Esc = „Gość”. Profil zmienia się później chipem w pasku wyszukiwania.
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useApp } from '../app/context'
+import { MODE_META, MODE_ORDER } from '../app/modeMeta'
 import type { ProfileId } from '../app/state'
-import { useModes, type ModeInfo } from '../app/useModes'
-
-// Kafelki; „Bez profilu” jest osobnym przyciskiem pod spodem
-const TILES: ProfileId[] = ['wheelchair', 'senior', 'tourist', 'stroller']
+import { useModes } from '../app/useModes'
+import { ArrowRightIcon, CheckIcon, LogoMark } from '../components/icons'
 
 export function StartScreen() {
   const [{ profile }, dispatch] = useApp()
@@ -15,28 +15,23 @@ export function StartScreen() {
   const choose = (id: ProfileId) => {
     const mode = modes.find((m) => m.id === id)
     dispatch({ type: 'chooseProfile', profile: id, prefs: mode?.prefs })
-    // Dialog znika - fokus na chip trybu, żeby klawiatura nie wylądowała na początku strony
+    // Ekran znika - fokus na chip profilu, żeby klawiatura nie wylądowała na początku strony
     requestAnimationFrame(() => document.getElementById('profile-chip')?.focus())
   }
-  return <StartDialog modes={modes} onChoose={choose} />
+  return <StartDialog onChoose={choose} />
 }
 
-function StartDialog({
-  modes,
-  onChoose,
-}: {
-  modes: ModeInfo[]
-  onChoose: (id: ProfileId) => void
-}) {
+export function StartDialog({ onChoose }: { onChoose: (id: ProfileId) => void }) {
   const id = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const [selected, setSelected] = useState<ProfileId | null>(null)
 
   useEffect(() => {
     heading.current?.focus()
   }, [])
 
-  // Modalny dialog: Tab krąży po przyciskach dialogu, Esc = „Kontynuuj bez profilu”
+  // Modalny dialog: Tab krąży po przyciskach dialogu, Esc = „Gość”
   function onKeyDown(e: KeyboardEvent<HTMLDialogElement>) {
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -44,9 +39,9 @@ function StartDialog({
       return
     }
     if (e.key !== 'Tab' || !dialog.current) return
-    const buttons = Array.from(dialog.current.querySelectorAll('button'))
-    const first = buttons[0]
-    const last = buttons[buttons.length - 1]
+    const buttons = Array.from(dialog.current.querySelectorAll('button:not([disabled])'))
+    const first = buttons[0] as HTMLElement | undefined
+    const last = buttons.at(-1) as HTMLElement | undefined
     const active = document.activeElement
     if (e.shiftKey && (active === first || active === heading.current)) {
       e.preventDefault()
@@ -56,10 +51,6 @@ function StartDialog({
       first?.focus()
     }
   }
-
-  const tiles = TILES.map((t) => modes.find((m) => m.id === t)).filter(
-    (m): m is ModeInfo => m !== undefined,
-  )
 
   return (
     <div className="start-screen">
@@ -72,42 +63,59 @@ function StartDialog({
         className="start-dialog"
         onKeyDown={onKeyDown}
       >
-        <p className="start-brand">Kraków bez Barier</p>
-        <h2 id={`${id}-heading`} ref={heading} tabIndex={-1}>
-          Jak się poruszasz?
-        </h2>
-        <p id={`${id}-lead`} className="start-lead">
-          Dopasujemy trasy i mapę do Twoich potrzeb.
-        </p>
+        <div className="start-hero">
+          <div className="start-brand">
+            <LogoMark size={44} />
+            <span>Kraków bez Barier</span>
+          </div>
+          <p id={`${id}-lead`} className="start-lead">
+            Trasy bez schodów i dostępne miejsca w Krakowie – dopasowane do tego, jak się poruszasz.
+          </p>
+        </div>
 
-        <fieldset className="mode-tiles">
-          <legend className="visually-hidden">Wybierz tryb</legend>
-          {tiles.map((mode) => (
+        <div className="start-body">
+          <h2 id={`${id}-heading`} ref={heading} tabIndex={-1}>
+            Jak się poruszasz?
+          </h2>
+          <fieldset className="mode-tiles">
+            <legend className="visually-hidden">Wybierz profil</legend>
+            {MODE_ORDER.map((mode) => {
+              const meta = MODE_META[mode]
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className="mode-tile"
+                  aria-pressed={selected === mode}
+                  aria-describedby={`${id}-${mode}-desc`}
+                  onClick={() => setSelected(mode)}
+                  onDoubleClick={() => onChoose(mode)}
+                >
+                  <span className="mode-tile-icon">
+                    <meta.Icon size={28} />
+                  </span>
+                  <span className="mode-tile-label">{meta.title}</span>
+                  <span id={`${id}-${mode}-desc`} className="mode-tile-desc">
+                    {meta.tagline}
+                  </span>
+                  {selected === mode && <CheckIcon size={18} className="mode-tile-check" />}
+                </button>
+              )
+            })}
+          </fieldset>
+
+          <div className="start-actions">
             <button
-              key={mode.id}
               type="button"
-              className="mode-tile"
-              aria-labelledby={`${id}-${mode.id}-label`}
-              aria-describedby={`${id}-${mode.id}-desc`}
-              onClick={() => onChoose(mode.id)}
+              className="primary-button start-continue"
+              disabled={!selected}
+              onClick={() => selected && onChoose(selected)}
             >
-              <span className="mode-tile-icon" aria-hidden="true">
-                {mode.icon}
-              </span>
-              <span id={`${id}-${mode.id}-label`} className="mode-tile-label">
-                {mode.label}
-              </span>
-              <span id={`${id}-${mode.id}-desc`} className="mode-tile-desc">
-                {mode.description}
-              </span>
+              Kontynuuj <ArrowRightIcon size={18} />
             </button>
-          ))}
-        </fieldset>
-
-        <button type="button" className="link-button start-skip" onClick={() => onChoose('guest')}>
-          Kontynuuj bez profilu
-        </button>
-        <p className="meta start-note">Zawsze możesz to zmienić i dostosować na mapie.</p>
+            <p className="start-note">Profil zmienisz lub dopasujesz w każdej chwili na mapie.</p>
+          </div>
+        </div>
       </dialog>
     </div>
   )

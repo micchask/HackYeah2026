@@ -6,7 +6,7 @@ import type { ModePreset } from '../api/client'
 import { DispatchContext, StateContext } from '../app/context'
 import { initialState, PROFILE_DEFAULTS, type AppState } from '../app/state'
 import { resetModesCache } from '../app/useModes'
-import { ProfileChip } from './ProfileChip'
+import { ProfileSwitcher } from './ProfileSwitcher'
 import { StartScreen } from './StartScreen'
 
 const LAYERS = {
@@ -62,29 +62,47 @@ afterEach(() => {
 })
 
 describe('StartScreen', () => {
-  it('modalny dialog z fokusem na nagłówku i kafelkami z /api/profiles', async () => {
+  it('modalny dialog z fokusem na nagłówku i pięcioma kafelkami', () => {
     renderWith(<StartScreen />, initialState())
     const dialog = screen.getByRole('dialog', { name: 'Jak się poruszasz?' })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(screen.getByRole('heading', { name: 'Jak się poruszasz?' })).toHaveFocus()
-    const tile = screen.getByRole('button', { name: 'Poruszam się na wózku' })
-    await waitFor(() => expect(tile).toHaveAccessibleDescription('opis z API: wheelchair'))
-    expect(screen.getByText('Zawsze możesz to zmienić i dostosować na mapie.')).toBeInTheDocument()
+    expect(screen.getByText('Kraków bez Barier')).toBeInTheDocument()
+    for (const name of [
+      'Osoba na wózku',
+      'Senior',
+      'Turysta',
+      'Rodzina z wózkiem dziecięcym',
+      'Gość',
+    ]) {
+      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument()
+    }
+    expect(screen.getByRole('button', { name: /Kontynuuj/ })).toBeDisabled()
+    expect(
+      screen.getByText('Profil zmienisz lub dopasujesz w każdej chwili na mapie.'),
+    ).toBeInTheDocument()
   })
 
-  it('wybór kafelka wywołuje chooseProfile z właściwym id i preferencjami z API', async () => {
+  it('kafelek + „Kontynuuj” wywołuje chooseProfile z preferencjami z API', async () => {
     const user = userEvent.setup()
     const dispatch = renderWith(<StartScreen />, initialState())
-    await screen.findByText('opis z API: senior')
-    await user.click(screen.getByRole('button', { name: 'Wolniejsze tempo, mniej podejść' }))
-    expect(dispatch).toHaveBeenCalledWith({
-      type: 'chooseProfile',
-      profile: 'senior',
-      prefs: { ...PROFILE_DEFAULTS.senior.prefs, max_kerb_height_cm: 7 },
-    })
+    // tryby z /api/profiles wczytują się w tle
+    await waitFor(() => expect(fetch).toHaveBeenCalled())
+    const tile = screen.getByRole('button', { name: /Senior/ })
+    await user.click(tile)
+    expect(tile).toHaveAttribute('aria-pressed', 'true')
+    expect(dispatch).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /Kontynuuj/ }))
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith({
+        type: 'chooseProfile',
+        profile: 'senior',
+        prefs: { ...PROFILE_DEFAULTS.senior.prefs, max_kerb_height_cm: 7 },
+      }),
+    )
   })
 
-  it('Esc = „Kontynuuj bez profilu”', async () => {
+  it('Esc = „Gość”', async () => {
     const user = userEvent.setup()
     const dispatch = renderWith(<StartScreen />, initialState())
     await user.keyboard('{Escape}')
@@ -93,10 +111,10 @@ describe('StartScreen', () => {
     )
   })
 
-  it('Tab krąży po przyciskach dialogu', async () => {
+  it('Tab krąży po aktywnych przyciskach dialogu', async () => {
     const user = userEvent.setup()
     renderWith(<StartScreen />, initialState())
-    const buttons = screen.getAllByRole('button')
+    const buttons = screen.getAllByRole('button').filter((b) => !b.hasAttribute('disabled'))
     buttons.at(-1)?.focus()
     await user.tab()
     expect(buttons[0]).toHaveFocus()
@@ -104,34 +122,44 @@ describe('StartScreen', () => {
     expect(buttons.at(-1)).toHaveFocus()
   })
 
-  it('nie pokazuje się, gdy tryb jest wybrany', () => {
+  it('nie pokazuje się, gdy profil jest zapisany', () => {
     renderWith(<StartScreen />, initialState({ profile: 'wheelchair' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
 
-describe('ProfileChip', () => {
-  it('pokazuje tryb i „dostosowany”, menu prowadzi do „Zmień tryb” i „Dostosuj”', async () => {
+describe('ProfileSwitcher', () => {
+  it('krótka nazwa profilu, menu ze zmianą profilu i personalizacją', async () => {
     const user = userEvent.setup()
     const state = { ...initialState({ profile: 'wheelchair' }), customized: true }
-    const dispatch = renderWith(<ProfileChip />, state)
-    const chip = screen.getByRole('button', { name: /Tryb: .*Poruszam się na wózku · dostosowany/ })
+    const dispatch = renderWith(<ProfileSwitcher />, state)
+    const chip = screen.getByRole('button', { name: /Profil: Wózek \(dostosowany\)/ })
     expect(chip).toHaveAttribute('aria-expanded', 'false')
 
     await user.click(chip)
     expect(chip).toHaveAttribute('aria-expanded', 'true')
-    await user.click(screen.getByRole('button', { name: 'Zmień tryb' }))
-    expect(dispatch).toHaveBeenCalledWith({ type: 'resetProfile' })
+    expect(screen.getByRole('button', { name: /Osoba na wózku/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    await user.click(screen.getByRole('button', { name: /Senior/ }))
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'chooseProfile', profile: 'senior' }),
+    )
 
     await user.click(chip)
-    await user.click(screen.getByRole('button', { name: 'Dostosuj' }))
+    await user.click(screen.getByRole('button', { name: 'Własna personalizacja' }))
     expect(dispatch).toHaveBeenCalledWith({ type: 'openSettings' })
+
+    await user.click(chip)
+    await user.click(screen.getByRole('button', { name: 'Pokaż ekran powitalny' }))
+    expect(dispatch).toHaveBeenCalledWith({ type: 'resetProfile' })
   })
 
   it('Esc zamyka menu i oddaje fokus na chip', async () => {
     const user = userEvent.setup()
-    renderWith(<ProfileChip />, initialState({ profile: 'guest' }))
-    const chip = screen.getByRole('button', { name: /Tryb: .*Bez profilu/ })
+    renderWith(<ProfileSwitcher />, initialState({ profile: 'guest' }))
+    const chip = screen.getByRole('button', { name: /Profil: Gość/ })
     await user.click(chip)
     await user.keyboard('{Escape}')
     expect(chip).toHaveAttribute('aria-expanded', 'false')

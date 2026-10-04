@@ -67,8 +67,8 @@ describe('SettingsDrawer', () => {
     render(<Harness onDispatch={vi.fn()} />)
 
     expect(screen.getByRole('group', { name: 'Ruch i trasy' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Na mapie' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Dane' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Miejsca i usługi' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Dane i widoczność' })).toBeInTheDocument()
     expect(
       screen.getByRole('switch', { name: 'Pokazuj miejsca odpoczynku na trasie' }),
     ).toBeInTheDocument()

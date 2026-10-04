@@ -23,29 +23,31 @@ export default function App() {
       <a href="#main" className="skip-link">
         Przejdź do treści
       </a>
-      <header className="header">
-        <div className="brand">
-          <LogoMark size={34} />
-          <div>
-            <h1>Dostępne trasy</h1>
-            <p className="brand-sub">Kraków · Stare Miasto, Wawel, Kazimierz</p>
-          </div>
+      {dashboard ? (
+        <div className="page">
+          {/* Mapa jest pełnoekranowa bez nagłówka; dashboard ma cienki pasek z powrotem do mapy */}
+          <header className="page-header">
+            <a href="#/" className="page-brand">
+              <LogoMark size={30} />
+              <h1>Kraków bez Barier</h1>
+            </a>
+            <nav className="page-nav" aria-label="Widoki">
+              <a href="#/">Mapa</a>
+              <a href={DASHBOARD_HASH} aria-current="page">
+                Dashboard miasta
+              </a>
+            </nav>
+          </header>
+          <main id="main" tabIndex={-1}>
+            <DashboardPage />
+          </main>
         </div>
-        <nav className="header-nav" aria-label="Widoki">
-          <a href="#/" aria-current={dashboard ? undefined : 'page'}>
-            Mapa
-          </a>
-          <a href={DASHBOARD_HASH} aria-current={dashboard ? 'page' : undefined}>
-            Dashboard miasta
-          </a>
-        </nav>
-        <p className="header-note">
-          <span className="badge badge-demo">demo</span> dane: OpenStreetMap
-        </p>
-      </header>
-      <main id="main" tabIndex={-1}>
-        {dashboard ? <DashboardPage /> : <HomePage />}
-      </main>
+      ) : (
+        <main id="main" tabIndex={-1}>
+          <h1 className="visually-hidden">Kraków bez Barier – dostępne trasy i miejsca</h1>
+          <HomePage />
+        </main>
+      )}
     </>
   )
 }

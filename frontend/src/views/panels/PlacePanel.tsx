@@ -6,7 +6,8 @@ import { openReport } from '../../app/mapActions'
 import { placeCard, type CardAttribute, type SelectedPlace } from '../../app/selectedPlace'
 import { SOURCE_LABEL } from '../../components/attributes'
 import { formatDate } from '../../components/format'
-import { AlertIcon } from '../../components/icons'
+import { EmptyState, LoadingSkeleton, SoonTag } from '../../components/EmptyState'
+import { AlertIcon, ImageIcon, PinIcon, RouteIcon } from '../../components/icons'
 import { PlaceAccessIcon } from '../../components/PlaceAccessIcon'
 import { ACCESS_LABEL, placeGroup } from '../../components/placeCategories'
 
@@ -76,23 +77,32 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
 
   if (!card) {
     return (
-      <section className="card">
-        <p className="meta">Wczytuję dane miejsca…</p>
-      </section>
+      <div aria-busy="true">
+        <LoadingSkeleton rows={3} />
+        <p className="visually-hidden">Wczytuję dane miejsca…</p>
+      </div>
     )
   }
 
   const attributes = changingTable ? [...card.attributes, changingTable] : card.attributes
   const named = card.point ? { label: card.title, point: card.point } : null
+  const sources = [...new Set(attributes.map((a) => a.source))]
+  const lastChecked = attributes
+    .map((a) => a.date)
+    .filter((d): d is string => !!d)
+    .sort()
+    .at(-1)
 
   return (
-    <section className="card place-card" aria-labelledby="place-card-title">
-      {card.kind && <p className="institution-kind">{card.kind}</p>}
-      <h3 id="place-card-title" className="place-card-title">
-        {card.title}
-      </h3>
-      {card.subtitle && <p className="meta">{card.subtitle}</p>}
-      {card.demo && <span className="badge badge-demo-data">dane przykładowe</span>}
+    <article className="place-card" aria-labelledby="place-card-title">
+      <header className="place-card-head">
+        {card.kind && <p className="eyebrow">{card.kind}</p>}
+        <h3 id="place-card-title" className="place-card-title">
+          {card.title}
+        </h3>
+        {card.subtitle && <p className="place-card-sub">{card.subtitle}</p>}
+        {card.demo && <SoonTag>dane przykładowe</SoonTag>}
+      </header>
       {card.locationNote && (
         <p className="callout callout-warning">
           <AlertIcon size={18} />
@@ -104,7 +114,7 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
         <PlaceAccessIcon access={card.access} size={24} />
         <span>
           <strong>{ACCESS_LABEL[card.access]}</strong>
-          {card.accessNote && <span className="meta place-status-note">{card.accessNote}</span>}
+          {card.accessNote && <span className="place-status-note">{card.accessNote}</span>}
         </span>
       </p>
 
@@ -119,11 +129,11 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
             dispatch({ type: 'openPanel', panel: { kind: 'route' } })
           }}
         >
-          Prowadź tutaj
+          <RouteIcon size={18} /> Prowadź tutaj
         </button>
         <button
           type="button"
-          className="chip"
+          className="secondary-button"
           disabled={!named}
           onClick={() => {
             if (!named) return
@@ -133,33 +143,85 @@ export function PlacePanel({ place: selection }: { place: SelectedPlace }) {
         >
           Ustaw jako start
         </button>
-        <button type="button" className="chip" onClick={() => openReport(dispatch, named)}>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={!card.point}
+          onClick={() => card.point && dispatch({ type: 'focusMap', point: card.point })}
+        >
+          <PinIcon size={16} /> Pokaż na mapie
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => openReport(dispatch, named)}
+        >
           Zgłoś zmianę
         </button>
       </div>
 
-      <h4 className="place-passport-title">Paszport dostępności</h4>
-      {attributes.length ? (
-        <>
-          <ul className="attributes place-passport">
-            {attributes.map((a) => (
-              <PassportItem key={a.key} attribute={a} />
-            ))}
-          </ul>
-          <p className="meta">
-            Cech, których nie ma na liście, nie znamy – to nie znaczy, że są dostępne.
-          </p>
-        </>
-      ) : (
-        <p className="callout callout-warning no-data">
-          <AlertIcon size={18} />
-          <span>
-            Nie mamy danych o dostępności tego miejsca. To <strong>nie</strong> znaczy, że jest
-            dostępne – sprawdź przed wyjściem albo zgłoś barierę, jeśli ją znasz.
-          </span>
-        </p>
+      {attributes.length > 0 && (
+        <ul className="place-tags" aria-label="Najważniejsze cechy">
+          {attributes.slice(0, 4).map((a) => (
+            <li key={a.key} className="tag">
+              {a.label}: {a.value}
+            </li>
+          ))}
+        </ul>
       )}
-    </section>
+
+      <details className="disclosure" open>
+        <summary>Dostępność</summary>
+        {attributes.length ? (
+          <>
+            <ul className="attributes place-passport">
+              {attributes.map((a) => (
+                <PassportItem key={a.key} attribute={a} />
+              ))}
+            </ul>
+            <p className="meta">
+              Cech, których nie ma na liście, nie znamy – to nie znaczy, że są dostępne.
+            </p>
+          </>
+        ) : (
+          <p className="callout callout-warning no-data">
+            <AlertIcon size={18} />
+            <span>
+              Nie mamy danych o dostępności tego miejsca. To <strong>nie</strong> znaczy, że jest
+              dostępne – sprawdź przed wyjściem albo zgłoś barierę, jeśli ją znasz.
+            </span>
+          </p>
+        )}
+      </details>
+
+      <details className="disclosure">
+        <summary>Źródła danych</summary>
+        {sources.length ? (
+          <p className="meta">
+            {sources.join(' · ')}
+            {lastChecked
+              ? ` · ostatnio sprawdzone ${formatDate(lastChecked)}`
+              : ' · bez daty weryfikacji'}
+          </p>
+        ) : (
+          <EmptyState title="Brak źródeł dla tego miejsca" />
+        )}
+      </details>
+
+      <details className="disclosure">
+        <summary>Zdjęcia</summary>
+        <EmptyState tone="soon" icon={<ImageIcon size={22} />} title="Zdjęcia wejść – wkrótce">
+          Mieszkańcy dodadzą zdjęcia wejścia i toalety.
+        </EmptyState>
+      </details>
+
+      <details className="disclosure">
+        <summary>Zgłoszenia</summary>
+        <EmptyState title="Brak zgłoszeń dla tego miejsca">
+          Widzisz barierę? Daj znać innym.
+        </EmptyState>
+      </details>
+    </article>
   )
 }
 

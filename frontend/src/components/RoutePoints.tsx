@@ -51,7 +51,7 @@ export function RoutePoints({
 
   return (
     <fieldset className="route-points">
-      <legend className="card-title">Zaplanuj trasę</legend>
+      <legend className="visually-hidden">Start i cel trasy</legend>
 
       <div className="points">
         <ol className="points-list">
@@ -97,12 +97,12 @@ export function RoutePoints({
       </div>
 
       <fieldset className="presets">
-        <legend className="presets-label">Szybki wybór – trasy demo</legend>
+        <legend className="presets-label">Trasy demo</legend>
         {presets.map((preset) => (
           <button
             key={preset.label}
             type="button"
-            className="chip"
+            className="chip chip-small"
             aria-pressed={activePreset === preset.label}
             onClick={() => onPreset(preset)}
           >
