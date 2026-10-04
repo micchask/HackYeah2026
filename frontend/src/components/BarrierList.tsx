@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import type { Barrier, BarrierType } from '../api/client'
 import { BarrierIcon } from './BarrierIcon'
 import { BARRIER_LABEL, BARRIER_TYPES } from './barrierStyle'
@@ -23,6 +23,8 @@ interface Props {
   onVisibleChange: (visible: boolean) => void
   selected: string | null
   onSelect: (id: string | null) => void
+  /** Zwinięta lista: tylko tyle najważniejszych barier, reszta po „Pokaż wszystkie” */
+  collapsedLimit?: number
 }
 
 /** Tekstowa alternatywa warstwy barier: te same dane co na mapie, pogrupowane wg typu. */
@@ -35,11 +37,16 @@ export function BarrierList({
   onVisibleChange,
   selected,
   onSelect,
+  collapsedLimit,
 }: Props) {
   const id = useId()
+  const [showAll, setShowAll] = useState(false)
+  // API zwraca bariery od najważniejszych (schody, krawężniki…) - zwinięta lista pokazuje je
+  const collapsible = collapsedLimit !== undefined && barriers.length > collapsedLimit
+  const shown = collapsible && !showAll ? barriers.slice(0, collapsedLimit) : barriers
   const groups = BARRIER_TYPES.map((type) => ({
     type,
-    items: barriers.filter((b) => b.type === type),
+    items: shown.filter((b) => b.type === type),
   })).filter((g) => g.items.length > 0)
 
   return (
@@ -109,6 +116,11 @@ export function BarrierList({
           )}
         </details>
       ))}
+      {collapsible && (
+        <button type="button" className="link-button" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? 'Pokaż mniej barier' : `Pokaż wszystkie bariery (${barriers.length})`}
+        </button>
+      )}
     </section>
   )
 }

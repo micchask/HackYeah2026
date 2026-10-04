@@ -2304,3 +2304,52 @@ button.step-body:hover {
     background: #3b1d5a;
   }
 }
+
+/* ---------- panel „Dla Ciebie” (#91) ---------- */
+
+.explore-section h2 {
+  margin-bottom: 0.5rem;
+}
+.explore-section .primary-button {
+  margin: 0 0 0.75rem;
+}
+.explore-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.explore-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+.explore-item:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.explore-item .place-access-icon {
+  margin-top: 0.15rem;
+}
+.explore-item-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.explore-item-title {
+  font-weight: 600;
+}
+.explore-item .meta {
+  margin: 0;
+}
