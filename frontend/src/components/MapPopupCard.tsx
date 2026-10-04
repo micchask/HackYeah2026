@@ -8,6 +8,8 @@ export interface MapPopupActions {
   /** Otwiera kartę miejsca w panelu (paszport, akcje) */
   onDetails: () => void
   onClose: () => void
+  /** Otwiera zgłoszenie bariery z tym miejscem (#95) */
+  onReport?: () => void
 }
 
 interface Props extends MapPopupActions {
@@ -22,7 +24,7 @@ interface Props extends MapPopupActions {
  * Mały dymek przy punkcie na mapie (jak w mapach Google): rodzaj, nazwa i „Szczegóły”.
  * Pełne informacje i akcje są w karcie miejsca w panelu (plan §5.5).
  */
-export function MapPopupCard({ id, kind, title, subtitle, onDetails, onClose }: Props) {
+export function MapPopupCard({ id, kind, title, subtitle, onDetails, onClose, onReport }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
 
@@ -53,6 +55,11 @@ export function MapPopupCard({ id, kind, title, subtitle, onDetails, onClose }: 
         <InfoIcon size={18} />
         <span>Szczegóły</span>
       </button>
+      {onReport && (
+        <button type="button" className="link-button popup-report" onClick={onReport}>
+          Zgłoś problem tutaj
+        </button>
+      )}
     </div>
   )
 }

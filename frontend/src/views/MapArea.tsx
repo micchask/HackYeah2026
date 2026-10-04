@@ -1,10 +1,10 @@
 // Prawa część ekranu: mapa + nakładki (pasek, baner wskazywania, legenda). Warstwy porządkuje #90.
 import { useApp, useAppData } from '../app/context'
-import { useMapClick } from '../app/mapActions'
+import { openReport, useMapClick } from '../app/mapActions'
 import { visibleLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
-import { PinIcon } from '../components/icons'
+import { AlertIcon, PinIcon } from '../components/icons'
 import { InstitutionPopup } from '../components/InstitutionPopup'
 import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
@@ -20,10 +20,16 @@ function usePopup(): MapPopup | null {
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
   const details = (place: SelectedPlace) => () =>
     dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
+  // „Zgłoś problem tutaj” w okienku: panel zgłoszenia z tym miejscem (#95)
+  const report = (label: string, point: { lat: number; lon: number }) => () => {
+    close()
+    openReport(dispatch, { label, point })
+  }
 
   if (mapSelection?.kind === 'institution') {
     const institution = institutions.find((i) => i.id === mapSelection.id)
     if (!institution?.location) return null
+    const point = institution.location.point
     return {
       key: `institution:${institution.id}`,
       point: institution.location.point,
@@ -33,6 +39,7 @@ function usePopup(): MapPopup | null {
           institution={institution}
           onDetails={details(mapSelection)}
           onClose={close}
+          onReport={report(institution.name, point)}
         />
       ),
     }
@@ -48,6 +55,7 @@ function usePopup(): MapPopup | null {
           result={result}
           onDetails={details(mapSelection)}
           onClose={close}
+          onReport={report(result.label, result.point)}
         />
       ),
     }
@@ -110,6 +118,23 @@ export function MapArea() {
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
       />
       <TopBar />
+      <button
+        type="button"
+        className="map-report-button"
+        aria-pressed={pickTarget === 'report'}
+        onClick={() => {
+          if (pickTarget === 'report') {
+            dispatch({ type: 'setPickTarget', target: null })
+            return
+          }
+          // panel zgłoszenia + wskazywanie miejsca kliknięciem; z klawiatury: adres w panelu
+          if (state.panel.kind !== 'report') openReport(dispatch, null)
+          dispatch({ type: 'setPickTarget', target: 'report' })
+        }}
+      >
+        <AlertIcon size={18} />
+        <span>Zgłoś problem</span>
+      </button>
       {pickLetter && (
         <div className="map-banner">
           <PinIcon size={18} />

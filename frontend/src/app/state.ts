@@ -206,9 +206,11 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'openPanel':
       return open(state, action.panel)
     case 'back': {
+      // wychodząc ze zgłoszenia nie zostawiamy włączonego wskazywania miejsca bariery na mapie
+      const pickTarget = state.pickTarget === 'report' ? null : state.pickTarget
       const previous = state.history.at(-1)
-      if (!previous) return { ...state, panel: { kind: 'explore' } }
-      return { ...state, panel: previous, history: state.history.slice(0, -1) }
+      if (!previous) return { ...state, pickTarget, panel: { kind: 'explore' } }
+      return { ...state, pickTarget, panel: previous, history: state.history.slice(0, -1) }
     }
     case 'setOrigin':
       return withPoints({ ...state, origin: action.point })

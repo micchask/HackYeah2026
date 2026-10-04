@@ -64,3 +64,8 @@ export const SOURCE_LABEL: Record<string, string> = {
   nmt_gugik: 'NMT GUGiK',
   demo: 'dane przykładowe',
 }
+
+/** Potwierdzenie po wysłaniu zgłoszenia (formularz i panel zgłoszenia) */
+export function reportConfirmation(report: { type: ReportType }): string {
+  return `Dziękujemy! Zgłoszenie „${REPORT_TYPE_LABEL[report.type]}” zapisane – czeka na weryfikację.`
+}

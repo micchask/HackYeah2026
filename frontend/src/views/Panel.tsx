@@ -1,18 +1,11 @@
 // Lewy panel: jeden kontekst naraz (jak w mapach Google), z „← Wstecz” (plan §2).
 import { useEffect, useRef } from 'react'
 import { useApp } from '../app/context'
-import type { PanelState } from '../app/state'
+import { PANEL_TITLE } from './panelTitles'
 import { ExplorePanel } from './panels/ExplorePanel'
 import { PlacePanel } from './panels/PlacePanel'
 import { ReportPanel } from './panels/ReportPanel'
 import { RoutePanel } from './panels/RoutePanel'
-
-const TITLE: Record<PanelState['kind'], string> = {
-  explore: 'Dla Ciebie',
-  route: 'Trasa',
-  place: 'Miejsce',
-  report: 'Zgłoś barierę',
-}
 
 export function Panel() {
   const [{ panel, history }, dispatch] = useApp()
@@ -37,7 +30,7 @@ export function Panel() {
           </button>
         )}
         <h2 id="panel-heading" ref={heading} tabIndex={-1}>
-          {TITLE[panel.kind]}
+          {PANEL_TITLE[panel.kind]}
         </h2>
       </div>
       {panel.kind === 'explore' && <ExplorePanel />}

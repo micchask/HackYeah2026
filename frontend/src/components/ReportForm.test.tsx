@@ -107,3 +107,33 @@ describe('ReportForm', () => {
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
   })
 })
+
+describe('ReportForm w panelu zgłoszenia (#95)', () => {
+  it('bez przycisku „Zwiń”, a po wysłaniu przekazuje zgłoszenie rodzicowi', async () => {
+    mockApi()
+    const user = userEvent.setup()
+    const onSent = vi.fn()
+    render(
+      <ReportForm
+        city="krakow"
+        point={SUKIENNICE}
+        onPointChange={() => {}}
+        picking={false}
+        onPick={() => {}}
+        segmentPoint={null}
+        defaultOpen
+        collapsible={false}
+        onSent={onSent}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Zwiń' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: /Niedziałająca winda/ }))
+    await user.click(screen.getByRole('button', { name: 'Wyślij zgłoszenie' }))
+
+    await vi.waitFor(() => expect(onSent).toHaveBeenCalledOnce())
+    expect(onSent.mock.calls[0][0].type).toBe('elevator_broken')
+    // potwierdzenie pokazuje panel (ReportSent), formularz go nie dubluje
+    expect(screen.queryByText(/Dziękujemy!/)).not.toBeInTheDocument()
+  })
+})
