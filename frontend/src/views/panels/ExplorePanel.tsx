@@ -7,6 +7,9 @@ import { BarrierList } from '../../components/BarrierList'
 import { DataGapsSection } from '../../components/DataGapsSection'
 import { InstitutionList } from '../../components/InstitutionList'
 import { PlaceList } from '../../components/PlaceList'
+import { GROUP_LABEL, placeGroup } from '../../components/placeCategories'
+import { visiblePlaces } from '../../app/layerData'
+import { fromPlace } from '../../app/selectedPlace'
 import { SearchResultsList } from '../../components/SearchResultsList'
 import { RouteForm } from './RouteForm'
 
@@ -69,7 +72,14 @@ export function ExplorePanel() {
         onSelect={(id) => dispatch({ type: 'selectOnMap', selection: { kind: 'institution', id } })}
       />
       <PlaceList
-        places={data.places}
+        places={visiblePlaces(data.places, state.layers)}
+        hiddenByLayers={data.places.length - visiblePlaces(data.places, state.layers).length}
+        onShow={(place) =>
+          dispatch({
+            type: 'selectOnMap',
+            selection: fromPlace(place, GROUP_LABEL[placeGroup(place)]),
+          })
+        }
         query={state.placesQuery}
         onQueryChange={(query) => dispatch({ type: 'setPlacesQuery', query })}
         limit={PLACES_LIMIT}

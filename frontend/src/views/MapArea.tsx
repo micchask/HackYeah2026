@@ -1,12 +1,14 @@
 // Prawa część ekranu: mapa + nakładki (pasek, baner wskazywania, legenda). Warstwy porządkuje #90.
 import { useApp, useAppData } from '../app/context'
-import { useMapClick, useSetPoint } from '../app/mapActions'
-import { fromSearchResult } from '../app/selectedPlace'
+import { useMapClick } from '../app/mapActions'
+import { visibleLayerData } from '../app/layerData'
+import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
 import { PinIcon } from '../components/icons'
 import { InstitutionPopup } from '../components/InstitutionPopup'
 import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
+import { GROUP_LABEL, placeGroup } from '../components/placeCategories'
 import { PlacePopup } from '../components/PlacePopup'
 import { TopBar } from './TopBar'
 
@@ -15,13 +17,13 @@ const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 function usePopup(): MapPopup | null {
   const [{ mapSelection }, dispatch] = useApp()
   const { institutions } = useAppData()
-  const setPoint = useSetPoint()
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
+  const details = (place: SelectedPlace) => () =>
+    dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
 
   if (mapSelection?.kind === 'institution') {
     const institution = institutions.find((i) => i.id === mapSelection.id)
     if (!institution?.location) return null
-    const point = { label: institution.name, point: institution.location.point }
     return {
       key: `institution:${institution.id}`,
       point: institution.location.point,
@@ -29,8 +31,7 @@ function usePopup(): MapPopup | null {
         <InstitutionPopup
           key={institution.id}
           institution={institution}
-          onSetOrigin={() => setPoint('origin', point)}
-          onSetDestination={() => setPoint('destination', point)}
+          onDetails={details(mapSelection)}
           onClose={close}
         />
       ),
@@ -38,7 +39,6 @@ function usePopup(): MapPopup | null {
   }
   if (mapSelection?.kind === 'search') {
     const result = mapSelection.result
-    const point = { label: result.label, point: result.point }
     return {
       key: result.id,
       point: result.point,
@@ -46,8 +46,7 @@ function usePopup(): MapPopup | null {
         <PlacePopup
           key={result.id}
           result={result}
-          onSetOrigin={() => setPoint('origin', point)}
-          onSetDestination={() => setPoint('destination', point)}
+          onDetails={details(mapSelection)}
           onClose={close}
         />
       ),
@@ -65,14 +64,22 @@ export function MapArea() {
   const { pickTarget, layers, mapSelection } = state
   const pickLetter =
     pickTarget === 'origin' ? 'A' : pickTarget === 'destination' ? 'B' : pickTarget ? '!' : null
-  const showBarriers = layers.barriers
+  // Mapa i legenda pokazują tylko warstwy włączone chipami (#90)
+  const visible = visibleLayerData(data, layers)
+  const showBarriers = layers.barriers || layers.reports
+  // Zaznaczenie na mapie (okienko) + karta w panelu (plan §6)
+  const select = (selection: SelectedPlace) => {
+    dispatch({ type: 'selectOnMap', selection })
+    dispatch({ type: 'openPanel', panel: { kind: 'place', place: selection } })
+  }
 
   return (
     <div className="map-wrap">
       <MapView
         center={KRAKOW_CENTER}
         zoom={14}
-        places={data.places}
+        places={visible.places}
+        onPlaceClick={(place) => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
         route={active}
         routeVariants={variants}
         selectedRoute={state.variant}
@@ -86,22 +93,18 @@ export function MapArea() {
         onBoundsChange={(bbox) =>
           dispatch({ type: 'setMapView', bbox, center: state.mapCenter ?? centerOf(bbox) })
         }
-        institutions={data.institutions}
+        institutions={visible.institutions}
         selectedInstitution={mapSelection?.kind === 'institution' ? mapSelection.id : null}
-        onInstitutionSelect={(id) =>
-          dispatch({ type: 'selectOnMap', selection: id ? { kind: 'institution', id } : null })
-        }
+        onInstitutionSelect={(id) => select({ kind: 'institution', id })}
         popup={popup}
         onPopupClose={() => dispatch({ type: 'selectOnMap', selection: null })}
         searchPin={mapSelection?.kind === 'search' ? mapSelection.result.point : null}
         resultPins={state.resultSet?.results}
-        onResultPinClick={(result) =>
-          dispatch({ type: 'selectOnMap', selection: fromSearchResult(result) })
-        }
+        onResultPinClick={(result) => select(fromSearchResult(result))}
         onViewChange={(center) =>
           state.mapBbox && dispatch({ type: 'setMapView', bbox: state.mapBbox, center })
         }
-        barriers={data.barriers}
+        barriers={visible.barriers}
         showBarriers={showBarriers}
         selectedBarrier={state.selectedBarrier}
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
@@ -136,15 +139,17 @@ export function MapArea() {
         </div>
       )}
       {(route ||
-        data.institutions.length > 0 ||
-        (showBarriers && data.barriers.length > 0) ||
+        visible.institutions.length > 0 ||
+        visible.barriers.length > 0 ||
+        visible.places.length > 0 ||
         layers.gaps) && (
         <Legend
           showRoute={!!route}
           showBaseline={!!route?.baseline && !route.is_mock}
-          showInstitutions={data.institutions.length > 0}
+          showInstitutions={visible.institutions.length > 0}
           otherRoutes={otherRoutes}
-          showBarriers={showBarriers && data.barriers.length > 0}
+          barrierTypes={[...new Set(visible.barriers.map((b) => b.type))]}
+          showPlaces={visible.places.length > 0}
           showDataGaps={layers.gaps}
         />
       )}

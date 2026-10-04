@@ -15,6 +15,7 @@ import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
 import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
+import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
 import { shortInstitutionName } from './institutionStyle'
 
 const MAP_STYLE: maplibregl.StyleSpecification = {
@@ -54,7 +55,10 @@ export interface MapPopup {
 interface Props {
   center: [number, number] // [lat, lon]
   zoom: number
+  /** Miejsca już przefiltrowane wg włączonych warstw - rysowane jako jedna warstwa z klastrami */
   places: Place[]
+  /** Klik w miejsce na mapie */
+  onPlaceClick?: (place: Place) => void
   /** Aktywny wariant, rysowany kolorami trudności i używany do wyboru odcinka. */
   route: RouteResponse | null
   /** Wszystkie warianty; nieaktywne są rysowane szaro, każdy innym wzorem. */
@@ -108,6 +112,112 @@ const OTHER_ROUTE_PATTERNS = [
   [3, 1.6],
   [0.4, 1.2],
 ]
+
+const PLACE_CLUSTERS = 'places-clusters'
+const PLACE_POINTS = 'places-points'
+// Powyżej tego zoomu miejsca są już pojedynczo (w Starym Mieście to ok. 2 budynki na ekran)
+const PLACE_CLUSTER_MAX_ZOOM = 16
+
+/** Ikony miejsc wg dostępności - te same SVG co w legendzie i na liście. */
+function loadPlaceIcons(map: maplibregl.Map): Promise<void> {
+  return Promise.all(
+    ACCESS_LEVELS.map(
+      (access) =>
+        new Promise<void>((resolve) => {
+          const img = new Image(48, 48)
+          img.onload = () => {
+            if (!map.hasImage(`place-${access}`))
+              map.addImage(`place-${access}`, img, { pixelRatio: 2 })
+            resolve()
+          }
+          img.onerror = () => resolve()
+          img.src = `data:image/svg+xml;utf8,${encodeURIComponent(accessIconSvg(access, 48))}`
+        }),
+    ),
+  ).then(() => undefined)
+}
+
+/** Kółko klastra z liczbą - rysowane w canvasie, bo rastrowy podkład nie ma fontów dla symboli. */
+function clusterImage(count: number): ImageData {
+  const scale = 2
+  const radius = count < 10 ? 15 : count < 100 ? 18 : 22
+  const size = (radius + 3) * 2 * scale
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.scale(scale, scale)
+  const c = radius + 3
+  ctx.beginPath()
+  ctx.arc(c, c, radius, 0, Math.PI * 2)
+  ctx.fillStyle = '#0b5cad'
+  ctx.fill()
+  ctx.lineWidth = 3
+  ctx.strokeStyle = '#ffffff'
+  ctx.stroke()
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `700 ${count < 100 ? 13 : 12}px system-ui, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(String(count), c, c + 0.5)
+  return ctx.getImageData(0, 0, size, size)
+}
+
+function addPlaceLayers(map: maplibregl.Map) {
+  map.addSource('places', {
+    type: 'geojson',
+    data: EMPTY,
+    cluster: true,
+    clusterRadius: 40,
+    clusterMaxZoom: PLACE_CLUSTER_MAX_ZOOM,
+  })
+  // Obrazek klastra powstaje przy pierwszym użyciu danej liczby
+  map.on('styleimagemissing', (e) => {
+    const match = /^cluster-(\d+)$/.exec(e.id)
+    if (match && !map.hasImage(e.id))
+      map.addImage(e.id, clusterImage(Number(match[1])), { pixelRatio: 2 })
+  })
+  map.addLayer({
+    id: PLACE_CLUSTERS,
+    type: 'symbol',
+    source: 'places',
+    filter: ['has', 'point_count'],
+    layout: {
+      'icon-image': ['concat', 'cluster-', ['to-string', ['get', 'point_count']]],
+      'icon-allow-overlap': true,
+    },
+  })
+  void loadPlaceIcons(map).then(() => {
+    if (!map.getStyle() || map.getLayer(PLACE_POINTS)) return
+    map.addLayer(
+      {
+        id: PLACE_POINTS,
+        type: 'symbol',
+        source: 'places',
+        filter: ['!', ['has', 'point_count']],
+        layout: {
+          'icon-image': ['concat', 'place-', ['get', 'access']],
+          'icon-allow-overlap': true,
+        },
+      },
+      // pod trasą i barierami
+      map.getLayer('baseline') ? 'baseline' : undefined,
+    )
+  })
+}
+
+function placeData(places: Place[]): GeoJSONData {
+  return {
+    type: 'FeatureCollection',
+    features: places.map((place) => ({
+      type: 'Feature' as const,
+      properties: { id: place.id, access: accessibilityOf(place) },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [place.location.lon, place.location.lat],
+      },
+    })),
+  }
+}
 
 const BARRIER_LINES = 'barrier-lines'
 const BARRIER_SELECTED = 'barrier-selected'
@@ -270,6 +380,7 @@ export function MapView({
   center,
   zoom,
   places,
+  onPlaceClick,
   route,
   routeVariants = [],
   selectedRoute = 0,
@@ -299,7 +410,6 @@ export function MapView({
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
-  const markers = useRef<maplibregl.Marker[]>([])
   const pointMarkers = useRef<maplibregl.Marker[]>([])
   const institutionMarkers = useRef(new Map<string, maplibregl.Marker>())
   const [popupEl, setPopupEl] = useState<HTMLElement | null>(null)
@@ -311,6 +421,8 @@ export function MapView({
   const onPopupCloseRef = useRef(onPopupClose)
   const onView = useRef(onViewChange)
   const onBarrier = useRef(onBarrierSelect)
+  const onPlace = useRef(onPlaceClick)
+  const placesRef = useRef(places)
   const picking = useRef(pickLabel !== null)
   const [mapReady, setMapReady] = useState(false)
   const routeRef = useRef(route)
@@ -333,6 +445,7 @@ export function MapView({
     onPopupCloseRef.current = onPopupClose
     onView.current = onViewChange
     onBarrier.current = onBarrierSelect
+    onPlace.current = onPlaceClick
   }, [
     onMapClick,
     onSegmentClick,
@@ -342,7 +455,12 @@ export function MapView({
     onPopupClose,
     onViewChange,
     onBarrierSelect,
+    onPlaceClick,
   ])
+
+  useEffect(() => {
+    placesRef.current = places
+  }, [places])
 
   useEffect(() => {
     if (!container.current) return
@@ -394,6 +512,29 @@ export function MapView({
         [x - HIT_PX, y - HIT_PX],
         [x + HIT_PX, y + HIT_PX],
       ]
+      if (!picking.current && instance.getLayer(PLACE_CLUSTERS)) {
+        const [cluster] = instance.queryRenderedFeatures(box, { layers: [PLACE_CLUSTERS] })
+        if (cluster) {
+          const source = instance.getSource('places') as maplibregl.GeoJSONSource
+          void source
+            .getClusterExpansionZoom(Number(cluster.properties.cluster_id))
+            .then((zoomTo) =>
+              instance.easeTo({
+                center: (cluster.geometry as GeoJSON.Point).coordinates as [number, number],
+                zoom: zoomTo,
+              }),
+            )
+          return
+        }
+      }
+      if (!picking.current && instance.getLayer(PLACE_POINTS)) {
+        const [hit] = instance.queryRenderedFeatures(box, { layers: [PLACE_POINTS] })
+        const place = hit && placesRef.current.find((p) => p.id === hit.properties.id)
+        if (place) {
+          onPlace.current?.(place)
+          return
+        }
+      }
       if (!picking.current && instance.getLayer(BARRIER_ICONS)) {
         const [barrier] = instance.queryRenderedFeatures(box, { layers: [BARRIER_ICONS] })
         if (barrier) {
@@ -413,6 +554,15 @@ export function MapView({
     instance.on('load', () => {
       // pod trasą i barierami - to tło informacyjne
       addGapLayers(instance)
+      addPlaceLayers(instance)
+      for (const layer of [PLACE_CLUSTERS, PLACE_POINTS]) {
+        instance.on('mouseenter', layer, () => {
+          if (!picking.current) instance.getCanvas().style.cursor = 'pointer'
+        })
+        instance.on('mouseleave', layer, () => {
+          instance.getCanvas().style.cursor = picking.current ? 'crosshair' : ''
+        })
+      }
       addBarrierLayers(instance)
       instance.addSource('baseline', { type: 'geojson', data: EMPTY })
       instance.addSource('other-routes', { type: 'geojson', data: EMPTY })
@@ -501,21 +651,10 @@ export function MapView({
   }, [pickLabel])
 
   useEffect(() => {
-    markers.current.forEach((marker) => marker.remove())
-
-    if (!map.current) return
-
-    markers.current = places.map((place) => {
-      const popup = document.createElement('div')
-      const name = document.createElement('strong')
-      name.textContent = place.name ?? 'Miejsce'
-      popup.append(name, document.createElement('br'), place.category ?? '')
-      return new maplibregl.Marker({ color: '#5b3a8c', scale: 0.7 })
-        .setLngLat([place.location.lon, place.location.lat])
-        .setPopup(new maplibregl.Popup().setDOMContent(popup))
-        .addTo(map.current!)
-    })
-  }, [places])
+    if (!mapReady) return
+    const source = map.current?.getSource('places') as maplibregl.GeoJSONSource | undefined
+    source?.setData(placeData(places))
+  }, [places, mapReady])
 
   useEffect(() => {
     pointMarkers.current.forEach((marker) => marker.remove())
@@ -815,7 +954,7 @@ export function MapView({
       <section
         ref={container}
         className="map"
-        aria-label="Mapa. Te same informacje, w tym szczegóły odcinków i instytucji, znajdziesz w panelu obok."
+        aria-label="Mapa. Te same informacje, w tym szczegóły odcinków, instytucji i miejsc (lista „Miejsca i źródła danych”), znajdziesz w panelu obok."
       />
       {popupEl && popup && createPortal(popup.render(), popupEl)}
     </>
