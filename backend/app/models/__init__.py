@@ -16,6 +16,7 @@ from app.models.institution import (
 )
 from app.models.place import Place
 from app.models.poi import Poi, PoiKind
+from app.models.profile import LayerId, ModeId, ModePreset
 from app.models.report import Report, ReportCreate, ReportStatus, ReportType, ReportUpdate
 from app.models.route import (
     Difficulty,
@@ -47,6 +48,9 @@ __all__ = [
     "InstitutionDataStatus",
     "InstitutionLocation",
     "LatLon",
+    "LayerId",
+    "ModeId",
+    "ModePreset",
     "Place",
     "Poi",
     "PoiKind",

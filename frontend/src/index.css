@@ -1821,3 +1821,15 @@ button.step-body:hover {
 .no-data {
   margin-top: 0.6rem;
 }
+
+/* ---------- nagłówek panelu (FE1, #86) ---------- */
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.panel-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
