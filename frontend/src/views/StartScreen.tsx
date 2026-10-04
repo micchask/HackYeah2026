@@ -69,7 +69,7 @@ export function StartDialog({ onChoose }: { onChoose: (id: ProfileId) => void })
             <span>BezPrzeszkód</span>
           </div>
           <p id={`${id}-lead`} className="start-lead">
-            Trasy bez schodów i dostępne miejsca w Krakowie – dopasowane do tego, jak się poruszasz.
+            Odkrywaj bez ograniczeń. Sprawdź, którędy iść i gdzie warto zajrzeć.
           </p>
         </div>
 
