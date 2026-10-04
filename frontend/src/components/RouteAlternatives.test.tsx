@@ -57,12 +57,13 @@ describe('RouteAlternatives', () => {
 
     expect(screen.getAllByRole('radio')).toHaveLength(2)
     expect(screen.getByRole('radio', { name: /Najbardziej dostępna/ })).toBeChecked()
-    expect(screen.getByText('Najkrótsza trasa piesza')).toBeInTheDocument()
+    expect(screen.getByText('Najkrótsza')).toBeInTheDocument()
+    expect(screen.getByText('Wybrana')).toBeInTheDocument()
     expect(screen.getByText('Krócej, ale przez schody.')).toBeInTheDocument()
     expect(screen.getByText(/dostępność 90\/100 · pewność danych 80%/)).toBeInTheDocument()
     expect(screen.getByText(/dostępność 50\/100 · pewność danych 70%/)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('radio', { name: /Najkrótsza trasa piesza/ }))
+    await user.click(screen.getByRole('radio', { name: /Najkrótsza/ }))
     expect(onChange).toHaveBeenCalledWith(1)
   })
 
@@ -82,6 +83,15 @@ describe('routeForVariant', () => {
     expect(selected.segments).toBe(route.alternatives?.[0].segments)
     expect(selected.accessibility_score).toBe(50)
     expect(selected.confidence).toBe(0.7)
-    expect(selectedVariantLabel(route, 1)).toBe('Najkrótsza trasa piesza')
+    expect(selectedVariantLabel(route, 1)).toBe('Najkrótsza')
+
+    const compromise = {
+      ...route,
+      alternatives: [
+        ...(route.alternatives ?? []),
+        { ...route.alternatives![0], label: 'Trasa kompromisowa' },
+      ],
+    }
+    expect(selectedVariantLabel(compromise, 2)).toBe('Kompromis')
   })
 })

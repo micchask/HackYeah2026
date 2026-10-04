@@ -35,7 +35,10 @@ export function RouteAlternatives({ route, selected, onChange }: Props) {
               <label htmlFor={`route-choice-${index}`} className="route-choice-content">
                 <span className="route-choice-head">
                   <span className="route-choice-label">{label}</span>
-                  <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
+                  <span className="route-choice-head-end">
+                    {selected === index && <span className="route-choice-selected">Wybrana</span>}
+                    <span className="route-choice-distance">{formatKm(choice.distance_m)}</span>
+                  </span>
                 </span>
                 <span className="route-choice-stats">
                   ok. {minutes} min · schody: {choice.stairs_count || 'brak'} · bruk / nierówna

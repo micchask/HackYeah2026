@@ -12,10 +12,17 @@ export function buildRouteVariants(route: RouteResponse): RouteVariant[] {
     { index: 0, label: 'Najbardziej dostępna', route },
     ...(route.alternatives ?? []).map((alternative, index) => ({
       index: index + 1,
-      label: alternative.label,
+      label: conciseVariantLabel(alternative.label),
       route: routeForVariant(route, index + 1),
     })),
   ]
+}
+
+function conciseVariantLabel(label: string): string {
+  const normalized = label.toLocaleLowerCase('pl')
+  if (normalized.includes('najkrótsz')) return 'Najkrótsza'
+  if (normalized.includes('kompromis')) return 'Kompromis'
+  return label
 }
 
 /** Buduje pełny widok wybranego wariantu, aby wszystkie części UI pokazywały tę samą trasę. */

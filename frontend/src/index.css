@@ -624,6 +624,21 @@ button:disabled {
   justify-content: space-between;
   gap: 0.75rem;
 }
+.route-choice-head-end {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.route-choice-selected {
+  padding: 0.1rem 0.45rem;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .route-choice-label,
 .route-choice-distance {
   font-weight: 700;
@@ -644,6 +659,16 @@ button:disabled {
 }
 .route-choice-description {
   margin-top: 0.15rem;
+}
+
+.route-rest-spots {
+  display: block;
+  margin: 0;
+  border-left: 4px solid var(--success);
+}
+
+.route-report-button {
+  align-self: flex-start;
 }
 
 .summary-head {
