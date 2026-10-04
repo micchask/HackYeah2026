@@ -281,6 +281,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data-gaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Data Gaps
+         * @description Ile i gdzie brakuje danych o dostępności sieci pieszej - tekst do mapy braków (#31).
+         */
+        get: operations["data_gaps_api_data_gaps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/barriers": {
         parameters: {
             query?: never;
@@ -427,10 +447,80 @@ export interface components {
             };
         };
         /**
+         * DataGapsSummary
+         * @description Gdzie brakuje danych o dostępności - argument dla miasta (np. do inwentaryzacji).
+         */
+        DataGapsSummary: {
+            /**
+             * Max Confidence
+             * @description Odcinek z pewnością <= tej wartości to 'brak danych'
+             */
+            max_confidence: number;
+            /**
+             * Total Length M
+             * @description Długość całej sieci pieszej w obszarze
+             */
+            total_length_m: number;
+            /** Gap Length M */
+            gap_length_m: number;
+            /** Gap Share */
+            gap_share: number;
+            /** Gap Segments */
+            gap_segments: number;
+            /**
+             * No Surface M
+             * @description W tym bez danych o nawierzchni
+             */
+            no_surface_m: number;
+            /**
+             * Imprecise Incline M
+             * @description W tym z nachyleniem oznaczonym w OSM bez wartości
+             */
+            imprecise_incline_m: number;
+            /** By Kind */
+            by_kind: components["schemas"]["GapKind"][];
+            /**
+             * Areas
+             * @description Obszary z największą długością braków
+             */
+            areas: components["schemas"]["GapArea"][];
+        };
+        /**
          * Difficulty
          * @enum {string}
          */
         Difficulty: "easy" | "moderate" | "hard";
+        /**
+         * GapArea
+         * @description Kwadrat ok. 200 x 200 m z odcinkami bez wiarygodnych danych.
+         */
+        GapArea: {
+            /**
+             * Label
+             * @description Np. 'okolice: Karmelicka' - najdłuższa nazwana ulica w kwadracie
+             */
+            label: string;
+            center: components["schemas"]["LatLon"];
+            /** Gap Length M */
+            gap_length_m: number;
+            /** Segments */
+            segments: number;
+        };
+        /** GapKind */
+        GapKind: {
+            /**
+             * Highway
+             * @description Rodzaj drogi z OSM, np. 'footway'
+             */
+            highway: string | null;
+            /**
+             * Label
+             * @description Po polsku, np. 'chodnik'
+             */
+            label: string;
+            /** Gap Length M */
+            gap_length_m: number;
+        };
         /**
          * GeocodeResult
          * @description Podpowiedź wyszukiwarki adresów - ten sam kształt co punkt A/B na froncie.
@@ -543,7 +633,7 @@ export interface components {
          * @description Warstwy mapy (chipy). Kolejność = kolejność chipów.
          * @enum {string}
          */
-        LayerId: "barriers" | "health" | "institutions" | "places" | "reports" | "rest" | "parking" | "events";
+        LayerId: "barriers" | "health" | "institutions" | "places" | "reports" | "rest" | "parking" | "events" | "gaps";
         /** LineStringGeometry */
         LineStringGeometry: {
             /**
@@ -1560,6 +1650,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SegmentCollection"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    data_gaps_api_data_gaps_get: {
+        parameters: {
+            query?: {
+                city?: string;
+                /** @description Obszar 's,w,n,e' (WGS84). Domyślnie obszar demo miasta. */
+                bbox?: string | null;
+                /** @description Odcinek z pewnością <= tej wartości to brak danych (0.4 = brak nawierzchni) */
+                max_confidence?: number;
+                /** @description Ile obszarów z największymi brakami */
+                top?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataGapsSummary"];
                 };
             };
             /** @description Validation Error */

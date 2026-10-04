@@ -9,8 +9,10 @@ import type {
   Place,
   RouteResponse,
   SearchResult,
+  SegmentCollection,
 } from '../api/client'
 import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
+import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
@@ -93,6 +95,10 @@ interface Props {
   selectedBarrier?: string | null
   /** Klik w ikonę bariery na mapie */
   onBarrierSelect?: (id: string | null) => void
+  /** Odcinki o niskiej pewności danych (#31); null = warstwa wyłączona */
+  dataGaps?: SegmentCollection | null
+  /** Przesuń mapę na ten punkt (zmiana seq = ponowne przesunięcie) */
+  focus?: { point: LatLon; seq: number } | null
 }
 
 // Linia trasy jest wąska - klik w promieniu kilku pikseli też ją trafia
@@ -248,6 +254,32 @@ function loadBarrierIcons(map: maplibregl.Map): Promise<void> {
   ).then(() => undefined)
 }
 
+function addGapLayers(map: maplibregl.Map) {
+  map.addSource('data-gaps', { type: 'geojson', data: EMPTY })
+  // Jedna warstwa na klasę - wzór linii w MapLibre nie zależy od danych obiektu
+  for (const gap of GAP_CLASSES) {
+    map.addLayer({
+      id: `data-gaps-${gap}`,
+      type: 'line',
+      source: 'data-gaps',
+      filter: ['==', ['get', 'gap'], gap],
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: { 'line-color': GAP_COLOR[gap], 'line-width': 4, 'line-dasharray': GAP_DASH[gap] },
+    })
+  }
+}
+
+function gapData(gaps: SegmentCollection | null | undefined): GeoJSONData {
+  return {
+    type: 'FeatureCollection',
+    features: (gaps?.features ?? []).map((f) => ({
+      type: 'Feature',
+      geometry: f.geometry,
+      properties: { gap: gapClass(f.properties.confidence) },
+    })),
+  }
+}
+
 function addBarrierLayers(map: maplibregl.Map) {
   map.addSource('barriers', { type: 'geojson', data: EMPTY })
   map.addLayer({
@@ -373,6 +405,8 @@ export function MapView({
   showBarriers = true,
   selectedBarrier = null,
   onBarrierSelect,
+  dataGaps = null,
+  focus = null,
 }: Props) {
   const container = useRef<HTMLElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -518,6 +552,8 @@ export function MapView({
       onClick.current({ lat: e.lngLat.lat, lon: e.lngLat.lng })
     })
     instance.on('load', () => {
+      // pod trasą i barierami - to tło informacyjne
+      addGapLayers(instance)
       addPlaceLayers(instance)
       for (const layer of [PLACE_CLUSTERS, PLACE_POINTS]) {
         instance.on('mouseenter', layer, () => {
@@ -766,6 +802,24 @@ export function MapView({
       })
     }
   }, [selectedBarrier, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady) return
+    const source = currentMap.getSource('data-gaps') as maplibregl.GeoJSONSource | undefined
+    source?.setData(gapData(dataGaps))
+  }, [dataGaps, mapReady])
+
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady || !focus) return
+    currentMap.easeTo({
+      center: [focus.point.lon, focus.point.lat],
+      zoom: Math.max(currentMap.getZoom(), 17),
+      duration: 600,
+    })
+    // nowy obiekt focus przy każdym kliknięciu - ten sam punkt drugi raz też przesuwa mapę
+  }, [focus, mapReady])
 
   // Znaczniki instytucji: kropka + podpis z nazwą (jak na mapach Google)
   useEffect(() => {

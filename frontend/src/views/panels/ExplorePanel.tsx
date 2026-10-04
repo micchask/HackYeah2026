@@ -9,6 +9,7 @@ import { nearbyForMode } from '../../app/nearby'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../../app/selectedPlace'
 import { PLACES_LIMIT } from '../../app/useMapData'
 import { BarrierList } from '../../components/BarrierList'
+import { DataGapsSection } from '../../components/DataGapsSection'
 import { formatKm } from '../../components/format'
 import { InstitutionList } from '../../components/InstitutionList'
 import { PlaceAccessIcon } from '../../components/PlaceAccessIcon'
@@ -206,6 +207,14 @@ export function ExplorePanel() {
       <button type="button" className="chip" onClick={() => openReport(dispatch, null)}>
         Zgłoś barierę
       </button>
+
+      <DataGapsSection
+        summary={data.dataGapsSummary}
+        error={data.dataGapsError}
+        visible={state.layers.gaps}
+        onVisibleChange={(on) => dispatch({ type: 'toggleLayer', layer: 'gaps', on })}
+        onShow={(point) => dispatch({ type: 'focusMap', point })}
+      />
 
       {/* Pełne listy - tekstowa alternatywa mapy (WCAG) */}
       <InstitutionList
