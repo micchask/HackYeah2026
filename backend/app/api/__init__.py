@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api import (
     barriers,
     cities,
+    data_gaps,
     geocode,
     health,
     institutions,
@@ -28,6 +29,7 @@ for module in (
     institutions,
     search,
     segments,
+    data_gaps,
     barriers,
 ):
     api_router.include_router(module.router)

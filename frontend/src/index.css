@@ -1172,6 +1172,16 @@ button.step-body:hover {
 .legend-swatch-dashed {
   background: repeating-linear-gradient(90deg, #3d4652 0 5px, transparent 5px 9px);
 }
+/* Braki danych (#31): wzór jak na mapie (GAP_DASH), kolor z GAP_COLOR przez currentColor */
+.legend-swatch-gap-none {
+  background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px);
+}
+.legend-swatch-gap-surface {
+  background: repeating-linear-gradient(90deg, currentColor 0 12px, transparent 12px 18px);
+}
+.legend-swatch-gap-incline {
+  background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 9px);
+}
 .legend-swatch-route-0 {
   background: repeating-linear-gradient(90deg, #59636f 0 4px, transparent 4px 8px);
 }
@@ -2077,4 +2087,17 @@ button.step-body:hover {
   padding: 0;
   overflow-y: auto;
   list-style: none;
+}
+
+/* ---------- braki danych (#31) ---------- */
+
+.data-gaps-subtitle {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
+}
+.data-gaps-areas {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  padding-left: 1.4rem;
 }

@@ -28,6 +28,8 @@ export type InstitutionAttribute = components['schemas']['InstitutionAttribute']
 export type SearchResult = components['schemas']['SearchResult']
 /** Odcinki sieci pieszej (`GET /api/segments`) - GeoJSON do źródła `geojson` w MapLibre. */
 export type SegmentCollection = components['schemas']['SegmentCollection']
+/** Ile i gdzie brakuje danych (`GET /api/data-gaps`) - tekst do mapy braków danych */
+export type DataGapsSummary = components['schemas']['DataGapsSummary']
 export type Barrier = components['schemas']['Barrier']
 export type BarrierType = components['schemas']['BarrierType']
 export type BarrierList = components['schemas']['BarrierList']
@@ -148,6 +150,8 @@ export const api = {
   profiles: (signal?: AbortSignal) => request<ModePreset[]>('/profiles', { signal }),
   barriers: (city: string, bbox: string, signal?: AbortSignal) =>
     request<BarrierList>(`/barriers?${new URLSearchParams({ city, bbox })}`, { signal }),
+  dataGaps: (city: string, signal?: AbortSignal) =>
+    request<DataGapsSummary>(`/data-gaps?${new URLSearchParams({ city })}`, { signal }),
   segments: (
     city: string,
     bbox: [number, number, number, number],

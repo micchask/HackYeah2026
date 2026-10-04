@@ -105,6 +105,8 @@ export function MapArea() {
         showBarriers={showBarriers}
         selectedBarrier={state.selectedBarrier}
         onBarrierSelect={(id) => dispatch({ type: 'selectBarrier', id })}
+        dataGaps={data.dataGaps}
+        focus={state.mapFocus}
       />
       <TopBar />
       {pickLetter && (
@@ -133,13 +135,17 @@ export function MapArea() {
           <span className="spinner" /> Szukam trasy…
         </div>
       )}
-      {(route || data.institutions.length > 0 || (showBarriers && data.barriers.length > 0)) && (
+      {(route ||
+        data.institutions.length > 0 ||
+        (showBarriers && data.barriers.length > 0) ||
+        layers.gaps) && (
         <Legend
           showRoute={!!route}
           showBaseline={!!route?.baseline && !route.is_mock}
           showInstitutions={data.institutions.length > 0}
           otherRoutes={otherRoutes}
           showBarriers={showBarriers && data.barriers.length > 0}
+          showDataGaps={layers.gaps}
         />
       )}
     </div>
