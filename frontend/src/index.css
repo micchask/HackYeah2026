@@ -1829,7 +1829,6 @@ button.step-body:hover {
   box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
 }
 .result-pin-label {
-  display: none;
   max-width: 12rem;
   overflow: hidden;
   color: #7a0b1d;
@@ -1843,8 +1842,11 @@ button.step-body:hover {
     -1px 1px 0 #fff,
     1px 1px 0 #fff;
 }
-.map[data-result-labels='on'] .result-pin-label,
-.result-pin:hover .result-pin-label {
+/* nazwa kolidująca z bliższym wynikiem - ukryta, ale widać ją po najechaniu */
+.result-pin-label.collide {
+  display: none;
+}
+.result-pin:hover .result-pin-label.collide {
   display: inline;
 }
 .search-results-head {

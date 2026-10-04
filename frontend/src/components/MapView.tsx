@@ -13,6 +13,7 @@ import type {
 } from '../api/client'
 import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
 import { GAP_CLASSES, GAP_COLOR, GAP_DASH, gapClass } from './dataGapsStyle'
+import { visibleLabels } from './declutter'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
 import { ACCESS_LEVELS, accessIconSvg, accessibilityOf } from './placeCategories'
@@ -152,8 +153,6 @@ interface Props {
 const HIT_PX = 6
 // Poniżej tego zoomu podpisy instytucji by się nakładały - zostają same kropki
 const LABEL_MIN_ZOOM = 14
-// Podpisy wyników wyszukiwania (np. 126 hoteli) dopiero z bliska - inaczej zakryją mapę
-const RESULT_LABEL_MIN_ZOOM = 17
 const OTHER_ROUTE_PATTERNS = [
   [1, 1.4],
   [3, 1.6],
@@ -577,7 +576,6 @@ export function MapView({
       const el = container.current
       if (!el) return
       el.dataset.labels = instance.getZoom() >= LABEL_MIN_ZOOM ? 'on' : 'off'
-      el.dataset.resultLabels = instance.getZoom() >= RESULT_LABEL_MIN_ZOOM ? 'on' : 'off'
     }
     updateLabels()
     instance.on('zoom', updateLabels)
@@ -947,7 +945,7 @@ export function MapView({
     )
   }, [selectedInstitution, institutions, mapReady])
 
-  // Wyniki zapytania o rodzaj/cechę: punkt + nazwa (z bliska); mapa obejmuje je wszystkie
+  // Wyniki zapytania o rodzaj/cechę: punkt + nazwa; mapa obejmuje je wszystkie
   useEffect(() => {
     const currentMap = map.current
     if (!currentMap || !mapReady || !resultPins.length) return
@@ -970,10 +968,29 @@ export function MapView({
         .setLngLat([result.point.lon, result.point.lat])
         .addTo(currentMap)
     })
+    // Nazwy przy wszystkich punktach, ale bez nakładania: pierwszeństwo mają bliższe środka mapy
+    // (kolejność wyników z API). Przeliczane po każdym przesunięciu i przybliżeniu.
+    const declutter = () => {
+      const pins = markers.map((m) => m.getElement())
+      const labels = pins.map((p) => p.querySelector<HTMLElement>('.result-pin-label'))
+      labels.forEach((l) => l?.classList.remove('collide'))
+      const shown = visibleLabels(
+        labels.map((l) => l?.getBoundingClientRect() ?? new DOMRect()),
+        pins.map(
+          (p) => p.querySelector('.result-pin-dot')?.getBoundingClientRect() ?? new DOMRect(),
+        ),
+      )
+      labels.forEach((l, i) => l?.classList.toggle('collide', !shown[i]))
+    }
+    currentMap.on('moveend', declutter)
+    requestAnimationFrame(declutter)
     const bounds = new maplibregl.LngLatBounds()
     resultPins.forEach((r) => bounds.extend([r.point.lon, r.point.lat]))
     currentMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 700 })
-    return () => markers.forEach((m) => m.remove())
+    return () => {
+      currentMap.off('moveend', declutter)
+      markers.forEach((m) => m.remove())
+    }
   }, [resultPins, mapReady])
 
   // Pinezka wybranego wyniku wyszukiwania (miejsca bez własnego znacznika na mapie)
