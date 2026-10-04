@@ -6,7 +6,7 @@ import { distanceM } from '../app/nearby'
 import { EmptyState } from './EmptyState'
 import { formatKm } from './format'
 import { PlaceAccessIcon } from './PlaceAccessIcon'
-import { ACCESS_LABEL, accessibilityOf, GROUP_LABEL, placeGroup } from './placeCategories'
+import { ACCESS_LABEL, accessibilityOf, placeKindLabel } from './placeCategories'
 
 const PAGE = 20
 
@@ -76,7 +76,7 @@ export function PlaceList({
                   <span className="item-text">
                     <span className="item-title">{place.name ?? 'Miejsce bez nazwy'}</span>
                     <span className="item-meta">
-                      {GROUP_LABEL[placeGroup(place)]} · {ACCESS_LABEL[access]}
+                      {placeKindLabel(place)} · {ACCESS_LABEL[access]}
                     </span>
                   </span>
                   {distance !== null && <span className="item-end">{formatKm(distance)}</span>}
