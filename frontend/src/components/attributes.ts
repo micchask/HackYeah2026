@@ -52,3 +52,15 @@ export const REPORT_STATUS_LABEL: Record<ReportStatus, string> = {
   rejected: 'odrzucone',
   resolved: 'rozwiązane',
 }
+
+/** Nazwy źródeł danych po polsku (provenance.source). */
+export const SOURCE_LABEL: Record<string, string> = {
+  osm: 'OpenStreetMap',
+  krakow_open_data: 'otwarte dane Krakowa',
+  accessibility_declarations: 'deklaracja dostępności (BIP)',
+  msip: 'MSIP Kraków',
+  user_reports: 'zgłoszenia użytkowników',
+  manual: 'dane wprowadzone ręcznie',
+  nmt_gugik: 'NMT GUGiK',
+  demo: 'dane przykładowe',
+}

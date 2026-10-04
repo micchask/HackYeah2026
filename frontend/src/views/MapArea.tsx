@@ -1,6 +1,6 @@
 // Prawa część ekranu: mapa + nakładki (pasek, baner wskazywania, legenda). Warstwy porządkuje #90.
 import { useApp, useAppData } from '../app/context'
-import { useMapClick, useSetPoint } from '../app/mapActions'
+import { useMapClick } from '../app/mapActions'
 import { visibleLayerData } from '../app/layerData'
 import { fromPlace, fromSearchResult, type SelectedPlace } from '../app/selectedPlace'
 import { useActiveRoute } from '../app/useRoute'
@@ -17,13 +17,13 @@ const KRAKOW_CENTER: [number, number] = [50.0575, 19.9385]
 function usePopup(): MapPopup | null {
   const [{ mapSelection }, dispatch] = useApp()
   const { institutions } = useAppData()
-  const setPoint = useSetPoint()
   const close = () => dispatch({ type: 'selectOnMap', selection: null })
+  const details = (place: SelectedPlace) => () =>
+    dispatch({ type: 'openPanel', panel: { kind: 'place', place } })
 
   if (mapSelection?.kind === 'institution') {
     const institution = institutions.find((i) => i.id === mapSelection.id)
     if (!institution?.location) return null
-    const point = { label: institution.name, point: institution.location.point }
     return {
       key: `institution:${institution.id}`,
       point: institution.location.point,
@@ -31,8 +31,7 @@ function usePopup(): MapPopup | null {
         <InstitutionPopup
           key={institution.id}
           institution={institution}
-          onSetOrigin={() => setPoint('origin', point)}
-          onSetDestination={() => setPoint('destination', point)}
+          onDetails={details(mapSelection)}
           onClose={close}
         />
       ),
@@ -40,7 +39,6 @@ function usePopup(): MapPopup | null {
   }
   if (mapSelection?.kind === 'search') {
     const result = mapSelection.result
-    const point = { label: result.label, point: result.point }
     return {
       key: result.id,
       point: result.point,
@@ -48,8 +46,7 @@ function usePopup(): MapPopup | null {
         <PlacePopup
           key={result.id}
           result={result}
-          onSetOrigin={() => setPoint('origin', point)}
-          onSetDestination={() => setPoint('destination', point)}
+          onDetails={details(mapSelection)}
           onClose={close}
         />
       ),

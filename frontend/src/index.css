@@ -2186,3 +2186,73 @@ button.step-body:hover {
   font-size: 0.6rem;
   font-weight: 700;
 }
+
+/* ---------- karta miejsca w panelu (#93) ---------- */
+
+.place-card-title {
+  margin: 0.1rem 0 0.25rem;
+  font-size: 1.25rem;
+}
+.place-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.place-status strong {
+  display: block;
+}
+.place-status-note {
+  display: block;
+  margin: 0.15rem 0 0;
+}
+.place-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.place-actions .primary-button {
+  margin-top: 0;
+}
+.place-passport-title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+.place-passport .passport-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.place-passport .passport-item.conflict {
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--warning);
+}
+.passport-conflict {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  color: var(--warning);
+  font-size: 0.85rem;
+}
+.passport-conflict svg {
+  flex: none;
+  margin-top: 0.15rem;
+}
+.badge-demo-data {
+  color: #6b21a8;
+  background: #f3e8ff;
+}
+@media (prefers-color-scheme: dark) {
+  .badge-demo-data {
+    color: #e9d5ff;
+    background: #3b1d5a;
+  }
+}
