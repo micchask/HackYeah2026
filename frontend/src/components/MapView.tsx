@@ -2,7 +2,14 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import * as maplibregl from 'maplibre-gl'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import type { Barrier, Institution, LatLon, Place, RouteResponse } from '../api/client'
+import type {
+  Barrier,
+  Institution,
+  LatLon,
+  Place,
+  RouteResponse,
+  SearchResult,
+} from '../api/client'
 import { BARRIER_COLOR, BARRIER_TYPES, barrierIconSvg } from './barrierStyle'
 import { DIFFICULTY_COLOR } from './difficulty'
 import { POPUP_RESIZE_EVENT } from './MapPopupCard'
@@ -72,6 +79,9 @@ interface Props {
   onPopupClose: () => void
   /** Pinezka wybranego wyniku wyszukiwania */
   searchPin: LatLon | null
+  /** Wszystkie wyniki zapytania o rodzaj/cechę ("hotel", "przewijak") jako punkty na mapie */
+  resultPins?: SearchResult[]
+  onResultPinClick?: (result: SearchResult) => void
   /** Środek widoku po każdym przesunięciu mapy (np. dla wyszukiwarki) */
   onViewChange?: (center: LatLon) => void
   barriers?: Barrier[]
@@ -85,6 +95,8 @@ interface Props {
 const HIT_PX = 6
 // Poniżej tego zoomu podpisy instytucji by się nakładały - zostają same kropki
 const LABEL_MIN_ZOOM = 14
+// Podpisy wyników wyszukiwania (np. 126 hoteli) dopiero z bliska - inaczej zakryją mapę
+const RESULT_LABEL_MIN_ZOOM = 17
 const OTHER_ROUTE_PATTERNS = [
   [1, 1.4],
   [3, 1.6],
@@ -243,6 +255,8 @@ export function MapView({
   popup,
   onPopupClose,
   searchPin,
+  resultPins = [],
+  onResultPinClick,
   onViewChange,
   barriers = [],
   showBarriers = true,
@@ -259,6 +273,7 @@ export function MapView({
   const onSegment = useRef(onSegmentClick)
   const onBounds = useRef(onBoundsChange)
   const onSelect = useRef(onInstitutionSelect)
+  const onResultPin = useRef(onResultPinClick)
   const onPopupCloseRef = useRef(onPopupClose)
   const onView = useRef(onViewChange)
   const onBarrier = useRef(onBarrierSelect)
@@ -280,6 +295,7 @@ export function MapView({
     onSegment.current = onSegmentClick
     onBounds.current = onBoundsChange
     onSelect.current = onInstitutionSelect
+    onResultPin.current = onResultPinClick
     onPopupCloseRef.current = onPopupClose
     onView.current = onViewChange
     onBarrier.current = onBarrierSelect
@@ -288,6 +304,7 @@ export function MapView({
     onSegmentClick,
     onBoundsChange,
     onInstitutionSelect,
+    onResultPinClick,
     onPopupClose,
     onViewChange,
     onBarrierSelect,
@@ -314,7 +331,9 @@ export function MapView({
     instance.on('moveend', reportBounds)
     const updateLabels = () => {
       const el = container.current
-      if (el) el.dataset.labels = instance.getZoom() >= LABEL_MIN_ZOOM ? 'on' : 'off'
+      if (!el) return
+      el.dataset.labels = instance.getZoom() >= LABEL_MIN_ZOOM ? 'on' : 'off'
+      el.dataset.resultLabels = instance.getZoom() >= RESULT_LABEL_MIN_ZOOM ? 'on' : 'off'
     }
     updateLabels()
     instance.on('zoom', updateLabels)
@@ -333,7 +352,7 @@ export function MapView({
     instance.on('click', (e) => {
       // Klik w znacznik instytucji albo w okienko nie ustawia punktu A/B
       const target = e.originalEvent.target as Element | null
-      if (target?.closest('.inst-marker, .maplibregl-popup')) return
+      if (target?.closest('.inst-marker, .result-pin, .maplibregl-popup')) return
       // Klik w mapę zamyka okienko (jak na mapach Google)
       onPopupCloseRef.current()
       const { x, y } = e.point
@@ -635,6 +654,35 @@ export function MapView({
       marker.getElement().setAttribute('aria-pressed', String(id === selectedInstitution)),
     )
   }, [selectedInstitution, institutions, mapReady])
+
+  // Wyniki zapytania o rodzaj/cechę: punkt + nazwa (z bliska); mapa obejmuje je wszystkie
+  useEffect(() => {
+    const currentMap = map.current
+    if (!currentMap || !mapReady || !resultPins.length) return
+    const markers = resultPins.map((result) => {
+      const el = document.createElement('button')
+      el.type = 'button'
+      el.className = 'result-pin'
+      // klawiatura i czytniki ekranu: lista wyników w panelu (bez setek przystanków Tab na mapie)
+      el.tabIndex = -1
+      el.title = result.label
+      el.setAttribute('aria-label', `${result.label} – pokaż szczegóły`)
+      const dot = document.createElement('span')
+      dot.className = 'result-pin-dot'
+      const label = document.createElement('span')
+      label.className = 'result-pin-label'
+      label.textContent = result.label
+      el.append(dot, label)
+      el.addEventListener('click', () => onResultPin.current?.(result))
+      return new maplibregl.Marker({ element: el, anchor: 'left', offset: [-6, 0] })
+        .setLngLat([result.point.lon, result.point.lat])
+        .addTo(currentMap)
+    })
+    const bounds = new maplibregl.LngLatBounds()
+    resultPins.forEach((r) => bounds.extend([r.point.lon, r.point.lat]))
+    currentMap.fitBounds(bounds, { padding: 80, maxZoom: 17, duration: 700 })
+    return () => markers.forEach((m) => m.remove())
+  }, [resultPins, mapReady])
 
   // Pinezka wybranego wyniku wyszukiwania (miejsca bez własnego znacznika na mapie)
   useEffect(() => {

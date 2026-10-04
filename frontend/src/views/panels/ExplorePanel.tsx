@@ -1,10 +1,12 @@
 // Panel „Dla Ciebie” (plan §5.3) - docelowo #91. Na razie: dotychczasowa treść panelu bez wyników trasy.
 import { useApp, useAppData } from '../../app/context'
 import { openReport } from '../../app/mapActions'
+import { fromSearchResult } from '../../app/selectedPlace'
 import { PLACES_LIMIT } from '../../app/useMapData'
 import { BarrierList } from '../../components/BarrierList'
 import { InstitutionList } from '../../components/InstitutionList'
 import { PlaceList } from '../../components/PlaceList'
+import { SearchResultsList } from '../../components/SearchResultsList'
 import { RouteForm } from './RouteForm'
 
 export function ExplorePanel() {
@@ -12,9 +14,26 @@ export function ExplorePanel() {
   const data = useAppData()
   const selectedInstitution =
     state.mapSelection?.kind === 'institution' ? state.mapSelection.id : null
+  const selectedResult =
+    state.mapSelection?.kind === 'institution'
+      ? `institution:${state.mapSelection.id}`
+      : state.mapSelection?.kind === 'search'
+        ? state.mapSelection.result.id
+        : null
   return (
     <>
       <RouteForm />
+      {state.resultSet && (
+        <SearchResultsList
+          query={state.resultSet.query}
+          results={state.resultSet.results}
+          selected={selectedResult}
+          onSelect={(result) =>
+            dispatch({ type: 'selectOnMap', selection: fromSearchResult(result) })
+          }
+          onClear={() => dispatch({ type: 'clearResults' })}
+        />
+      )}
       <section className="card empty" aria-labelledby="start-heading">
         <h2 id="start-heading">Jak to działa?</h2>
         <ol>

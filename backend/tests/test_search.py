@@ -101,7 +101,7 @@ def fake_sources(monkeypatch):
 
 
 def test_endpoint_combines_sources_without_duplicates(client, fake_sources):
-    r = client.get("/api/search", params={"q": "apteka", "lat": RYNEK.lat, "lon": RYNEK.lon})
+    r = client.get("/api/search", params={"q": "tygrys", "lat": RYNEK.lat, "lon": RYNEK.lon})
     assert r.status_code == 200
     data = r.json()
     assert [(d["source"], d["label"]) for d in data] == [
@@ -131,3 +131,67 @@ def test_works_without_geocoder(client, monkeypatch):
 
 def test_short_query_returns_nothing(client):
     assert client.get("/api/search", params={"q": "a"}).json() == []
+
+
+# --- zapytania o rodzaj i cechę: wszystkie takie miejsca --------------------------------
+
+HOTELS = [
+    _place(f"osm:h{i}", f"Hotel {i}", "hotel", 50.0600 + i * 0.0005, 19.9370) for i in range(12)
+]
+
+
+def _with_changing_table(place: Place, value: bool) -> Place:
+    attr = AccessibilityAttribute(
+        key=AttributeKey.CHANGING_TABLE,
+        value=value,
+        provenance=Provenance(
+            source="osm", source_type=SourceType.OSM, fetched_at=datetime.now(UTC)
+        ),
+        confidence=0.6,
+    )
+    return place.model_copy(update={"attributes": [attr]})
+
+
+def test_same_word_polish_forms():
+    from app.search import same_word
+
+    for query, name in [
+        ("hotele", "hotel"),
+        ("apteki", "apteka"),
+        ("muzea", "muzeum"),
+        ("toalety", "toaleta"),
+        ("przewijaki", "przewijak"),
+        ("kawiarnie", "kawiarnia"),
+    ]:
+        assert same_word(query, name), (query, name)
+    assert not same_word("bank", "bankomat")
+    assert not same_word("bar", "bank")
+
+
+def test_category_query_returns_all_places_nearest_first(client, monkeypatch):
+    monkeypatch.setattr(place_search, "load_places", lambda city: PLACES + HOTELS)
+    data = client.get(
+        "/api/search", params={"q": "hotele", "lat": RYNEK.lat, "lon": RYNEK.lon}
+    ).json()
+    assert len(data) == 12  # wszystkie, a nie limit 8
+    assert {d["match"] for d in data} == {"category"}
+    assert {d["kind"] for d in data} == {"hotel"}
+    distances = [d["distance_m"] for d in data]
+    assert distances == sorted(distances)
+
+
+def test_feature_query_przewijak(client, monkeypatch):
+    with_table = _with_changing_table(PLACES[0], True)
+    without = _with_changing_table(HOTELS[0], False)  # "brak przewijaka" - nie pokazujemy
+    monkeypatch.setattr(place_search, "load_places", lambda city: [with_table, without])
+    data = client.get("/api/search", params={"q": "przewijak"}).json()
+    labels = [d["label"] for d in data]
+    assert "Apteka Pod Złotym Tygrysem" in labels
+    assert "Hotel 0" not in labels
+    # instytucja z przewijakiem w deklaracji dostępności (Pałac Krzysztofory, obszar demo)
+    assert any(d["institution_id"] == "mk-krzysztofory" for d in data)
+
+
+def test_name_query_still_works(client, fake_sources):
+    data = client.get("/api/search", params={"q": "krzysztofory"}).json()
+    assert data and all(d["match"] == "name" for d in data)

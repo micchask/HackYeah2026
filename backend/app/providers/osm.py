@@ -24,7 +24,16 @@ TAG_MAPPING: dict[str, tuple[AttributeKey, Any]] = {
     "ramp:wheelchair": (AttributeKey.RAMP, lambda v: v == "yes"),
     "tactile_paving": (AttributeKey.TACTILE_PAVING, lambda v: v == "yes"),
     "surface": (AttributeKey.SURFACE, str),
+    # przewijak: yes / limited = jest, no = brak (False to też informacja, nie "brak danych")
+    "changing_table": (AttributeKey.CHANGING_TABLE, lambda v: v != "no"),
 }
+# Stary tag OSM na przewijak - używany, gdy nie ma `changing_table`
+LEGACY_CHANGING_TABLE = "diaper"
+
+# Rodzaje noclegów i atrakcji (tourism=*) pobierane w obszarze demo - wyszukiwarka "hotel"
+POI_TOURISM = (
+    "hotel|hostel|guest_house|apartment|motel|museum|gallery|attraction|information|viewpoint"
+)
 
 
 @register_provider("osm")
@@ -34,12 +43,22 @@ class OsmProvider(Provider):
 
     def build_query(self) -> str:
         s, w, n, e = self.city.bbox
+        # Obszar demo: wszystkie nazwane miejsca (wyszukiwarka "hotel", "apteka" ma znaleźć
+        # wszystkie, nie tylko te z tagiem wheelchair). Całe miasto: tylko tagi dostępności.
+        ds, dw, dn, de = self.city.area_bbox
+        city, demo = f"({s},{w},{n},{e})", f"({ds},{dw},{dn},{de})"
         timeout = self.options.get("timeout_s", 60)
         return f"""
 [out:json][timeout:{timeout}];
 (
-  node["wheelchair"]({s},{w},{n},{e});
-  way["wheelchair"]({s},{w},{n},{e});
+  node["wheelchair"]{city};
+  way["wheelchair"]{city};
+  nwr["changing_table"]{city};
+  nwr["{LEGACY_CHANGING_TABLE}"]{city};
+  nwr["amenity"]["name"]{demo};
+  nwr["amenity"="toilets"]{demo};
+  nwr["shop"]["name"]{demo};
+  nwr["tourism"~"^({POI_TOURISM})$"]{demo};
 );
 out center tags;
 """
@@ -78,6 +97,21 @@ out center tags;
                 for tag, (key, convert) in TAG_MAPPING.items()
                 if tag in tags
             ]
+            if "changing_table" not in tags and LEGACY_CHANGING_TABLE in tags:
+                attributes.append(
+                    AccessibilityAttribute(
+                        key=AttributeKey.CHANGING_TABLE,
+                        value=tags[LEGACY_CHANGING_TABLE] != "no",
+                        provenance=Provenance(
+                            source=self.name,
+                            source_type=self.source_type,
+                            source_ref=ref,
+                            fetched_at=fetched_at,
+                            last_verified=last_verified,
+                        ),
+                        confidence=self.base_confidence,
+                    )
+                )
             places.append(
                 Place(
                     id=f"osm:{ref}",
@@ -92,7 +126,12 @@ out center tags;
 
 
 def _category(tags: dict[str, str]) -> str | None:
-    return tags.get("amenity") or tags.get("shop") or tags.get("public_transport")
+    return (
+        tags.get("amenity")
+        or tags.get("shop")
+        or tags.get("tourism")  # hotel, hostel, muzeum... (wcześniej bez kategorii)
+        or tags.get("public_transport")
+    )
 
 
 def _parse_check_date(value: str | None) -> datetime | None:

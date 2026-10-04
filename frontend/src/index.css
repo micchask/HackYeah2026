@@ -1833,3 +1833,80 @@ button.step-body:hover {
   margin: 0;
   font-size: 1.2rem;
 }
+
+/* ---------- wszystkie wyniki zapytania o rodzaj ("hotel", "przewijak") ---------- */
+
+.suggestion.show-all .suggestion-label {
+  color: var(--accent);
+}
+.suggestion.show-all.active .suggestion-label {
+  color: var(--accent-text);
+}
+.result-pin {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.result-pin-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: #c4122f;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
+}
+.result-pin-label {
+  display: none;
+  max-width: 12rem;
+  overflow: hidden;
+  color: #7a0b1d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
+}
+.map[data-result-labels='on'] .result-pin-label,
+.result-pin:hover .result-pin-label {
+  display: inline;
+}
+.result-set-chip {
+  position: absolute;
+  top: 4.25rem;
+  left: 0.75rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--surface);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+.search-results-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.institution-list-items {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 22rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
