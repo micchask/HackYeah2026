@@ -223,6 +223,8 @@ const BARRIER_LINES = 'barrier-lines'
 const BARRIER_SELECTED = 'barrier-selected'
 const BARRIER_ICONS = 'barrier-icons'
 const BARRIER_ICON_SELECTED = 'barrier-icon-selected'
+// Zgłoszenia użytkowników (#62): przy każdym przybliżeniu - jest ich mało, a muszą być widoczne
+const REPORT_ICONS = 'barrier-report-icons'
 // Ikony dopiero od tego zoomu - wcześniej setki barier zasłoniłyby mapę
 const BARRIER_ICON_MIN_ZOOM = 15
 
@@ -306,12 +308,31 @@ function addBarrierLayers(map: maplibregl.Map) {
       type: 'symbol',
       source: 'barriers',
       minzoom: BARRIER_ICON_MIN_ZOOM,
-      filter: ['all', ['==', ['geometry-type'], 'Point'], ['!=', ['get', 'selected'], true]],
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'Point'],
+        ['!=', ['get', 'selected'], true],
+        ['!=', ['get', 'type'], 'reported'],
+      ],
       layout: {
         'icon-image': icon,
         // przy kolizji zostają ważniejsze: schody, krawężnik, zgłoszenia…
         'symbol-sort-key': ['get', 'rank'],
       },
+      paint: { 'icon-opacity': ['case', ['==', ['get', 'pending'], true], 0.55, 1] },
+    })
+    map.addLayer({
+      id: REPORT_ICONS,
+      type: 'symbol',
+      source: 'barriers',
+      filter: [
+        'all',
+        ['==', ['geometry-type'], 'Point'],
+        ['!=', ['get', 'selected'], true],
+        ['==', ['get', 'type'], 'reported'],
+      ],
+      layout: { 'icon-image': icon, 'icon-allow-overlap': true },
+      // niepotwierdzone - półprzezroczyste
       paint: { 'icon-opacity': ['case', ['==', ['get', 'pending'], true], 0.55, 1] },
     })
     // Wybrana bariera zawsze widoczna (icon-allow-overlap nie przyjmuje wyrażeń z danych)
@@ -539,7 +560,8 @@ export function MapView({
         }
       }
       if (!picking.current && instance.getLayer(BARRIER_ICONS)) {
-        const [barrier] = instance.queryRenderedFeatures(box, { layers: [BARRIER_ICONS] })
+        const layers = [REPORT_ICONS, BARRIER_ICONS].filter((id) => instance.getLayer(id))
+        const [barrier] = instance.queryRenderedFeatures(box, { layers })
         if (barrier) {
           onBarrier.current?.(String(barrier.properties.id))
           return
@@ -773,7 +795,13 @@ export function MapView({
     const currentMap = map.current
     if (!currentMap || !mapReady) return
     const apply = () => {
-      for (const layer of [BARRIER_LINES, BARRIER_SELECTED, BARRIER_ICONS, BARRIER_ICON_SELECTED]) {
+      for (const layer of [
+        BARRIER_LINES,
+        BARRIER_SELECTED,
+        BARRIER_ICONS,
+        BARRIER_ICON_SELECTED,
+        REPORT_ICONS,
+      ]) {
         if (currentMap.getLayer(layer))
           currentMap.setLayoutProperty(layer, 'visibility', showBarriers ? 'visible' : 'none')
       }

@@ -117,3 +117,27 @@ def test_daily_vote_limit(client, monkeypatch):
         assert _vote(client, report["id"], VOTERS[0], "confirm").status_code == 200
     r = _vote(client, reports[2]["id"], VOTERS[0], "confirm")
     assert r.status_code == 429
+
+
+def test_barrier_limit_never_drops_user_reports():
+    from app.api.barriers import limit_barriers
+    from app.models import Barrier, BarrierType, LatLon
+
+    def barrier(i: int, kind: BarrierType) -> Barrier:
+        p = LatLon(lat=50.06, lon=19.93)
+        return Barrier(
+            id=f"{kind}:{i}",
+            type=kind,
+            description="x",
+            location=p,
+            geometry=[p],
+            source="osm",
+            confidence=0.6,
+        )
+
+    segments = [barrier(i, BarrierType.STAIRS) for i in range(10)]
+    reports = [barrier(i, BarrierType.REPORTED) for i in range(2)]
+    result = limit_barriers(segments + reports, limit=5)
+    assert [b.type for b in result.barriers].count(BarrierType.REPORTED) == 2
+    assert len(result.barriers) == 5
+    assert result.truncated

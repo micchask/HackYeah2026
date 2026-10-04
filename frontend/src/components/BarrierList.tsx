@@ -48,7 +48,13 @@ export function BarrierList({
   const [showAll, setShowAll] = useState(false)
   // API zwraca bariery od najważniejszych (schody, krawężniki…) - zwinięta lista pokazuje je
   const collapsible = collapsedLimit !== undefined && barriers.length > collapsedLimit
-  const shown = collapsible && !showAll ? barriers.slice(0, collapsedLimit) : barriers
+  // …ale zgłoszeń użytkowników (#62) nie chowamy - jest ich mało, a czekają na potwierdzenie innych
+  const reports = barriers.filter((b) => b.type === 'reported')
+  const others = barriers.filter((b) => b.type !== 'reported')
+  const shown =
+    collapsible && !showAll
+      ? [...others.slice(0, Math.max(0, collapsedLimit - reports.length)), ...reports]
+      : barriers
   const groups = BARRIER_TYPES.map((type) => ({
     type,
     items: shown.filter((b) => b.type === type),
