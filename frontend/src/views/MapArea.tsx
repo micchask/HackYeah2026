@@ -8,7 +8,7 @@ import { AlertIcon, PinIcon } from '../components/icons'
 import { InstitutionPopup } from '../components/InstitutionPopup'
 import { Legend } from '../components/Legend'
 import { MapView, type MapPopup } from '../components/MapView'
-import { GROUP_LABEL, placeGroup } from '../components/placeCategories'
+import { placeKindLabel } from '../components/placeCategories'
 import { PlacePopup } from '../components/PlacePopup'
 import { ReportPopup } from '../components/ReportPopup'
 import { LayersDrawer } from './LayersDrawer'
@@ -100,7 +100,7 @@ export function MapArea() {
         center={KRAKOW_CENTER}
         zoom={14}
         places={visible.places}
-        onPlaceClick={(place) => select(fromPlace(place, GROUP_LABEL[placeGroup(place)]))}
+        onPlaceClick={(place) => select(fromPlace(place, placeKindLabel(place)))}
         route={active}
         routeVariants={variants}
         selectedRoute={state.variant}

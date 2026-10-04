@@ -5,12 +5,7 @@ import { isDemoData, type DemoPoi } from '../api/demo'
 import { ATTRIBUTE_LABEL, SOURCE_LABEL, VALUE_LABEL } from '../components/attributes'
 import { STATUS_LABEL } from '../components/dataStatus'
 import { formatKm } from '../components/format'
-import {
-  accessibilityOf,
-  GROUP_LABEL,
-  placeGroup,
-  type Access,
-} from '../components/placeCategories'
+import { type Access, accessibilityOf, placeKindLabel } from '../components/placeCategories'
 
 export type SelectedPlace =
   | { kind: 'institution'; id: string }
@@ -133,7 +128,7 @@ function placeCardOf(place: Place, extra: Partial<PlaceCard> = {}): PlaceCard {
   return {
     id: place.id,
     title: place.name ?? 'Miejsce bez nazwy',
-    kind: GROUP_LABEL[placeGroup(place)],
+    kind: placeKindLabel(place),
     subtitle: null,
     point: place.location,
     access: accessibilityOf(place),
