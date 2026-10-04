@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { CITY, useApp } from '../../app/context'
 import { DEMO_ROUTES } from '../../app/demoRoutes'
 import { openReport, setPointAction } from '../../app/mapActions'
+import { unlockSpeech } from '../../app/speech'
 import { useActiveRoute } from '../../app/useRoute'
 import { useRouteReportWatch } from '../../app/useRouteReportWatch'
 import type { RouteResponse } from '../../api/client'
 import { demoApi } from '../../api/demo'
-import { AlertIcon } from '../../components/icons'
+import { AlertIcon, NavigationIcon } from '../../components/icons'
 import { RouteAlternatives } from '../../components/RouteAlternatives'
 import { RouteDescription } from '../../components/RouteDescription'
 import { RouteReportAlert } from '../../components/RouteReportAlert'
@@ -115,6 +116,31 @@ export function RoutePanel() {
               onRecalculate={() => dispatch({ type: 'recalculateRoute' })}
               onDismiss={newReports.dismiss}
             />
+            {/* Start nawigacji: GPS albo symulacja przejścia (test i pokaz bez wychodzenia z domu) */}
+            <div className="route-start">
+              <button
+                type="button"
+                className="primary-button route-start-button"
+                disabled={loading}
+                onClick={() => {
+                  unlockSpeech()
+                  dispatch({ type: 'startNavigation', mode: 'gps' })
+                }}
+              >
+                <NavigationIcon size={18} /> Rozpocznij
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={loading}
+                onClick={() => {
+                  unlockSpeech()
+                  dispatch({ type: 'startNavigation', mode: 'sim' })
+                }}
+              >
+                Symuluj przejście
+              </button>
+            </div>
             <RouteAlternatives
               route={route}
               selected={variant}
