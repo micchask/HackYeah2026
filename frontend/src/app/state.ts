@@ -117,7 +117,7 @@ export type Action =
   | { type: 'chooseProfile'; profile: ProfileId; prefs?: RoutePreferences }
   | { type: 'resetProfile' }
   | { type: 'setPrefs'; prefs: RoutePreferences }
-  | { type: 'toggleLayer'; layer: LayerId; on?: boolean }
+  | { type: 'toggleLayer'; layer: LayerId; on?: boolean; customized?: boolean }
   | { type: 'openPanel'; panel: PanelState }
   | { type: 'back' }
   | { type: 'setOrigin'; point: NamedPoint | null }
@@ -208,7 +208,11 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, prefs: action.prefs, customized: true }
     case 'toggleLayer': {
       const on = action.on ?? !state.layers[action.layer]
-      return { ...state, layers: { ...state.layers, [action.layer]: on } }
+      return {
+        ...state,
+        layers: { ...state.layers, [action.layer]: on },
+        customized: action.customized ? true : state.customized,
+      }
     }
     case 'openPanel':
       return open(state, action.panel)
