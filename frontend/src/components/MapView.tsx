@@ -441,6 +441,7 @@ export function MapView({
   selectedRoute = 0,
   origin,
   destination,
+  waypoints = [],
   reportPoint = null,
   selectedSegment,
   pickLabel,

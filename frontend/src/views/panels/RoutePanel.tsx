@@ -25,6 +25,7 @@ export function RoutePanel() {
   const {
     origin,
     destination,
+    waypoints,
     pickTarget,
     routeLoading: loading,
     routeError: error,

@@ -1,6 +1,5 @@
 """Planowanie trasy na grafie i opis tekstowy segment po segmencie (tekstowa alternatywa mapy)."""
 
-import itertools
 import logging
 import math
 from dataclasses import dataclass, field, replace
@@ -112,14 +111,7 @@ MAX_FALLBACK_M = 250
 
 
 def _route_with_fallback(
-    city_graph: CityGraph,
-    profile,
-    source: int,
-    target: int,
-    origin: LatLon,
-    destination: LatLon,
-    stop_no: int | None = None,
-    allow_origin_fallback: bool = True,
+    req: RouteRequest, city_graph: CityGraph, profile, source: int, target: int
 ) -> tuple[list[int], int, int, list[str]]:
     """Najkrótsza trasa; bez niej - do najbliższego osiągalnego celu albo od osiągalnego startu."""
     graph = city_graph.graph
@@ -152,26 +144,6 @@ def _route_with_fallback(
             )
             return shortest_path(graph, alt, target, profile), alt, target, [warning]
     raise NoRouteError
-
-
-@dataclass
-class _Legs:
-    """Ścieżka przez wszystkie przystanki; `breaks` = (indeks krawędzi, nr przystanku)."""
-
-    path: list[int]
-    breaks: list[tuple[int, int]] = field(default_factory=list)
-
-
-def _join_legs(stops: list[int], find) -> _Legs:
-    """Skleja ścieżki kolejnych odcinków stop[i] → stop[i+1] (wspólny węzeł raz)."""
-    legs = _Legs(path=[stops[0]])
-    for stop_no, (a, b) in enumerate(itertools.pairwise(stops)):
-        if a == b:
-            continue
-        if stop_no and len(legs.path) > 1:
-            legs.breaks.append((len(legs.path) - 1, stop_no + 1))
-        legs.path.extend(find(a, b)[1:])
-    return legs
 
 
 @dataclass
@@ -220,38 +192,13 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     applied = route_reports.sync_reports(req.city, city_graph, _load_reports(req.city), now)
     source, d_source = city_graph.nearest_node(req.origin.lat, req.origin.lon)
     target, d_target = city_graph.nearest_node(req.destination.lat, req.destination.lon)
-    stops = []
-    for pt in req.waypoints:
-        node, _ = city_graph.nearest_node(pt.lat, pt.lon)
-        stops.append(node)
-    all_stops = [source, *stops, target]
-    points = [req.origin, *req.waypoints, req.destination]
 
     timings_ms: dict[str, float] = {}
     started = perf_counter()
-    fallback_warnings: list[str] = []
     try:
-        def find_leg(a: int, b: int) -> list[int]:
-            i = all_stops.index(b)
-            stop_no = i if i <= len(stops) else None
-            path, actual_a, actual_b, warn = _route_with_fallback(
-                city_graph,
-                profile,
-                a,
-                b,
-                points[i - 1],
-                points[i],
-                stop_no=stop_no,
-                allow_origin_fallback=a == source,
-            )
-            fallback_warnings.extend(warn)
-            if a == source:
-                all_stops[0] = actual_a
-            if b == target:
-                all_stops[-1] = actual_b
-            return path
-
-        legs = _join_legs(all_stops, find_leg)
+        path, source, target, fallback_warnings = _route_with_fallback(
+            req, city_graph, profile, source, target
+        )
     except NoRouteError:
         raise
     except Exception as exc:
@@ -259,38 +206,37 @@ def plan_route(req: RouteRequest, city_graph: CityGraph) -> RouteResponse:
     timings_ms["main"] = (perf_counter() - started) * 1000
 
     fetched_at = graph_fetched_at(graph.graph)
-    edges = path_edges(graph, legs.path, profile)
-    for break_idx, stop_no in legs.breaks:
-        if break_idx < len(edges):
-            edges[break_idx]["_break"] = stop_no
+    main = _candidate(
+        "Trasa najbardziej dostępna",
+        path_edges(graph, path, profile),
+        city_graph,
+        profile,
+        fetched_at,
+    )
 
-    main = _candidate("Trasa najbardziej dostępna", edges, city_graph, profile, fetched_at)
-
-    shortest = compromise = None
-    if not stops:
-        shortest = _optional_candidate(
-            "Najkrótsza trasa piesza",
-            city_graph,
-            all_stops[0],
-            all_stops[-1],
-            route_profile=None,
-            description_profile=profile,
-            fetched_at=fetched_at,
-            timings_ms=timings_ms,
-            timing_key="shortest",
-        )
-        compromise_profile = _compromise_profile(profile)
-        compromise = _optional_candidate(
-            "Trasa kompromisowa",
-            city_graph,
-            all_stops[0],
-            all_stops[-1],
-            route_profile=compromise_profile,
-            description_profile=compromise_profile,
-            fetched_at=fetched_at,
-            timings_ms=timings_ms,
-            timing_key="compromise",
-        )
+    shortest = _optional_candidate(
+        "Najkrótsza trasa piesza",
+        city_graph,
+        source,
+        target,
+        route_profile=None,
+        description_profile=profile,
+        fetched_at=fetched_at,
+        timings_ms=timings_ms,
+        timing_key="shortest",
+    )
+    compromise_profile = _compromise_profile(profile)
+    compromise = _optional_candidate(
+        "Trasa kompromisowa",
+        city_graph,
+        source,
+        target,
+        route_profile=compromise_profile,
+        description_profile=compromise_profile,
+        fetched_at=fetched_at,
+        timings_ms=timings_ms,
+        timing_key="compromise",
+    )
 
     route_accessibility, route_confidence = aggregate_route_scores(main.segments)
     warnings: list[str] = list(fallback_warnings)
@@ -589,18 +535,12 @@ def _to_segment(
     length = seg.length
     street, steps = seg.key
     difficulty = _segment_difficulty(seg.edges)
-    
-    stop_no = next((stop for e in seg.edges if (stop := e.get("_break")) is not None), None)
-
     if prev is None:
         compass = COMPASS_PL[round(_start_bearing(seg.geometry) / 45) % 8]
         lead = f"Ruszaj na {compass}"
     else:
         lead = _turn(prev, seg)
-    
     instruction = f"{lead}: {street}, {round(length)} m."
-    if stop_no is not None:
-        instruction += f" (Osiągniesz przystanek {stop_no})"
 
     surfaces = [tag(e, "surface") for e in seg.edges]
     known = [s for s in surfaces if s]

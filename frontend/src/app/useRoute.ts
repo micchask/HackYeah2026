@@ -8,23 +8,15 @@ import type { Action, AppState } from './state'
 
 /** Efekt w AppProvider: przelicza trasę po zmianie punktów lub preferencji. */
 export function useRouteFetch(state: AppState, dispatch: Dispatch<Action>): void {
-  const { origin, destination, waypoints, prefs, routeNonce } = state
+  const { origin, destination, prefs, routeNonce } = state
   useEffect(() => {
     if (!origin || !destination) return
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       dispatch({ type: 'routeLoading' })
       try {
-        // Ignorujemy przystanki, które jeszcze nie mają wybranych współrzędnych (null)
-        const validWaypoints = waypoints.filter((wp): wp is NamedPoint => wp !== null)
         const route = await api.route(
-          { 
-            city: CITY, 
-            origin: origin.point, 
-            destination: destination.point, 
-            waypoints: validWaypoints.map(wp => wp.point),
-            preferences: prefs 
-          },
+          { city: CITY, origin: origin.point, destination: destination.point, preferences: prefs },
           controller.signal,
         )
         dispatch({ type: 'setRoute', route })
@@ -38,7 +30,7 @@ export function useRouteFetch(state: AppState, dispatch: Dispatch<Action>): void
       controller.abort()
     }
     // routeNonce: „Przelicz trasę” po nowym zgłoszeniu na trasie (#63)
-  }, [origin, destination, waypoints, prefs, routeNonce, dispatch])
+  }, [origin, destination, prefs, routeNonce, dispatch])
 }
 
 export interface ActiveRoute {

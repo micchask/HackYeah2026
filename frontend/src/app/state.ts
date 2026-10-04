@@ -324,6 +324,15 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'toggleSidebar':
       return { ...state, sidebarOpen: action.open ?? !state.sidebarOpen }
     case 'refinePoint': {
+      if (typeof action.target === 'object' && action.target !== null && 'waypoint' in action.target) {
+        const i = action.target.waypoint
+        if (state.waypoints[i] === action.expected) {
+          const next = [...state.waypoints]
+          next[i] = action.point
+          return { ...state, waypoints: next }
+        }
+        return state
+      }
       const key = action.target === 'report' ? 'reportPoint' : action.target
       return state[key] === action.expected ? { ...state, [key]: action.point } : state
     }

@@ -52,13 +52,13 @@ export function RoutePoints({
   const isPicking = (t: PickTarget) => {
     if (typeof t === 'string') return pickTarget === t
     if (typeof pickTarget === 'object' && pickTarget !== null && 'waypoint' in pickTarget) {
-      return pickTarget.waypoint === t.waypoint
+      return pickTarget.waypoint === (t as any).waypoint
     }
     return false
   }
 
   const rows = [
-    { target: 'origin' as PickTarget, letter: 'A', title: 'Start', empty: 'Wpisz adres startu', val: origin },
+    { target: 'origin' as PickTarget, letter: 'A', title: 'Start', empty: 'Wpisz adres startu', val: origin, isWaypoint: false, index: -1 },
     ...waypoints.map((wp, i) => ({
       target: { waypoint: i } as PickTarget,
       letter: String(i + 1),
@@ -68,7 +68,7 @@ export function RoutePoints({
       isWaypoint: true,
       index: i
     })),
-    { target: 'destination' as PickTarget, letter: 'B', title: 'Cel', empty: 'Wpisz adres celu', val: destination },
+    { target: 'destination' as PickTarget, letter: 'B', title: 'Cel', empty: 'Wpisz adres celu', val: destination, isWaypoint: false, index: -1 },
   ]
 
   return (
