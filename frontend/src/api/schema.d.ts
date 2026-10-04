@@ -344,6 +344,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * City Stats
+         * @description Dashboard miasta: pokrycie danymi, bariery, ranking ulic, zgłoszenia (obszar demo).
+         */
+        get: operations["city_stats_api_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -412,6 +432,14 @@ export interface components {
             last_verified?: string | null;
             /** @description Tylko dla zgłoszeń użytkowników: status i głosy innych osób */
             report?: components["schemas"]["BarrierReport"] | null;
+        };
+        /** BarrierCount */
+        BarrierCount: {
+            type: components["schemas"]["BarrierType"];
+            /** Count */
+            count: number;
+            /** Length M */
+            length_m: number;
         };
         /** BarrierList */
         BarrierList: {
@@ -487,6 +515,74 @@ export interface components {
             pois?: {
                 [key: string]: unknown;
             };
+        };
+        /** CityStats */
+        CityStats: {
+            /** City */
+            city: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Network Length M
+             * @description Długość sieci pieszej w obszarze demo
+             */
+            network_length_m: number;
+            /** Network Segments */
+            network_segments: number;
+            /** Coverage */
+            coverage: components["schemas"]["Coverage"][];
+            /**
+             * Gap Length M
+             * @description Odcinki bez danych o nawierzchni (jak /api/data-gaps)
+             */
+            gap_length_m: number;
+            /** Gap Share */
+            gap_share: number;
+            /** Barriers Total */
+            barriers_total: number;
+            /** Barriers By Type */
+            barriers_by_type: components["schemas"]["BarrierCount"][];
+            /** Priority Weights */
+            priority_weights: {
+                [key: string]: number;
+            };
+            /** Priority Streets */
+            priority_streets: components["schemas"]["PriorityStreet"][];
+            /**
+             * Reports Total
+             * @description None = magazyn zgłoszeń niedostępny
+             */
+            reports_total: number | null;
+            /** Reports By Status */
+            reports_by_status: components["schemas"]["ReportStatusCount"][];
+            /** Reports By Type */
+            reports_by_type: components["schemas"]["ReportTypeCount"][];
+        };
+        /** Coverage */
+        Coverage: {
+            /**
+             * Key
+             * @description Cecha odcinka, np. 'surface', 'incline_percent'
+             */
+            key: string;
+            /**
+             * Sources
+             * @description Skąd pochodzi, np. ['osm'] albo ['nmt_gugik']
+             */
+            sources: string[];
+            /**
+             * Length M
+             * @description Długość odcinków, które mają tę cechę
+             */
+            length_m: number;
+            /**
+             * Share
+             * @description Udział w długości całej sieci pieszej
+             */
+            share: number;
         };
         /**
          * DataGapsSummary
@@ -784,6 +880,25 @@ export interface components {
          * @enum {string}
          */
         PoiKind: "bench" | "changing_table";
+        /**
+         * PriorityStreet
+         * @description Ulica do naprawy w pierwszej kolejności - argument dla miasta (B2G).
+         */
+        PriorityStreet: {
+            /** Street */
+            street: string;
+            /**
+             * Score
+             * @description Suma wag barier (patrz `priority_weights`)
+             */
+            score: number;
+            /** Barriers */
+            barriers: number;
+            /** By Type */
+            by_type: {
+                [key: string]: number;
+            };
+        };
         /** Provenance */
         Provenance: {
             /**
@@ -898,11 +1013,23 @@ export interface components {
          * @enum {string}
          */
         ReportStatus: "pending" | "confirmed" | "rejected" | "resolved";
+        /** ReportStatusCount */
+        ReportStatusCount: {
+            status: components["schemas"]["ReportStatus"];
+            /** Count */
+            count: number;
+        };
         /**
          * ReportType
          * @enum {string}
          */
         ReportType: "barrier" | "elevator_broken" | "construction" | "inaccessible_entrance" | "blocked_parking";
+        /** ReportTypeCount */
+        ReportTypeCount: {
+            type: components["schemas"]["ReportType"];
+            /** Count */
+            count: number;
+        };
         /**
          * ReportUpdate
          * @description Zmiana statusu przez moderację (na razie bez logowania - patrz #37).
@@ -1834,6 +1961,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BarrierList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    city_stats_api_stats_get: {
+        parameters: {
+            query?: {
+                city?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CityStats"];
                 };
             };
             /** @description Validation Error */

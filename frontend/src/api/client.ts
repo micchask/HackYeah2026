@@ -33,6 +33,8 @@ export type SearchResult = components['schemas']['SearchResult']
 export type SegmentCollection = components['schemas']['SegmentCollection']
 /** Ile i gdzie brakuje danych (`GET /api/data-gaps`) - tekst do mapy braków danych */
 export type DataGapsSummary = components['schemas']['DataGapsSummary']
+/** Dashboard miasta (`GET /api/stats`): pokrycie danymi, bariery, priorytety, zgłoszenia */
+export type CityStats = components['schemas']['CityStats']
 export type Barrier = components['schemas']['Barrier']
 export type BarrierType = components['schemas']['BarrierType']
 export type BarrierList = components['schemas']['BarrierList']
@@ -159,6 +161,8 @@ export const api = {
   profiles: (signal?: AbortSignal) => request<ModePreset[]>('/profiles', { signal }),
   barriers: (city: string, bbox: string, signal?: AbortSignal) =>
     request<BarrierList>(`/barriers?${new URLSearchParams({ city, bbox })}`, { signal }),
+  stats: (city: string, signal?: AbortSignal) =>
+    request<CityStats>(`/stats?${new URLSearchParams({ city })}`, { signal }),
   dataGaps: (city: string, signal?: AbortSignal) =>
     request<DataGapsSummary>(`/data-gaps?${new URLSearchParams({ city })}`, { signal }),
   segments: (
