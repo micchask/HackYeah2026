@@ -58,9 +58,7 @@ describe('RouteSummary', () => {
 
     expect(table).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Najbardziej dostępna/ })).toBeInTheDocument()
-    expect(
-      screen.getByRole('columnheader', { name: 'Najkrótsza trasa piesza' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Najkrótsza' })).toBeInTheDocument()
     expect(screen.getByRole('rowheader', { name: 'Dostępność' })).toBeInTheDocument()
     expect(screen.getByText('Krótsza, ale prowadzi przez schody.')).toBeInTheDocument()
     columnHeaders.forEach((header) => expect(header).toHaveAttribute('scope', 'col'))
